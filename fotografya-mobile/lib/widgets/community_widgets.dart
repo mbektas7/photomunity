@@ -101,14 +101,18 @@ class StatusBadge extends StatelessWidget {
     return Container(
       height: small ? 20 : 28,
       padding: EdgeInsets.symmetric(horizontal: small ? 7 : 11),
-      alignment: Alignment.center,
       decoration: ShapeDecoration(
         color: p.surface2,
         shape: const StadiumBorder(),
       ),
-      child: Text(
-        t('contest.status.$status'),
-        style: font(small ? 11 : 13, weight: 600, color: p.inkMuted),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            t('contest.status.$status'),
+            style: font(small ? 11 : 13, weight: 600, color: p.inkMuted),
+          ),
+        ],
       ),
     );
   }

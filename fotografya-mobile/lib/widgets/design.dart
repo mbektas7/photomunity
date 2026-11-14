@@ -73,8 +73,11 @@ List<String> exifChips(Exif? e, String locale, {int max = 3}) {
 
 /// Fotoğrafın çekim bilgisini gösteren küçük hap; uygulamanın imzası.
 class ExifChip extends StatelessWidget {
-  const ExifChip(this.text, {super.key});
+  const ExifChip(this.text, {super.key, this.color});
   final String text;
+
+  /// Zemin; varsayılan surface-2 (surface kart içinde). bg üzerinde surface verilir.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -82,14 +85,18 @@ class ExifChip extends StatelessWidget {
     return Container(
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.center,
       decoration: ShapeDecoration(
-        color: p.surface2,
+        color: color ?? p.surface2,
         shape: const StadiumBorder(),
       ),
-      child: Text(
-        text,
-        style: font(12.5, weight: 600, color: p.inkMuted, tabular: true),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: font(12.5, weight: 600, color: p.inkMuted, tabular: true),
+          ),
+        ],
       ),
     );
   }
@@ -109,11 +116,15 @@ class LiveBadge extends StatelessWidget {
     return Container(
       height: small ? 20 : 28,
       padding: EdgeInsets.symmetric(horizontal: small ? 7 : 11),
-      alignment: Alignment.center,
       decoration: ShapeDecoration(color: p.live, shape: const StadiumBorder()),
-      child: Text(
-        text,
-        style: font(small ? 11 : 13.5, weight: 700, color: p.liveInk),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: font(small ? 11 : 13.5, weight: 700, color: p.liveInk),
+          ),
+        ],
       ),
     );
   }
@@ -121,8 +132,16 @@ class LiveBadge extends StatelessWidget {
 
 /// Bir sonraki aşamaya kalan süre: gün/saat/dakika; bir günün altında saat/dakika/saniye.
 class Countdown extends StatefulWidget {
-  const Countdown({super.key, required this.until, required this.srLabel});
+  const Countdown({
+    super.key,
+    required this.until,
+    required this.srLabel,
+    this.boxColor,
+  });
   final DateTime until;
+
+  /// Kutu zemini; varsayılan surface-2.
+  final Color? boxColor;
 
   /// Ekran okuyucu cümlesinin başı ("Oylamanın kapanmasına").
   final String srLabel;
@@ -183,7 +202,7 @@ class _CountdownState extends State<Countdown> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: p.surface2,
+                  color: widget.boxColor ?? p.surface2,
                   borderRadius: BorderRadius.circular(Radii.box),
                 ),
                 child: Column(

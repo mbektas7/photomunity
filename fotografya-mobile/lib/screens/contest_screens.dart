@@ -11,6 +11,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
+import '../widgets/design.dart';
 import 'community_screens.dart' show openWeb;
 
 class ContestScreen extends ConsumerStatefulWidget {
@@ -81,21 +82,46 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
     final async = ref.watch(contestProvider(widget.id));
     final c = async.asData?.value;
     final t = L10n.of(context);
+    final publicVoting = c != null && c.status == 'judging' && c.judgingMode == 'public';
+    final p = context.palette;
+    // Çizimde yarışma içeriği beyaz (surface) bir yaprak üzerinde; kutular surface-2.
     return Scaffold(
+      backgroundColor: p.surface,
       appBar: AppBar(
-        actions: [
-          if (c != null)
-            IconButton(
-              tooltip: t('contest.share'),
-              icon: const Icon(LucideIcons.link),
-              onPressed: () => _share(c),
+        backgroundColor: p.surface,
+        toolbarHeight: 72,
+        leadingWidth: 76,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 14),
+          child: Center(
+            child: RoundIconButton(
+              icon: LucideIcons.chevronLeft,
+              label: t('ui.back'),
+              color: p.surface2,
+              onPressed: () => Navigator.of(context).maybePop(),
             ),
+          ),
+        ),
+        actions: [
           if (c?.myRole == 'admin')
-            IconButton(
-              tooltip: t('contest.manage_web'),
-              icon: const Icon(LucideIcons.slidersHorizontal),
-              onPressed: () =>
-                  openWeb(context, '/contests/${widget.id}/manage'),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: RoundIconButton(
+                icon: LucideIcons.slidersHorizontal,
+                label: t('contest.manage_web'),
+                color: p.surface2,
+                onPressed: () => openWeb(context, '/contests/${widget.id}/manage'),
+              ),
+            ),
+          if (c != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: RoundIconButton(
+                icon: LucideIcons.share2,
+                label: t('contest.share'),
+                color: p.surface2,
+                onPressed: () => _share(c),
+              ),
             ),
         ],
       ),
@@ -107,144 +133,144 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
               onRetry: () => ref.invalidate(contestProvider(widget.id)),
             )
           : const Center(child: CircularProgressIndicator()),
+      bottomNavigationBar: publicVoting
+          ? SafeArea(
+              minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: LargeButton(
+                label: t('contest.start_voting'),
+                icon: LucideIcons.star,
+                onPressed: () => _startVoting(c),
+              ),
+            )
+          : null,
     );
+  }
+
+  void _startVoting(Contest c) {
+    final list = ref.read(entriesProvider(c.id)).asData?.value ?? const <Entry>[];
+    final votable = list.where((e) => !e.mine).toList();
+    if (votable.isEmpty) return;
+    final first = votable.firstWhere((e) => e.myStars == null, orElse: () => votable.first);
+    showVoteSheet(context, c.id, list.indexOf(first));
   }
 
   Widget _body(BuildContext context, Contest c) {
     final t = L10n.of(context);
     final p = context.palette;
     final locale = t.locale.languageCode;
+    final next = contestNextMoment(c);
+    final countdownLabel = switch (c.status) {
+      'judging' => t('contest.countdown_voting'),
+      'closed' => t('contest.countdown_results'),
+      _ => t('contest.countdown_deadline'),
+    };
+    Widget section(String title, Widget child) => SurfaceCard(
+      color: p.surface2,
+      padding: const EdgeInsets.all(Space.s5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: AppText.heading(p.ink)),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(contestProvider(widget.id));
         ref.invalidate(entriesProvider(widget.id));
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
+        padding: const EdgeInsets.fromLTRB(Space.s5, 4, Space.s5, 32),
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: () => context.push('/c/${c.community.slug}'),
-                  child: Row(
-                    children: [
-                      CommunityLogo(
-                        name: c.community.name,
-                        url: c.community.logoUrl,
-                        size: 26,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          c.community.name,
-                          style: font(14.5, weight: 500, color: p.ink),
-                        ),
-                      ),
-                    ],
+          // Yarışma kapak görseli API'de yok; başlık bölümü görselsiz.
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              StatusBadge(status: c.status, mode: c.judgingMode),
+              InkWell(
+                borderRadius: BorderRadius.circular(Radii.box),
+                onTap: () => context.push('/c/${c.community.slug}'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    c.community.name,
+                    style: font(15, color: p.inkMuted),
                   ),
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    StatusBadge(status: c.status),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${t('contest.mode.${c.judgingMode}')} · ${t('contest.entries', {'count': c.entryCount})}',
-                      style: font(12.5, color: p.inkMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  c.title,
-                  style: font(
-                    36,
-                    weight: 700,
-                    height: 1.0,
-                    spacing: -1.4,
-                    color: p.ink,
-                  ),
-                ),
-                const SizedBox(height: 18),
-              ],
-            ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          const SizedBox(height: 6),
+          Text(c.title, style: AppText.display(p.ink).copyWith(fontSize: 40, height: 1.05)),
+          const SizedBox(height: Space.s5),
+          if (next != null && next.isAfter(DateTime.now())) ...[
+            Countdown(until: next, srLabel: countdownLabel),
+            const SizedBox(height: Space.s6),
+          ],
+          _phase(context, c, locale),
+          const SizedBox(height: Space.s6),
+          SurfaceCard(
+            color: p.surface2,
+            padding: const EdgeInsets.all(Space.s5),
             child: ContestTimeline(c: c),
           ),
-          const SizedBox(height: 18),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _phase(context, c, locale),
-          ),
-          const SizedBox(height: 28),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (c.prizes.isNotEmpty) ...[
-                  Text(
-                    t('contest.prizes'),
-                    style: font(15, weight: 600, color: p.ink),
-                  ),
-                  const SizedBox(height: 6),
+          const SizedBox(height: Space.s3),
+          if (c.prizes.isNotEmpty) ...[
+            section(
+              t('contest.prizes'),
+              Column(
+                children: [
                   for (final pr in c.prizes)
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: p.line)),
+                        border: Border(top: BorderSide(color: p.ringIdle.withValues(alpha: 0.5))),
                       ),
                       child: Row(
                         children: [
-                          SizedBox(
-                            width: 30,
-                            child: Text(
-                              '${pr.rank}.',
-                              style: font(17, weight: 600, color: p.ink),
-                            ),
+                          Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(color: p.surface, shape: BoxShape.circle),
+                            child: Text('${pr.rank}', style: font(13, weight: 700, color: p.ink, tabular: true)),
                           ),
-                          Expanded(
-                            child: Text(
-                              pr.title,
-                              style: font(15, color: p.ink),
-                            ),
-                          ),
+                          const SizedBox(width: 14),
+                          Expanded(child: Text(pr.title, style: AppText.body(p.ink))),
                         ],
                       ),
                     ),
-                  const SizedBox(height: 22),
                 ],
-                Text(
-                  t('contest.about'),
-                  style: font(15, weight: 600, color: p.ink),
-                ),
-                const SizedBox(height: 6),
-                Text(c.description, style: font(15, height: 1.5, color: p.ink)),
-                if (c.rules != null) ...[
-                  const SizedBox(height: 18),
-                  Text(
-                    t('contest.rules'),
-                    style: font(15, weight: 600, color: p.ink),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(c.rules!, style: font(15, height: 1.5, color: p.inkMuted)),
-                ],
-              ],
+              ),
             ),
+            const SizedBox(height: Space.s3),
+          ],
+          section(
+            t('contest.about'),
+            Text(c.description, style: font(15, height: 1.55, color: p.inkMuted)),
           ),
+          if (c.rules != null) ...[
+            const SizedBox(height: Space.s3),
+            section(
+              t('contest.rules'),
+              Text(c.rules!, style: font(15, height: 1.55, color: p.inkMuted)),
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _panel(Palette p, List<Widget> children) => Container(
-    color: p.surface,
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(Space.s5),
+    decoration: BoxDecoration(
+      color: p.surface2,
+      borderRadius: BorderRadius.circular(Radii.card),
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children,
@@ -260,9 +286,12 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           final img = c.myEntry!.feed;
           return _panel(p, [
             if (img != null)
-              AspectRatio(
-                aspectRatio: img.ratio,
-                child: NetPhoto(url: img.url),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.photo),
+                child: AspectRatio(
+                  aspectRatio: img.ratio,
+                  child: NetPhoto(url: img.url),
+                ),
               ),
             const SizedBox(height: 14),
             Row(
@@ -288,19 +317,17 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           ]);
         }
         return _panel(p, [
-          Text(
-            t('contest.enter_title'),
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text(t('contest.enter_title'), style: AppText.title(p.ink)),
           const SizedBox(height: 6),
           Text(
             t('contest.enter_body'),
             style: font(15, height: 1.45, color: p.inkMuted),
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _busy || c.status == 'draft' ? null : _enter,
-            child: BusyLabel(busy: _busy, label: t('contest.enter_cta')),
+          LargeButton(
+            label: t('contest.enter_cta'),
+            busy: _busy,
+            onPressed: c.status == 'draft' ? null : _enter,
           ),
         ]);
       case 'judging' when c.judgingMode == 'public':
@@ -357,89 +384,31 @@ class _Voting extends ConsumerWidget {
       AsyncData(:final value) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Builder(
-            builder: (_) {
-              final votable = value.where((e) => !e.mine).toList();
-              final done = votable.where((e) => e.myStars != null).length;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    t('contest.rated_progress', {
-                      'done': done,
-                      'total': votable.length,
-                    }),
-                    style: font(13.5, weight: 500, color: p.ink),
-                  ),
-                  const SizedBox(height: 6),
-                  LinearProgressIndicator(
-                    value: votable.isEmpty ? 0 : done / votable.length,
-                  ),
-                  const SizedBox(height: 14),
-                ],
-              );
-            },
-          ),
-          for (final e in value)
-            Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              padding: const EdgeInsets.all(10),
-              color: p.surface,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (e.feed != null)
-                    GestureDetector(
-                      onTap: () => _fullscreen(context, e),
-                      child: AspectRatio(
-                        aspectRatio: e.feed!.ratio,
-                        child: NetPhoto(url: e.feed!.url),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          e.user?.displayName ?? e.title ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: font(13.5, color: p.inkMuted),
-                        ),
-                      ),
-                      if (e.mine)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: p.ink.withValues(alpha: 0.06),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            t('contest.your_entry'),
-                            style: font(13.5, weight: 500, color: p.ink),
-                          ),
-                        )
-                      else
-                        StarRating(
-                          value: e.myStars,
-                          onChanged: (stars) => ref
-                              .read(entriesProvider(contestId).notifier)
-                              .vote(e.id, stars)
-                              .catchError((Object err) {
-                                if (context.mounted)
-                                  toast(context, errorText(context, err));
-                              }),
-                        ),
-                    ],
-                  ),
-                ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(t('contest.entries_title'), style: AppText.title(p.ink)),
+              const Spacer(),
+              Text(
+                [
+                  t('contest.entries_n', {'count': value.length}),
+                  t('contest.my_votes', {
+                    'count': value.where((e) => !e.mine && e.myStars != null).length,
+                  }),
+                ].join(', '),
+                style: font(15, color: p.inkMuted, tabular: true),
               ),
-            ),
+            ],
+          ),
+          const SizedBox(height: 14),
           if (value.isEmpty)
-            Text(t('contest.no_entries'), style: font(15, color: p.inkMuted)),
+            Text(t('contest.no_entries'), style: font(15, color: p.inkMuted))
+          else
+            _EntryColumns(
+              entries: value,
+              onOpen: (i) => showVoteSheet(context, contestId, i),
+            ),
         ],
       ),
       AsyncError(:final error) => ErrorView(
@@ -451,6 +420,217 @@ class _Voting extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
     };
+  }
+}
+
+/// İki sütunlu duvar: her kare kendi oranında (kırpma yok), sol altta oy hapı.
+class _EntryColumns extends StatelessWidget {
+  const _EntryColumns({required this.entries, required this.onOpen});
+  final List<Entry> entries;
+  final ValueChanged<int> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final cols = [<int>[], <int>[]];
+    final h = [0.0, 0.0];
+    for (var i = 0; i < entries.length; i++) {
+      final r = entries[i].feed?.ratio ?? 1.5;
+      final c = h[0] <= h[1] ? 0 : 1;
+      cols[c].add(i);
+      h[c] += 1 / r;
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final (ci, col) in cols.indexed) ...[
+          if (ci > 0) const SizedBox(width: Space.s3),
+          Expanded(
+            child: Column(
+              children: [
+                for (final i in col)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Space.s3),
+                    child: _EntryTile(entry: entries[i], onTap: () => onOpen(i)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({required this.entry, required this.onTap});
+  final Entry entry;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final t = L10n.of(context);
+    final img = entry.feed;
+    final Widget pill = entry.mine
+        ? _ScrimPill(text: t('contest.your_entry'))
+        : entry.myStars != null
+        ? Container(
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: ShapeDecoration(color: p.accent, shape: const StadiumBorder()),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_rounded, size: 18, color: p.accentInk),
+                const SizedBox(width: 4),
+                Text('${entry.myStars}', style: font(15, weight: 700, color: p.accentInk, tabular: true)),
+              ],
+            ),
+          )
+        : _ScrimPill(text: t('contest.vote_cta'));
+    return Semantics(
+      button: true,
+      label: [
+        entry.title,
+        entry.mine
+            ? t('contest.your_entry')
+            : entry.myStars != null
+            ? t('contest.stars', {'count': entry.myStars!})
+            : t('contest.vote_cta'),
+      ].whereType<String>().join(', '),
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(Radii.photo),
+          child: Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: img?.ratio ?? 1.5,
+                child: img == null ? ColoredBox(color: p.surface2) : NetPhoto(url: img.url),
+              ),
+              Positioned(left: 8, bottom: 8, child: pill),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ScrimPill extends StatelessWidget {
+  const _ScrimPill({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 13),
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(color: p.scrim, shape: const StadiumBorder()),
+      child: Text(text, style: font(14.5, weight: 700, color: p.ink)),
+    );
+  }
+}
+
+/// Oylama: kare kendi oranında, altında 1–5 yıldız; puanlayınca sıradakine geçer.
+Future<void> showVoteSheet(BuildContext context, String contestId, int start) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _VoteSheet(contestId: contestId, start: start),
+    );
+
+class _VoteSheet extends ConsumerStatefulWidget {
+  const _VoteSheet({required this.contestId, required this.start});
+  final String contestId;
+  final int start;
+
+  @override
+  ConsumerState<_VoteSheet> createState() => _VoteSheetState();
+}
+
+class _VoteSheetState extends ConsumerState<_VoteSheet> {
+  late int _i = widget.start;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final list = ref.watch(entriesProvider(widget.contestId)).asData?.value ?? const <Entry>[];
+    if (list.isEmpty) return const SizedBox(height: 200);
+    final i = _i.clamp(0, list.length - 1);
+    final e = list[i];
+    final votable = list.where((x) => !x.mine).toList();
+    final done = votable.where((x) => x.myStars != null).length;
+    final img = e.full ?? e.feed;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.s5, 0, Space.s5, Space.s5),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            t('contest.rated_progress', {'done': done, 'total': votable.length}),
+            textAlign: TextAlign.center,
+            style: font(14, weight: 600, color: p.inkMuted, tabular: true),
+          ),
+          const SizedBox(height: Space.s3),
+          if (img != null)
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.55),
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(Radii.photo),
+                  child: AspectRatio(aspectRatio: img.ratio, child: NetPhoto(url: img.url, fit: BoxFit.contain)),
+                ),
+              ),
+            ),
+          const SizedBox(height: Space.s4),
+          Row(
+            children: [
+              RoundIconButton(
+                icon: LucideIcons.chevronLeft,
+                label: t('contest.prev_entry'),
+                onPressed: i == 0 ? null : () => setState(() => _i = i - 1),
+              ),
+              Expanded(
+                child: Center(
+                  child: e.mine
+                      ? Text(t('contest.your_entry'), style: AppText.bodyStrong(p.ink))
+                      : StarRating(
+                          value: e.myStars,
+                          onChanged: (stars) {
+                            ref
+                                .read(entriesProvider(widget.contestId).notifier)
+                                .vote(e.id, stars)
+                                .catchError((Object err) {
+                                  if (context.mounted) toast(context, errorText(context, err));
+                                });
+                            if (i < list.length - 1) {
+                              Future.delayed(const Duration(milliseconds: 250), () {
+                                if (mounted) setState(() => _i = i + 1);
+                              });
+                            }
+                          },
+                        ),
+                ),
+              ),
+              RoundIconButton(
+                icon: LucideIcons.chevronRight,
+                label: t('contest.next_entry'),
+                onPressed: i == list.length - 1 ? null : () => setState(() => _i = i + 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.s2),
+          Text(t('contest.vote_hint'), textAlign: TextAlign.center, style: AppText.caption(p.inkMuted)),
+        ],
+      ),
+    );
   }
 }
 
@@ -494,10 +674,7 @@ class _Results extends ConsumerWidget {
             children: [
               Icon(LucideIcons.trophy, color: p.accent),
               const SizedBox(width: 8),
-              Text(
-                t('contest.results'),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text(t('contest.results'), style: AppText.title(p.ink)),
             ],
           ),
           const SizedBox(height: 14),
@@ -507,6 +684,7 @@ class _Results extends ConsumerWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: p.surface,
+                borderRadius: BorderRadius.circular(Radii.card),
                 border: e.rank == 1
                     ? Border.all(color: p.accent, width: 2)
                     : null,
@@ -570,7 +748,7 @@ class _Results extends ConsumerWidget {
                           if (e.prize != null)
                             Text(
                               e.prize!,
-                              style: font(14, weight: 600, color: p.accent),
+                              style: font(14, weight: 600, color: p.accentText),
                             ),
                           if (e.score != null)
                             Text(

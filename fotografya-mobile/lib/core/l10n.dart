@@ -18,6 +18,9 @@ class L10n {
 
   static const _strings = <String, Map<String, String>>{
     'tr': {
+      'contest.prev_entry': 'Önceki kare',
+      'contest.next_entry': 'Sonraki kare',
+      'contest.vote_hint': 'Puanını istediğin zaman değiştirebilirsin.',
       'ui.share': 'Paylaş',
       'ui.link_copied': 'Bağlantı kopyalandı',
       'ui.back': 'Geri',
@@ -538,6 +541,9 @@ class L10n {
       'specialties.travel': 'Seyahat',
     },
     'en': {
+      'contest.prev_entry': 'Previous photo',
+      'contest.next_entry': 'Next photo',
+      'contest.vote_hint': 'You can change your rating any time.',
       'ui.share': 'Share',
       'ui.link_copied': 'Link copied',
       'ui.back': 'Back',

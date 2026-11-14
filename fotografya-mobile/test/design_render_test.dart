@@ -151,6 +151,7 @@ void main() {
     }
 
     final router = container.read(routerProvider);
+    await settle(); // oturum yüklenip açılış yönlendirmesi bitsin
     Directory(_out).createSync(recursive: true);
     for (final route in _routes.split(',')) {
       final parts = route.split('=');
