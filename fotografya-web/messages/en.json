@@ -158,7 +158,11 @@
     "like_count": "Like, {count} likes",
     "unlike_count": "Remove like, {count} likes",
     "liked_count": "You liked, {count}",
-    "open_photo": "Open photo"
+    "open_photo": "Open photo",
+    "followers_count": "{count, plural, one {# follower} other {# followers}}",
+    "see_on_map": "See on map",
+    "more_from": "More from {name}",
+    "go_profile": "Go to profile"
   },
   "profile": {
     "follow": "Follow",

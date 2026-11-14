@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { PhotoCard } from "@/lib/types";
 
-const GAP = 6;
+const GAP = 10;
 
 type Row = { height: number; items: { photo: PhotoCard; width: number }[] };
 
@@ -79,7 +79,7 @@ export function JustifiedWall({
               <Link
                 key={photo.id}
                 href={`/p/${photo.id}`}
-                className="print-placeholder group relative block shrink-0 overflow-hidden"
+                className="print-placeholder group relative block shrink-0 overflow-hidden rounded-photo"
                 style={{ width: w, height: row.height }}
               >
                 {src && (

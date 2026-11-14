@@ -59,7 +59,7 @@ export function PhotoCard({ photo, meId }: { photo: CardPhoto; meId?: string }) 
         <LikeButton id={photo.id} liked={photo.liked_by_me} count={photo.like_count} />
         <ShareButton url={`/${locale}/p/${photo.id}`} title={photo.title ?? undefined} />
         <span className="flex-1" />
-        <ExifChips exif={photo.exif} />
+        <ExifChips exif={photo.exif} locale={locale} />
       </footer>
     </article>
   );

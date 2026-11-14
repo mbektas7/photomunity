@@ -158,7 +158,11 @@
     "like_count": "Beğen, {count} beğeni",
     "unlike_count": "Beğeniyi kaldır, {count} beğeni",
     "liked_count": "Beğendin, {count}",
-    "open_photo": "Fotoğrafı aç"
+    "open_photo": "Fotoğrafı aç",
+    "followers_count": "{count} takipçi",
+    "see_on_map": "Haritada gör",
+    "more_from": "{name} diğer kareleri",
+    "go_profile": "Profile git"
   },
   "profile": {
     "follow": "Takip et",
