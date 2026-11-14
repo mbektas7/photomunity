@@ -29,11 +29,11 @@ export function MessagesLink() {
       href="/messages"
       aria-current={pathname.startsWith("/messages") ? "page" : undefined}
       aria-label={count ? t("messages_unread", { count }) : t("messages")}
-      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5"
+      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-surface md:bg-surface md:hover:bg-surface-2"
     >
-      <MessageCircle className="h-[21px] w-[21px]" strokeWidth={1.9} />
+      <MessageCircle className="h-[21px] w-[21px]" strokeWidth={1.8} aria-hidden />
       {count > 0 && (
-        <span className="tnum absolute right-1 top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold leading-[18px] text-accent-ink">
+        <span className="tnum absolute -right-0.5 -top-0.5 inline-flex min-w-[20px] items-center justify-center rounded-full border-2 border-bg bg-accent px-1 text-[11px] font-bold leading-4 text-accent-ink">
           {count > 99 ? "99+" : count}
         </span>
       )}

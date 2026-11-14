@@ -6,7 +6,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <>
       <Header />
       <RealtimeBridge />
-      <main className="pb-24 md:pb-16 [&:has([data-fullbleed])]:pb-0">{children}</main>
+      <main className="pb-28 md:pb-16 [&:has([data-fullbleed])]:pb-0">{children}</main>
       <MobileTabBar />
     </>
   );

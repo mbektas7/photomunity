@@ -20,7 +20,8 @@
     "map": "Map",
     "messages": "Messages",
     "messages_unread": "Messages, {count} unread",
-    "guide": "Guide"
+    "guide": "Guide",
+    "upload_photo": "Upload photo"
   },
   "landing": {
     "meta_title": "Fotografya — Where photographers meet",
@@ -117,7 +118,11 @@
     "empty_body": "Photos from people you follow show up here. Find work you like in Explore and follow the photographers.",
     "go_explore": "Go to Explore",
     "upload_first": "Upload your first photo",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "stories": "Communities and contests",
+    "live_contests": "Live contests",
+    "all_contests": "All contests",
+    "contest_left": "{title}, {time}"
   },
   "explore": {
     "title": "Explore",
@@ -149,7 +154,11 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
-    "delete_confirm": "This photo and its likes will be permanently deleted. Continue?"
+    "delete_confirm": "This photo and its likes will be permanently deleted. Continue?",
+    "like_count": "Like, {count} likes",
+    "unlike_count": "Remove like, {count} likes",
+    "liked_count": "You liked, {count}",
+    "open_photo": "Open photo"
   },
   "profile": {
     "follow": "Follow",
@@ -480,7 +489,17 @@
     "no_entries": "No photos in this contest.",
     "results": "Results",
     "score": "Score {score}",
-    "your_entry": "Your photo"
+    "your_entry": "Your photo",
+    "phase_open": "Entries open",
+    "phase_voting": "Voting open",
+    "phase_jury": "Jury judging",
+    "live_open": "Entries",
+    "live_voting": "Voting",
+    "closed_on": "Closed {date}",
+    "until_short": "Until {date}",
+    "countdown_deadline": "Until the entry deadline",
+    "countdown_voting": "Until voting closes",
+    "countdown_results": "Until results"
   },
   "contestForm": {
     "about": "Contest",
@@ -775,5 +794,23 @@
     "manage_apple": "This subscription was bought in the App Store. Manage it in Settings → Apple ID → Subscriptions on your iPhone.",
     "manage_play": "This subscription was bought on Google Play. Manage it in Play Store → Payments & subscriptions.",
     "error": "The payment page couldn't be opened. Try again."
+  },
+  "ui": {
+    "share": "Share",
+    "link_copied": "Link copied",
+    "back": "Back",
+    "more": "More options",
+    "close": "Close",
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds",
+    "countdown_sr": "{label} {days} days {hours} hours {minutes} minutes",
+    "days_short": "{count}d",
+    "hours_short": "{count}h",
+    "minutes_short": "{count}m",
+    "days_left": "{count, plural, one {# day} other {# days}} left",
+    "hours_left": "{count, plural, one {# hour} other {# hours}} left",
+    "minutes_left": "{count, plural, one {# minute} other {# minutes}} left"
   }
 }

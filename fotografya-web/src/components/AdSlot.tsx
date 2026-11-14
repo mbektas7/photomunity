@@ -50,7 +50,7 @@ export function AdSlot({ kind, className }: { kind: "feed" | "banner"; className
 
   if (!show) return null;
   return (
-    <aside aria-label={t("label")} className={clsx("bg-surface px-3 pb-3 pt-2", className)}>
+    <aside aria-label={t("label")} className={clsx("rounded-card bg-surface px-3.5 pb-3.5 pt-2.5", className)}>
       <div className="mb-2 flex items-center justify-between text-[11px] text-ink-muted">
         <span>{t("label")}</span>
         <Link href="/pro" className="font-medium hover:text-ink">{t("remove")}</Link>
@@ -64,7 +64,7 @@ export function AdSlot({ kind, className }: { kind: "feed" | "banner"; className
 
 export function ProBadge({ className }: { className?: string }) {
   return (
-    <span className={clsx("inline-flex items-center rounded-[5px] bg-accent px-1.5 py-[1px] text-[10px] font-bold tracking-[0.06em] text-accent-ink", className)}>
+    <span className={clsx("inline-flex items-center rounded-[7px] bg-accent px-[7px] py-[3px] text-[11px] font-bold leading-[13px] tracking-[0.02em] text-accent-ink", className)}>
       PRO
     </span>
   );

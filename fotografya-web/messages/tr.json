@@ -20,7 +20,8 @@
     "map": "Harita",
     "messages": "Mesajlar",
     "messages_unread": "Mesajlar, {count} okunmamış",
-    "guide": "Rehber"
+    "guide": "Rehber",
+    "upload_photo": "Fotoğraf yükle"
   },
   "landing": {
     "meta_title": "Fotografya — Fotoğrafçıların buluştuğu yer",
@@ -117,7 +118,11 @@
     "empty_body": "Takip ettiğin fotoğrafçıların paylaşımları burada görünür. Keşfet'te sevdiğin işleri bul ve takip et.",
     "go_explore": "Keşfet'e git",
     "upload_first": "İlk fotoğrafını yükle",
-    "loading": "Yükleniyor…"
+    "loading": "Yükleniyor…",
+    "stories": "Topluluklar ve yarışmalar",
+    "live_contests": "Canlı yarışmalar",
+    "all_contests": "Tüm yarışmalar",
+    "contest_left": "{title}, {time}"
   },
   "explore": {
     "title": "Keşfet",
@@ -149,7 +154,11 @@
     "delete": "Sil",
     "save": "Kaydet",
     "cancel": "Vazgeç",
-    "delete_confirm": "Bu fotoğraf ve beğenileri kalıcı olarak silinecek. Devam edilsin mi?"
+    "delete_confirm": "Bu fotoğraf ve beğenileri kalıcı olarak silinecek. Devam edilsin mi?",
+    "like_count": "Beğen, {count} beğeni",
+    "unlike_count": "Beğeniyi kaldır, {count} beğeni",
+    "liked_count": "Beğendin, {count}",
+    "open_photo": "Fotoğrafı aç"
   },
   "profile": {
     "follow": "Takip et",
@@ -480,7 +489,17 @@
     "no_entries": "Bu yarışmada fotoğraf yok.",
     "results": "Sonuçlar",
     "score": "Puan {score}",
-    "your_entry": "Senin karen"
+    "your_entry": "Senin karen",
+    "phase_open": "Katılım açık",
+    "phase_voting": "Oylama açık",
+    "phase_jury": "Jüri değerlendiriyor",
+    "live_open": "Katılım",
+    "live_voting": "Oylama",
+    "closed_on": "{date} kapandı",
+    "until_short": "{date} kadar",
+    "countdown_deadline": "Son gönderime",
+    "countdown_voting": "Oylamanın kapanmasına",
+    "countdown_results": "Sonuçlara"
   },
   "contestForm": {
     "about": "Yarışma",
@@ -775,5 +794,23 @@
     "manage_apple": "Bu abonelik App Store üzerinden alındı. iPhone'unda Ayarlar → Apple Kimliği → Abonelikler bölümünden yönetebilirsin.",
     "manage_play": "Bu abonelik Google Play üzerinden alındı. Play Store → Ödemeler ve abonelikler bölümünden yönetebilirsin.",
     "error": "Ödeme sayfası açılamadı. Tekrar dene."
+  },
+  "ui": {
+    "share": "Paylaş",
+    "link_copied": "Bağlantı kopyalandı",
+    "back": "Geri",
+    "more": "Diğer seçenekler",
+    "close": "Kapat",
+    "days": "gün",
+    "hours": "saat",
+    "minutes": "dakika",
+    "seconds": "saniye",
+    "countdown_sr": "{label} {days} gün {hours} saat {minutes} dakika",
+    "days_short": "{count} gün",
+    "hours_short": "{count} sa",
+    "minutes_short": "{count} dk",
+    "days_left": "{count} gün kaldı",
+    "hours_left": "{count} saat kaldı",
+    "minutes_left": "{count} dakika kaldı"
   }
 }
