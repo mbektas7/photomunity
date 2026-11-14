@@ -198,7 +198,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         children: [
           Text(
             t('upload.requirements'),
-            style: font(14.5, height: 1.45, color: p.muted),
+            style: font(14.5, height: 1.45, color: p.inkMuted),
           ),
           const SizedBox(height: 18),
           if (_file == null)
@@ -207,7 +207,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
               child: Container(
                 height: 220,
                 decoration: BoxDecoration(
-                  color: p.mat,
+                  color: p.surface,
                   border: Border.all(color: p.line, width: 1.5),
                 ),
                 child: Column(
@@ -229,7 +229,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             )
           else
             Container(
-              color: p.mat,
+              color: p.surface,
               padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,7 +253,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                           _file!.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: font(13, color: p.muted),
+                          style: font(13, color: p.inkMuted),
                         ),
                       ),
                       if (!uploading)
@@ -326,12 +326,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           if (_location == null)
             Text(
               t('upload.location_hint'),
-              style: font(13.5, height: 1.45, color: p.muted),
+              style: font(13.5, height: 1.45, color: p.inkMuted),
             )
           else ...[
             Text(
               '${_location!.latitude}, ${_location!.longitude}',
-              style: font(13.5, color: p.muted, tabular: true),
+              style: font(13.5, color: p.inkMuted, tabular: true),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -352,7 +352,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             const SizedBox(height: 8),
             Text(
               t('upload.uploading', {'pct': (_progress! * 100).round()}),
-              style: font(13.5, color: p.muted, tabular: true),
+              style: font(13.5, color: p.inkMuted, tabular: true),
             ),
             const SizedBox(height: 14),
           ],
@@ -365,7 +365,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           const SizedBox(height: 12),
           Text(
             t('upload.quality_note'),
-            style: font(13.5, height: 1.45, color: p.muted),
+            style: font(13.5, height: 1.45, color: p.inkMuted),
           ),
         ],
       ),

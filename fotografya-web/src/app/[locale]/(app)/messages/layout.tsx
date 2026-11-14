@@ -42,11 +42,11 @@ function Shell({ children }: { children: React.ReactNode }) {
                 key={f}
                 href={f === "inbox" ? pathname : `${pathname}?folder=requests`}
                 aria-current={folder === f ? "page" : undefined}
-                className={clsx("flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium", folder === f ? "bg-ink text-mat" : "text-muted hover:text-ink")}
+                className={clsx("flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium", folder === f ? "bg-ink text-surface" : "text-ink-muted hover:text-ink")}
               >
                 {t(f)}
                 {f === "requests" && (unread.data?.requests ?? 0) > 0 && (
-                  <span className={clsx("rounded-full px-1.5 text-[11px] font-semibold", folder === f ? "bg-mat text-ink" : "bg-accent text-accent-ink")}>{unread.data?.requests}</span>
+                  <span className={clsx("rounded-full px-1.5 text-[11px] font-semibold", folder === f ? "bg-surface text-ink" : "bg-accent text-accent-ink")}>{unread.data?.requests}</span>
                 )}
               </Link>
             ))}

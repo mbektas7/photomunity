@@ -58,19 +58,19 @@ class _InlineAdState extends ConsumerState<InlineAd> {
         final t = L10n.of(context);
         final p = context.palette;
         return Container(
-          color: p.mat,
+          color: p.surface,
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
           child: Column(
             children: [
               Row(
                 children: [
-                  Text(t('ads.label'), style: font(11, color: p.muted)),
+                  Text(t('ads.label'), style: font(11, color: p.inkMuted)),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => context.push('/pro'),
                     child: Text(
                       t('ads.remove'),
-                      style: font(11, weight: 600, color: p.muted),
+                      style: font(11, weight: 600, color: p.inkMuted),
                     ),
                   ),
                 ],

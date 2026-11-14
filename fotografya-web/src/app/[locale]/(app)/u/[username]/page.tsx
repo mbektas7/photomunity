@@ -69,7 +69,7 @@ export default function ProfilePage() {
                   {p.display_name}
                   {p.is_pro && <ProBadge />}
                 </h1>
-                <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-muted">
+                <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-ink-muted">
                   <span>@{p.username}</span>
                   {!p.is_public && (
                     <span className="inline-flex items-center gap-1">
@@ -105,7 +105,7 @@ export default function ProfilePage() {
               <dl className="flex gap-7">
                 {stats.map((s) => (
                   <div key={s.label} className="flex flex-col-reverse">
-                    <dt className="text-sm text-muted">{s.label}</dt>
+                    <dt className="text-sm text-ink-muted">{s.label}</dt>
                     <dd className="tnum text-xl font-semibold">{s.n}</dd>
                   </div>
                 ))}
@@ -130,7 +130,7 @@ export default function ProfilePage() {
           </div>
 
           {kit.length > 0 && (
-            <aside aria-labelledby="kit" className="self-start bg-mat px-5 py-5">
+            <aside aria-labelledby="kit" className="self-start bg-surface px-5 py-5">
               <h2 id="kit" className="text-[15px] font-semibold">
                 {t("kit")}
               </h2>
@@ -140,7 +140,7 @@ export default function ProfilePage() {
                     <span className="min-w-0 truncate text-[15px]">
                       {e.brand} {e.model}
                     </span>
-                    <span className="shrink-0 text-[13px] text-muted">{te(e.type)}</span>
+                    <span className="shrink-0 text-[13px] text-ink-muted">{te(e.type)}</span>
                   </li>
                 ))}
               </ul>
@@ -152,16 +152,16 @@ export default function ProfilePage() {
       <section aria-label={t("photos")} className="px-1.5">
         {!canView ? (
           <div className="mx-auto max-w-[1400px] px-3 sm:px-5">
-            <div className="bg-mat px-6 py-14">
+            <div className="bg-surface px-6 py-14">
               <Lock className="h-6 w-6" />
               <h2 className="mt-4 text-xl font-semibold tracking-[-0.02em]">{t("private_title")}</h2>
-              <p className="mt-1.5 text-muted">{t("private_body")}</p>
+              <p className="mt-1.5 text-ink-muted">{t("private_body")}</p>
             </div>
           </div>
         ) : photos.isSuccess && items.length === 0 ? (
           <div className="mx-auto max-w-[1400px] px-3 sm:px-5">
-            <div className="bg-mat px-6 py-14">
-              <p className="text-muted">{p.is_me ? t("empty_me") : t("empty")}</p>
+            <div className="bg-surface px-6 py-14">
+              <p className="text-ink-muted">{p.is_me ? t("empty_me") : t("empty")}</p>
               {p.is_me && (
                 <Link href="/upload" className={buttonClass("primary", "mt-5")}>
                   {t("upload_first")}

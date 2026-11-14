@@ -57,7 +57,7 @@ export default function PhotoPage() {
       <div className="mx-auto max-w-[680px] px-4 py-20">
         <Notice tone="error">{e?.message || t("not_found")}</Notice>
         {e?.code === "private_profile" && (
-          <p className="mt-4 text-muted">{t("private_hint")}</p>
+          <p className="mt-4 text-ink-muted">{t("private_hint")}</p>
         )}
       </div>
     );
@@ -72,7 +72,7 @@ export default function PhotoPage() {
     return (
       <div className="mx-auto max-w-[680px] px-4 py-24">
         <h1 className="text-2xl font-semibold tracking-[-0.02em]">{t("processing_title")}</h1>
-        <p className="mt-2 text-muted">{t("processing_body")}</p>
+        <p className="mt-2 text-ink-muted">{t("processing_body")}</p>
         <div className="mt-8 h-1 overflow-hidden bg-line">
           <div className="h-full w-1/3 animate-[slide_1.2s_ease-in-out_infinite] bg-accent" />
         </div>
@@ -92,7 +92,7 @@ export default function PhotoPage() {
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-muted">{t("rejected_body")}</p>
+        <p className="mt-4 text-ink-muted">{t("rejected_body")}</p>
         <div className="mt-8 flex gap-3">
           <Link href="/upload" className={buttonClass("primary")}>
             {t("try_another")}
@@ -108,7 +108,7 @@ export default function PhotoPage() {
   const details = (
     <>
       {photo.width && photo.height && (
-        <p className="tnum text-sm text-muted">
+        <p className="tnum text-sm text-ink-muted">
           {photo.width} × {photo.height} px
         </p>
       )}
@@ -129,7 +129,7 @@ export default function PhotoPage() {
   return (
     <article>
       {/* Duvar: fotoğraf ekrana sığar, asla kırpılmaz */}
-      <div className="flex justify-center bg-wall px-0 py-0 sm:px-6 sm:py-8">
+      <div className="flex justify-center bg-bg px-0 py-0 sm:px-6 sm:py-8">
         {img && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -157,7 +157,7 @@ export default function PhotoPage() {
               {photo.tags.length > 0 && (
                 <ul className="mt-5 flex flex-wrap gap-2">
                   {photo.tags.map((tag) => (
-                    <li key={tag} className="rounded-full border border-line px-3 py-1 text-sm text-muted">
+                    <li key={tag} className="rounded-full border border-line px-3 py-1 text-sm text-ink-muted">
                       #{tag}
                     </li>
                   ))}
@@ -188,12 +188,12 @@ export default function PhotoPage() {
             <Avatar name={photo.user.display_name} url={photo.user.avatar_url} size={48} />
             <span className="min-w-0">
               <span className="block truncate font-semibold">{photo.user.display_name}</span>
-              <span className="block truncate text-sm text-muted">@{photo.user.username}</span>
+              <span className="block truncate text-sm text-ink-muted">@{photo.user.username}</span>
             </span>
           </Link>
           <div className="flex items-center justify-between border-y border-line py-2">
             <LikeButton id={photo.id} liked={photo.liked_by_me} count={photo.like_count} size="lg" />
-            <span className="px-2 text-sm text-muted">{formatDate(photo.published_at, locale)}</span>
+            <span className="px-2 text-sm text-ink-muted">{formatDate(photo.published_at, locale)}</span>
           </div>
           <div className="hidden flex-col gap-6 lg:flex">{details}</div>
         </aside>

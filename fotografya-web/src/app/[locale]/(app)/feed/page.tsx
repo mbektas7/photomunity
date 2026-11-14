@@ -28,9 +28,9 @@ export default function FeedPage() {
     <div className="mx-auto max-w-[680px] px-0 pt-6 sm:px-4 sm:pt-10">
       <h1 className="sr-only">{t("title")}</h1>
       {feed.isSuccess && items.length === 0 && (
-        <div className="mx-4 bg-mat px-6 py-12 sm:mx-0">
+        <div className="mx-4 bg-surface px-6 py-12 sm:mx-0">
           <h2 className="text-2xl font-semibold tracking-[-0.02em]">{t("empty_title")}</h2>
-          <p className="mt-2 max-w-[44ch] leading-relaxed text-muted">{t("empty_body")}</p>
+          <p className="mt-2 max-w-[44ch] leading-relaxed text-ink-muted">{t("empty_body")}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/explore" className={buttonClass("primary")}>
               {t("go_explore")}
@@ -50,7 +50,7 @@ export default function FeedPage() {
         ))}
       </div>
       <div ref={sentinel} className="h-px" />
-      {isFetchingNextPage && <p className="py-8 text-center text-sm text-muted">{t("loading")}</p>}
+      {isFetchingNextPage && <p className="py-8 text-center text-sm text-ink-muted">{t("loading")}</p>}
     </div>
   );
 }

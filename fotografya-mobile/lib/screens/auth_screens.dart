@@ -67,7 +67,7 @@ class WelcomeScreen extends ConsumerWidget {
                     const SizedBox(height: 18),
                     Text(
                       t('welcome.lead'),
-                      style: font(17, height: 1.5, color: p.muted),
+                      style: font(17, height: 1.5, color: p.inkMuted),
                     ),
                     const SizedBox(height: 26),
                     Row(
@@ -133,7 +133,7 @@ class _AuthScaffold extends StatelessWidget {
             ),
             if (lead != null) ...[
               const SizedBox(height: 8),
-              Text(lead!, style: font(16, height: 1.45, color: p.muted)),
+              Text(lead!, style: font(16, height: 1.45, color: p.inkMuted)),
             ],
             const SizedBox(height: 28),
             ...children,
@@ -252,7 +252,7 @@ class _SocialButtonsState extends ConsumerState<SocialButtons> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   t('auth.or_email'),
-                  style: font(13, color: p.muted),
+                  style: font(13, color: p.inkMuted),
                 ),
               ),
               Expanded(child: Divider(color: p.line)),

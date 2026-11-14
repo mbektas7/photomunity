@@ -231,7 +231,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                               side: BorderSide(color: p.line),
                             ),
                           ),
-                          child: Text('#$tag', style: font(14, color: p.muted)),
+                          child: Text('#$tag', style: font(14, color: p.inkMuted)),
                         ),
                     ],
                   ),
@@ -272,7 +272,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                     if (photo.width != null && photo.height != null)
                       '${photo.width} × ${photo.height} px',
                   ].join('    '),
-                  style: font(13, color: p.muted, tabular: true),
+                  style: font(13, color: p.inkMuted, tabular: true),
                 ),
                 if (isOwner) ...[
                   const SizedBox(height: 18),
@@ -408,7 +408,7 @@ class _StatusView extends StatelessWidget {
     children: [
       Text(title, style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 8),
-      Text(body, style: font(15, height: 1.5, color: context.palette.muted)),
+      Text(body, style: font(15, height: 1.5, color: context.palette.inkMuted)),
       const SizedBox(height: 24),
       child,
     ],

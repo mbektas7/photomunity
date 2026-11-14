@@ -58,7 +58,7 @@ export default function NotificationsPage() {
   return (
     <div className="mx-auto max-w-[680px] px-4 pt-8 sm:pt-12">
       <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
-      {q.isSuccess && items.length === 0 && <p className="mt-8 text-muted">{t("empty")}</p>}
+      {q.isSuccess && items.length === 0 && <p className="mt-8 text-ink-muted">{t("empty")}</p>}
       <ul className="mt-8 divide-y divide-line border-y border-line">
         {items.map((n) => (
           <li key={n.id}>
@@ -68,14 +68,14 @@ export default function NotificationsPage() {
                 {n.actor ? (
                   <Avatar name={n.actor.display_name} url={n.actor.avatar_url} size={40} />
                 ) : (
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink text-mat" aria-hidden>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink text-surface" aria-hidden>
                     <ImageIcon className="h-[18px] w-[18px]" />
                   </span>
                 )}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] leading-snug">{n.text}</span>
-                <span className="mt-0.5 block text-[13px] text-muted">{relativeTime(n.created_at, locale)}</span>
+                <span className="mt-0.5 block text-[13px] text-ink-muted">{relativeTime(n.created_at, locale)}</span>
               </span>
               {n.photo?.thumb_url && (
                 // eslint-disable-next-line @next/next/no-img-element

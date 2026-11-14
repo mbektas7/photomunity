@@ -32,15 +32,15 @@ export function CommunityRow({ c }: { c: CommunityCard }) {
   const locale = useLocale();
   const place = [c.city, countryName(c.country, locale)].filter(Boolean).join(", ");
   return (
-    <Link href={`/c/${c.slug}`} className="flex items-center gap-4 bg-mat px-4 py-4 transition-colors hover:bg-mat/70">
+    <Link href={`/c/${c.slug}`} className="flex items-center gap-4 bg-surface px-4 py-4 transition-colors hover:bg-surface/70">
       <CommunityLogo name={c.name} url={c.logo_url} size={52} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[16px] font-semibold">{c.name}</span>
-        <span className="mt-0.5 block truncate text-sm text-muted">
+        <span className="mt-0.5 block truncate text-sm text-ink-muted">
           {[place, t("members_count", { count: c.member_count })].filter(Boolean).join("  ·  ")}
         </span>
       </span>
-      {c.my_role && <span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs text-muted">{t(`role.${c.my_role}`)}</span>}
+      {c.my_role && <span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted">{t(`role.${c.my_role}`)}</span>}
     </Link>
   );
 }
@@ -52,10 +52,10 @@ export function StatusBadge({ status }: { status: ContestStatus }) {
       className={clsx(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
         status === "open" && "bg-accent text-accent-ink",
-        status === "judging" && "bg-ink text-mat",
-        status === "closed" && "border border-line text-muted",
+        status === "judging" && "bg-ink text-surface",
+        status === "closed" && "border border-line text-ink-muted",
         status === "finished" && "border border-ink text-ink",
-        status === "draft" && "border border-dashed border-line text-muted",
+        status === "draft" && "border border-dashed border-line text-ink-muted",
       )}
     >
       {t(`status.${status}`)}
@@ -77,13 +77,13 @@ export function ContestRow({ c, showCommunity = true }: { c: ContestCard; showCo
   const next = nextMoment(c);
   const left = next ? remaining(next.at, locale) : null;
   return (
-    <Link href={`/contests/${c.id}`} className="block bg-mat px-5 py-5 transition-colors hover:bg-mat/70">
+    <Link href={`/contests/${c.id}`} className="block bg-surface px-5 py-5 transition-colors hover:bg-surface/70">
       <div className="flex items-center gap-2">
         <StatusBadge status={c.status} />
-        <span className="text-xs text-muted">{t(`mode.${c.judging_mode}`)}</span>
+        <span className="text-xs text-ink-muted">{t(`mode.${c.judging_mode}`)}</span>
       </div>
       <h3 className="mt-3 text-[19px] font-semibold leading-snug tracking-[-0.015em]">{c.title}</h3>
-      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
+      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-sm text-ink-muted">
         {showCommunity && <span>{c.community.name}</span>}
         <span className="tnum">{t("entries_count", { count: c.entry_count })}</span>
         {next && left && <span className="tnum text-ink">{t(next.key, { time: left })}</span>}
@@ -109,12 +109,12 @@ export function ContestTimeline({ c }: { c: ContestCard }) {
         const done = current > s.idx || (s.idx === 3 && current === 3);
         const active = current === s.idx || (s.idx === 1 && current === 2);
         return (
-          <li key={s.label} className={clsx("px-3 py-3 sm:px-4", active ? "bg-ink text-mat" : "bg-mat")}>
-            <span className={clsx("flex items-center gap-1.5 text-[13px] font-semibold", !active && !done && "text-muted")}>
+          <li key={s.label} className={clsx("px-3 py-3 sm:px-4", active ? "bg-ink text-surface" : "bg-surface")}>
+            <span className={clsx("flex items-center gap-1.5 text-[13px] font-semibold", !active && !done && "text-ink-muted")}>
               {done && !active && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
               {s.label}
             </span>
-            <span className={clsx("tnum mt-1 block text-[12px] leading-snug", active ? "text-mat/75" : "text-muted")}>
+            <span className={clsx("tnum mt-1 block text-[12px] leading-snug", active ? "text-surface/75" : "text-ink-muted")}>
               {s.until ? t("until", { date: formatDateTime(s.at, locale) }) : formatDateTime(s.at, locale)}
             </span>
           </li>
@@ -140,9 +140,9 @@ export function StarRating({ value, onChange, disabled, size = 26 }: { value: nu
           disabled={disabled}
           onMouseEnter={() => setHover(n)}
           onClick={() => onChange(n)}
-          className="p-1 text-accent transition-transform active:scale-90 disabled:opacity-40"
+          className="p-1 text-accent-text transition-transform active:scale-90 disabled:opacity-40"
         >
-          <Star style={{ width: size, height: size }} fill={n <= shown ? "currentColor" : "none"} strokeWidth={1.7} className={n <= shown ? "" : "text-muted"} />
+          <Star style={{ width: size, height: size }} fill={n <= shown ? "currentColor" : "none"} strokeWidth={1.7} className={n <= shown ? "" : "text-ink-muted"} />
         </button>
       ))}
     </div>
@@ -167,7 +167,7 @@ export function MyPhotoPicker({ open, onClose, onPick, busy, title }: { open: bo
   }, [open]);
 
   return (
-    <dialog ref={dialog} onClose={onClose} className="m-auto max-h-[85dvh] w-[min(760px,calc(100vw-1.5rem))] border border-line bg-mat p-0 text-ink backdrop:bg-black/55">
+    <dialog ref={dialog} onClose={onClose} className="m-auto max-h-[85dvh] w-[min(760px,calc(100vw-1.5rem))] border border-line bg-surface p-0 text-ink backdrop:bg-black/55">
       <div className="flex items-center justify-between border-b border-line px-5 py-4">
         <h2 className="text-lg font-semibold">{title}</h2>
         <button type="button" onClick={onClose} aria-label={t("close")} className="rounded-full p-1.5 hover:bg-ink/5">
@@ -176,7 +176,7 @@ export function MyPhotoPicker({ open, onClose, onPick, busy, title }: { open: bo
       </div>
       <div className="max-h-[58dvh] overflow-y-auto p-3">
         {photos.isSuccess && photos.data.items.length === 0 && (
-          <p className="px-2 py-10 text-center text-muted">
+          <p className="px-2 py-10 text-center text-ink-muted">
             {t("no_photos")}{" "}
             <Link href="/upload" className="font-semibold text-ink underline underline-offset-4">
               {t("upload_one")}

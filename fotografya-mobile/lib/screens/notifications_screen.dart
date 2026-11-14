@@ -65,7 +65,7 @@ class NotificationsScreen extends ConsumerWidget {
         children: [
           Text(
             t('notifications.empty'),
-            style: font(15, height: 1.5, color: p.muted),
+            style: font(15, height: 1.5, color: p.inkMuted),
           ),
         ],
       );
@@ -111,7 +111,7 @@ class _Tile extends StatelessWidget {
                 : CircleAvatar(
                     radius: 21,
                     backgroundColor: p.ink,
-                    child: Icon(Icons.image_outlined, size: 19, color: p.mat),
+                    child: Icon(Icons.image_outlined, size: 19, color: p.surface),
                   ),
             const SizedBox(width: 14),
             Expanded(
@@ -122,7 +122,7 @@ class _Tile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     relativeTime(n.createdAt, locale),
-                    style: font(13, color: p.muted),
+                    style: font(13, color: p.inkMuted),
                   ),
                 ],
               ),

@@ -58,7 +58,7 @@ function Section({ title, lead, children }: { title: string; lead?: string; chil
   return (
     <section className="mt-12 border-t border-line pt-8">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">{title}</h2>
-      {lead && <p className="mt-1 text-[15px] text-muted">{lead}</p>}
+      {lead && <p className="mt-1 text-[15px] text-ink-muted">{lead}</p>}
       <div className="mt-6">{children}</div>
     </section>
   );
@@ -163,7 +163,7 @@ function ProfileSection({ me }: { me: Me }) {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-line px-4 py-3">
           <span className="text-[15px]">
             <span className="block font-medium">{t("map_location")}</span>
-            <span className="block text-sm text-muted">
+            <span className="block text-sm text-ink-muted">
               {form.latitude != null ? t("map_location_set") : t("map_location_hint")}
             </span>
           </span>
@@ -191,7 +191,7 @@ function ProfileSection({ me }: { me: Me }) {
                   onClick={() => set("specialties", on ? form.specialties.filter((x) => x !== s) : [...form.specialties, s].slice(0, 10))}
                   className={clsx(
                     "rounded-full border px-3.5 py-1.5 text-sm transition-colors",
-                    on ? "border-ink bg-ink text-mat" : "border-line hover:border-ink",
+                    on ? "border-ink bg-ink text-surface" : "border-line hover:border-ink",
                   )}
                 >
                   {ts(s)}
@@ -211,7 +211,7 @@ function ProfileSection({ me }: { me: Me }) {
             id="locale"
             value={form.locale}
             onChange={(e) => set("locale", e.target.value as Me["locale"])}
-            className="h-11 rounded-[10px] border border-line bg-mat px-3 text-[15px]"
+            className="h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px]"
           >
             <option value="tr">Türkçe</option>
             <option value="en">English</option>
@@ -254,7 +254,7 @@ function EquipmentSection({ initial }: { initial: Equipment[] }) {
               aria-label={t("equipment_type")}
               value={it.type}
               onChange={(e) => update(i, { type: e.target.value as EquipmentType })}
-              className="h-11 rounded-[10px] border border-line bg-mat px-2.5 text-[15px]"
+              className="h-11 rounded-[10px] border border-line bg-surface px-2.5 text-[15px]"
             >
               {EQUIPMENT_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -267,20 +267,20 @@ function EquipmentSection({ initial }: { initial: Equipment[] }) {
               placeholder={t("brand")}
               value={it.brand}
               onChange={(e) => update(i, { brand: e.target.value })}
-              className="h-11 min-w-0 rounded-[10px] border border-line bg-mat px-3 text-[15px] outline-none focus:border-ink"
+              className="h-11 min-w-0 rounded-[10px] border border-line bg-surface px-3 text-[15px] outline-none focus:border-ink"
             />
             <input
               aria-label={t("model")}
               placeholder={t("model")}
               value={it.model}
               onChange={(e) => update(i, { model: e.target.value })}
-              className="col-span-2 row-start-2 h-11 min-w-0 rounded-[10px] border border-line bg-mat px-3 text-[15px] outline-none focus:border-ink sm:col-span-1 sm:row-start-auto"
+              className="col-span-2 row-start-2 h-11 min-w-0 rounded-[10px] border border-line bg-surface px-3 text-[15px] outline-none focus:border-ink sm:col-span-1 sm:row-start-auto"
             />
             <button
               type="button"
               onClick={() => setItems((list) => list.filter((_, j) => j !== i))}
               aria-label={t("remove")}
-              className="col-start-3 row-start-1 inline-flex h-11 w-11 items-center justify-center rounded-full text-muted hover:bg-ink/5 hover:text-ink sm:col-start-auto sm:row-start-auto"
+              className="col-start-3 row-start-1 inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink sm:col-start-auto sm:row-start-auto"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -329,7 +329,7 @@ function AccountSection() {
         }}
       >
         <h3 className="font-semibold">{t("change_password")}</h3>
-        <p className="-mt-2 text-sm text-muted">{t("change_password_hint")}</p>
+        <p className="-mt-2 text-sm text-ink-muted">{t("change_password_hint")}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField label={t("current_password")} name="current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
           <TextField label={t("new_password")} name="new" type="password" autoComplete="new-password" minLength={8} required value={next} onChange={(e) => setNext(e.target.value)} />
@@ -343,7 +343,7 @@ function AccountSection() {
 
       <div className="mt-10 rounded-[10px] border border-danger/30 px-5 py-5">
         <h3 className="font-semibold">{t("delete_account")}</h3>
-        <p className="mt-1 text-sm text-muted">{t("delete_account_body")}</p>
+        <p className="mt-1 text-sm text-ink-muted">{t("delete_account_body")}</p>
         <Button
           type="button"
           variant="danger"

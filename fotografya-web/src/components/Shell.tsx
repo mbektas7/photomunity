@@ -29,7 +29,7 @@ function LocaleSwitch() {
     <button
       type="button"
       onClick={() => router.replace(pathname, { locale: next })}
-      className="h-9 rounded-full px-2 text-sm font-medium text-muted hover:text-ink sm:px-3"
+      className="h-9 rounded-full px-2 text-sm font-medium text-ink-muted hover:text-ink sm:px-3"
       aria-label={next === "en" ? "Switch to English" : "Türkçeye geç"}
     >
       {next.toUpperCase()}
@@ -55,8 +55,8 @@ function UserMenu() {
       <summary className="flex cursor-pointer list-none items-center rounded-full [&::-webkit-details-marker]:hidden" aria-label={t("account")}>
         <Avatar name={me.display_name} url={me.avatar_url} size={36} />
       </summary>
-      <div className="absolute right-0 top-12 z-30 w-56 border border-line bg-mat p-1.5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.25)]">
-        <p className="truncate px-3 pb-2 pt-1.5 text-sm text-muted">@{me.username}</p>
+      <div className="absolute right-0 top-12 z-30 w-56 border border-line bg-surface p-1.5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.25)]">
+        <p className="truncate px-3 pb-2 pt-1.5 text-sm text-ink-muted">@{me.username}</p>
         <Link href={`/u/${me.username}`} className="block rounded-md px-3 py-2 text-[15px] hover:bg-ink/5">
           {t("profile")}
         </Link>
@@ -64,7 +64,7 @@ function UserMenu() {
           {t("settings")}
         </Link>
         <Link href="/pro" className="flex items-center justify-between rounded-md px-3 py-2 text-[15px] hover:bg-ink/5">
-          Fotografya Pro {me.is_pro && <span className="text-xs text-accent">✓</span>}
+          Fotografya Pro {me.is_pro && <span className="text-xs text-accent-text">✓</span>}
         </Link>
         <button type="button" onClick={logout} className="block w-full rounded-md px-3 py-2 text-left text-[15px] hover:bg-ink/5">
           {t("logout")}
@@ -89,7 +89,7 @@ export function Header() {
   ].filter((l) => l.show);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-wall/85 backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-4 sm:gap-6 sm:px-6">
         <Link href={me ? "/feed" : "/"} aria-label="Fotografya">
           <Wordmark />
@@ -100,7 +100,7 @@ export function Header() {
               key={l.href}
               href={l.href}
               aria-current={pathname.startsWith(l.href) ? "page" : undefined}
-              className="rounded-full px-3.5 py-2 text-[15px] font-medium text-muted hover:text-ink aria-[current=page]:text-ink"
+              className="rounded-full px-3.5 py-2 text-[15px] font-medium text-ink-muted hover:text-ink aria-[current=page]:text-ink"
             >
               {l.label}
             </Link>
@@ -152,7 +152,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label={t("main")}
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-wall/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
     >
       <ul className="grid grid-cols-5">
         {tabs.map(({ href, label, icon: Icon }) => {
@@ -162,7 +162,7 @@ export function MobileTabBar() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={clsx("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium", active ? "text-ink" : "text-muted")}
+                className={clsx("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium", active ? "text-ink" : "text-ink-muted")}
               >
                 <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 1.8} />
                 {label}

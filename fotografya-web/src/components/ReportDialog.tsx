@@ -21,18 +21,18 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
 
   return (
     <>
-      <button type="button" onClick={() => dialog.current?.showModal()} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+      <button type="button" onClick={() => dialog.current?.showModal()} className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink">
         <Flag className="h-4 w-4" /> {t("button")}
       </button>
       <dialog
         ref={dialog}
-        className="m-auto w-[min(440px,calc(100vw-2rem))] border border-line bg-mat p-6 text-ink backdrop:bg-black/50"
+        className="m-auto w-[min(440px,calc(100vw-2rem))] border border-line bg-surface p-6 text-ink backdrop:bg-black/50"
         onClose={() => send.reset()}
       >
         <h2 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h2>
         {send.isSuccess || already ? (
           <>
-            <p className="mt-3 text-muted">{already ? send.error?.message : t("thanks")}</p>
+            <p className="mt-3 text-ink-muted">{already ? send.error?.message : t("thanks")}</p>
             <Button className="mt-6" onClick={() => dialog.current?.close()}>
               {t("close")}
             </Button>
@@ -60,7 +60,7 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
               maxLength={1000}
               rows={3}
               placeholder={t("note")}
-              className="rounded-[10px] border border-line bg-mat px-3.5 py-3 text-[15px] outline-none focus:border-ink"
+              className="rounded-[10px] border border-line bg-surface px-3.5 py-3 text-[15px] outline-none focus:border-ink"
             />
             {send.error && !already && <Notice tone="error">{send.error.message}</Notice>}
             <div className="flex gap-3">

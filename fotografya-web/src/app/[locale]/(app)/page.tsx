@@ -85,7 +85,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       {/* Giriş */}
       <section className="mx-auto max-w-[1400px] px-4 pb-10 pt-14 sm:px-6 sm:pt-20">
         <h1 className="max-w-[13ch] text-[clamp(2.8rem,8vw,6.4rem)] font-bold leading-[0.93] tracking-[-0.05em]">{t("title")}</h1>
-        <p className="mt-7 max-w-[54ch] text-[17px] leading-relaxed text-muted sm:text-lg">{t("lead")}</p>
+        <p className="mt-7 max-w-[54ch] text-[17px] leading-relaxed text-ink-muted sm:text-lg">{t("lead")}</p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link href="/register" className={buttonClass("primary", "h-12 px-6 text-base")}>{t("cta")}</Link>
           <Link href="/explore" className={buttonClass("secondary", "h-12 px-6 text-base")}>{t("explore")}</Link>
@@ -118,21 +118,21 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 pt-24 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
         <div>
           <h2 className="text-[clamp(1.9rem,4vw,2.9rem)] font-bold leading-[1.02] tracking-[-0.04em]">{t("exif_title")}</h2>
-          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted">{t("exif_body")}</p>
+          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-muted">{t("exif_body")}</p>
           <ul className="mt-6 flex flex-col gap-3 text-[15px]">
             {(["exif_point_quality", "exif_point_uncropped", "exif_point_location"] as const).map((k) => (
-              <li key={k} className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={3} /> {t(k)}</li>
+              <li key={k} className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-text" strokeWidth={3} /> {t(k)}</li>
             ))}
           </ul>
         </div>
         {exifPhoto && exifPhoto.images.feed && exifPhoto.exif && (
-          <figure className="bg-mat p-3">
+          <figure className="bg-surface p-3">
             <Link href={`/p/${exifPhoto.id}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={exifPhoto.images.feed.url} alt={exifPhoto.title ?? ""} width={exifPhoto.images.feed.width} height={exifPhoto.images.feed.height} className="block h-auto w-full" />
             </Link>
             <Viewfinder exif={exifPhoto.exif} />
-            <figcaption className="px-1 pt-2.5 text-sm text-muted">{[exifPhoto.title, exifPhoto.user.display_name].filter(Boolean).join(", ")}</figcaption>
+            <figcaption className="px-1 pt-2.5 text-sm text-ink-muted">{[exifPhoto.title, exifPhoto.user.display_name].filter(Boolean).join(", ")}</figcaption>
           </figure>
         )}
       </section>
@@ -146,15 +146,15 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
               <ContestRow c={featured} />
             </div>
           ) : (
-            <div className="bg-mat px-6 py-10 text-muted">{t("contest_empty")}</div>
+            <div className="bg-surface px-6 py-10 text-ink-muted">{t("contest_empty")}</div>
           )}
         </div>
         <div>
           <h2 className="text-[clamp(1.9rem,4vw,2.9rem)] font-bold leading-[1.02] tracking-[-0.04em]">{t("community_title")}</h2>
-          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted">{t("community_body")}</p>
+          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-muted">{t("community_body")}</p>
           <dl className="mt-6 grid max-w-[480px] gap-4 sm:grid-cols-2">
-            <div><dt className="font-semibold">{t("jury_title")}</dt><dd className="mt-1 text-[15px] text-muted">{t("jury_body")}</dd></div>
-            <div><dt className="font-semibold">{t("public_title")}</dt><dd className="mt-1 text-[15px] text-muted">{t("public_body")}</dd></div>
+            <div><dt className="font-semibold">{t("jury_title")}</dt><dd className="mt-1 text-[15px] text-ink-muted">{t("jury_body")}</dd></div>
+            <div><dt className="font-semibold">{t("public_title")}</dt><dd className="mt-1 text-[15px] text-ink-muted">{t("public_body")}</dd></div>
           </dl>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/contests" className={buttonClass("secondary")}>{t("see_contests")}</Link>
@@ -167,8 +167,8 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section className="mx-auto grid max-w-[1200px] items-center gap-10 px-4 pt-28 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
         <div>
           <h2 className="text-[clamp(1.9rem,4vw,2.9rem)] font-bold leading-[1.02] tracking-[-0.04em]">{t("map_title")}</h2>
-          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted">{t("map_body")}</p>
-          <p className="mt-4 max-w-[48ch] text-[15px] text-muted">{t("map_privacy")}</p>
+          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-muted">{t("map_body")}</p>
+          <p className="mt-4 max-w-[48ch] text-[15px] text-ink-muted">{t("map_privacy")}</p>
           <Link href="/map" className={buttonClass("secondary", "mt-7")}><MapPin className="h-4 w-4" /> {t("open_map")}</Link>
         </div>
         <MapIllustration t={t} />
@@ -179,8 +179,8 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
         <div className="order-last lg:order-first"><PlannerTeaser /></div>
         <div>
           <h2 className="text-[clamp(1.9rem,4vw,2.9rem)] font-bold leading-[1.02] tracking-[-0.04em]">{t("sky_title")}</h2>
-          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted">{t("sky_body")}</p>
-          <p className="mt-4 max-w-[48ch] text-[15px] text-muted">{t("sky_ar")}</p>
+          <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-muted">{t("sky_body")}</p>
+          <p className="mt-4 max-w-[48ch] text-[15px] text-ink-muted">{t("sky_ar")}</p>
         </div>
       </section>
 
@@ -189,7 +189,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
           <div>
             <h2 className="text-[clamp(1.9rem,4vw,2.9rem)] font-bold leading-[1.02] tracking-[-0.04em]">{t("guide_title")}</h2>
-            <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted">{t("guide_body")}</p>
+            <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-ink-muted">{t("guide_body")}</p>
             <div className="mt-6 inline-flex flex-col bg-black px-5 py-4 text-[#f2f2ee]">
               <span className="tnum text-[30px] font-semibold leading-none">{npf}</span>
               <span className="mt-2 text-[13px] text-[#8d8d88]">{t("guide_npf_example")}</span>
@@ -198,7 +198,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           {guides && guides.length > 0 && (
             <ul className="grid content-start gap-1 sm:grid-cols-2">
               {guides.map((g) => (
-                <li key={g.slug} className="bg-mat">
+                <li key={g.slug} className="bg-surface">
                   <Link href={`/guide/${g.slug}`} className="block px-5 py-4 text-[16px] font-medium hover:bg-ink/[0.03]">{g.title}</Link>
                 </li>
               ))}
@@ -211,21 +211,21 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section id="pricing" className="mx-auto max-w-[1200px] scroll-mt-20 px-4 pt-28 sm:px-6">
         <h2 className="text-[clamp(1.9rem,4vw,2.9rem)] font-bold leading-[1.02] tracking-[-0.04em]">{t("pricing_title")}</h2>
         <div className="mt-8 grid gap-px bg-line md:grid-cols-2">
-          <div className="bg-mat p-6">
+          <div className="bg-surface p-6">
             <p className="text-lg font-semibold">{t("free_title")}</p>
             <p className="tnum mt-2 text-[34px] font-bold tracking-tight">{t("free_price")}</p>
             <ul className="mt-5 flex flex-col gap-2.5 text-[15px]">
-              {(["free_1", "free_2", "free_3", "free_4"] as const).map((k) => <li key={k} className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={3} /> {t(k)}</li>)}
+              {(["free_1", "free_2", "free_3", "free_4"] as const).map((k) => <li key={k} className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" strokeWidth={3} /> {t(k)}</li>)}
             </ul>
             <Link href="/register" className={buttonClass("secondary", "mt-7")}>{t("cta")}</Link>
           </div>
-          <div className="bg-ink p-6 text-mat">
+          <div className="bg-ink p-6 text-surface">
             <p className="text-lg font-semibold">Pro</p>
             <p className="tnum mt-2 text-[34px] font-bold tracking-tight">{t("pro_price")}</p>
             <ul className="mt-5 flex flex-col gap-2.5 text-[15px]">
-              {(["pro_1", "pro_2", "pro_3"] as const).map((k) => <li key={k} className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={3} /> {t(k)}</li>)}
+              {(["pro_1", "pro_2", "pro_3"] as const).map((k) => <li key={k} className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-text" strokeWidth={3} /> {t(k)}</li>)}
             </ul>
-            <Link href="/pro" className={buttonClass("secondary", "mt-7 border-mat/30 bg-transparent text-mat hover:border-mat")}>{t("pro_cta")}</Link>
+            <Link href="/pro" className={buttonClass("secondary", "mt-7 border-surface/30 bg-transparent text-surface hover:border-surface")}>{t("pro_cta")}</Link>
           </div>
         </div>
       </section>
@@ -238,9 +238,9 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
             <details key={k} className="group py-4">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[17px] font-semibold [&::-webkit-details-marker]:hidden">
                 {t(`faq.${k}_q`)}
-                <span aria-hidden className="text-2xl font-normal leading-none text-muted transition-transform group-open:rotate-45">+</span>
+                <span aria-hidden className="text-2xl font-normal leading-none text-ink-muted transition-transform group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-3 max-w-[64ch] text-[15px] leading-relaxed text-muted">{t(`faq.${k}_a`)}</p>
+              <p className="mt-3 max-w-[64ch] text-[15px] leading-relaxed text-ink-muted">{t(`faq.${k}_a`)}</p>
             </details>
           ))}
         </div>
@@ -255,7 +255,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
         </div>
       </section>
 
-      <footer className="mx-auto mt-16 max-w-[1400px] border-t border-line px-4 py-8 text-sm text-muted sm:px-6">
+      <footer className="mx-auto mt-16 max-w-[1400px] border-t border-line px-4 py-8 text-sm text-ink-muted sm:px-6">
         <nav aria-label={t("footer_nav")} className="flex flex-wrap gap-x-6 gap-y-2">
           {([["/explore", "foot_explore"], ["/communities", "foot_communities"], ["/contests", "foot_contests"], ["/map", "foot_map"], ["/guide", "foot_guide"], ["/pro", "foot_pro"]] as const).map(([href, k]) => (
             <Link key={href} href={href} className="hover:text-ink">{t(k)}</Link>
@@ -276,17 +276,17 @@ function MapIllustration({ t }: { t: (k: string) => string }) {
   ];
   return (
     <div aria-hidden className="relative">
-      <div className="relative aspect-[4/3] overflow-hidden bg-mat" style={{ backgroundImage: "radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) 1.2px, transparent 1.3px)", backgroundSize: "14px 14px" }}>
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface" style={{ backgroundImage: "radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) 1.2px, transparent 1.3px)", backgroundSize: "14px 14px" }}>
         {pins.map((p, i) => (
           <span key={p.n} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${p.x}%`, top: `${p.y}%` }}>
             <span className={i === 3 ? "block rounded-full ring-[3px] ring-accent" : "block rounded-full ring-[3px] ring-white"}><Avatar name={p.n} size={40} /></span>
           </span>
         ))}
-        <span className="absolute left-[58%] top-[18%] inline-flex h-12 w-12 items-center justify-center rounded-full bg-ink text-[14px] font-semibold text-mat ring-4 ring-ink/15">12</span>
+        <span className="absolute left-[58%] top-[18%] inline-flex h-12 w-12 items-center justify-center rounded-full bg-ink text-[14px] font-semibold text-surface ring-4 ring-ink/15">12</span>
       </div>
       <div className="absolute -bottom-8 right-3 flex w-[min(320px,85%)] flex-col gap-2 sm:right-[-12px]">
-        <p className="self-start rounded-[18px] rounded-bl-[6px] bg-mat px-3.5 py-2 text-[14px] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.35)]">{t("chat_1")}</p>
-        <p className="self-end rounded-[18px] rounded-br-[6px] bg-ink px-3.5 py-2 text-[14px] text-mat shadow-[0_10px_30px_-12px_rgba(0,0,0,0.35)]">{t("chat_2")}</p>
+        <p className="self-start rounded-[18px] rounded-bl-[6px] bg-surface px-3.5 py-2 text-[14px] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.35)]">{t("chat_1")}</p>
+        <p className="self-end rounded-[18px] rounded-br-[6px] bg-ink px-3.5 py-2 text-[14px] text-surface shadow-[0_10px_30px_-12px_rgba(0,0,0,0.35)]">{t("chat_2")}</p>
       </div>
     </div>
   );

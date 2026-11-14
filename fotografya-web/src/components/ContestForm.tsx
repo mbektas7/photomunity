@@ -64,7 +64,7 @@ export function ContestForm({ initial, locked = false, busy, error, submitLabel,
 
       <fieldset className="flex flex-col gap-5" disabled={locked}>
         <legend className="mb-1 text-lg font-semibold">{t("dates")}</legend>
-        <p className="-mt-2 text-sm text-muted">{locked ? t("locked_hint") : t("dates_hint")}</p>
+        <p className="-mt-2 text-sm text-ink-muted">{locked ? t("locked_hint") : t("dates_hint")}</p>
         <div className="grid gap-5 sm:grid-cols-3">
           {(["submission_deadline", "voting_end", "results_at"] as const).map((k) => (
             <TextField key={k} label={t(k)} name={k} type="datetime-local" required value={toLocalInput(f[k])} onChange={(e) => set(k, fromLocalInput(e.target.value))} />
@@ -77,14 +77,14 @@ export function ContestForm({ initial, locked = false, busy, error, submitLabel,
         <legend className="mb-4 text-lg font-semibold">{t("judging")}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {(["public", "jury"] as const).map((m) => (
-            <label key={m} className={clsx("cursor-pointer border bg-mat px-4 py-4", f.judging_mode === m ? "border-ink" : "border-line", locked && "cursor-not-allowed opacity-60")}>
+            <label key={m} className={clsx("cursor-pointer border bg-surface px-4 py-4", f.judging_mode === m ? "border-ink" : "border-line", locked && "cursor-not-allowed opacity-60")}>
               <input type="radio" name="judging_mode" value={m} checked={f.judging_mode === m} onChange={() => set("judging_mode", m)} className="sr-only" />
               <span className="block font-semibold">{t(`mode_${m}`)}</span>
-              <span className="mt-1 block text-sm leading-relaxed text-muted">{t(`mode_${m}_hint`)}</span>
+              <span className="mt-1 block text-sm leading-relaxed text-ink-muted">{t(`mode_${m}_hint`)}</span>
             </label>
           ))}
         </div>
-        {f.judging_mode === "jury" && <p className="text-sm text-muted">{t("jury_after")}</p>}
+        {f.judging_mode === "jury" && <p className="text-sm text-ink-muted">{t("jury_after")}</p>}
         <Toggle checked={f.anonymous} onChange={(v) => !locked && set("anonymous", v)} label={t("anonymous")} hint={t("anonymous_hint")} />
         {f.judging_mode === "public" && (
           <TextField label={t("min_votes")} name="min_votes" type="number" min={0} max={100} hint={t("min_votes_hint")} value={String(f.min_votes)} onChange={(e) => set("min_votes", Number(e.target.value) || 0)} className="max-w-[260px]" />
@@ -102,10 +102,10 @@ export function ContestForm({ initial, locked = false, busy, error, submitLabel,
               value={p.title}
               maxLength={200}
               onChange={(e) => set("prizes", f.prizes.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-              className="h-11 min-w-0 flex-1 rounded-[10px] border border-line bg-mat px-3.5 text-[15px] outline-none focus:border-ink"
+              className="h-11 min-w-0 flex-1 rounded-[10px] border border-line bg-surface px-3.5 text-[15px] outline-none focus:border-ink"
             />
             {f.prizes.length > 1 && (
-              <button type="button" onClick={() => set("prizes", f.prizes.filter((_, j) => j !== i))} className="rounded-full p-2 text-muted hover:bg-ink/5" aria-label={t("remove_prize")}>
+              <button type="button" onClick={() => set("prizes", f.prizes.filter((_, j) => j !== i))} className="rounded-full p-2 text-ink-muted hover:bg-ink/5" aria-label={t("remove_prize")}>
                 <X className="h-4 w-4" />
               </button>
             )}

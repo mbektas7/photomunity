@@ -14,7 +14,7 @@ export function AuthHeading({ title, lead }: { title: string; lead?: string }) {
   return (
     <div className="mb-8">
       <h1 className="text-[34px] font-bold leading-tight tracking-[-0.035em]">{title}</h1>
-      {lead && <p className="mt-2 text-muted">{lead}</p>}
+      {lead && <p className="mt-2 text-ink-muted">{lead}</p>}
     </div>
   );
 }
@@ -55,7 +55,7 @@ export function LoginForm() {
       <form onSubmit={submit} className="flex flex-col gap-4">
         <TextField label={t("email")} name="email" type="email" autoComplete="email" required />
         <TextField label={t("password")} name="password" type="password" autoComplete="current-password" required />
-        <Link href="/forgot-password" className="-mt-1 self-end text-sm font-medium text-muted hover:text-ink">
+        <Link href="/forgot-password" className="-mt-1 self-end text-sm font-medium text-ink-muted hover:text-ink">
           {t("forgot")}
         </Link>
         {error && <Notice tone="error">{error}</Notice>}
@@ -63,7 +63,7 @@ export function LoginForm() {
           {t("login_submit")}
         </Button>
       </form>
-      <p className="mt-8 text-[15px] text-muted">
+      <p className="mt-8 text-[15px] text-ink-muted">
         {t("no_account")}{" "}
         <Link href={`/register${next !== "/feed" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-ink underline-offset-4 hover:underline">
           {t("register_link")}
@@ -127,9 +127,9 @@ export function RegisterForm() {
         <Button type="submit" busy={busy} className="mt-1 h-12 text-base">
           {t("register_submit")}
         </Button>
-        <p className="text-sm text-muted">{t("terms")}</p>
+        <p className="text-sm text-ink-muted">{t("terms")}</p>
       </form>
-      <p className="mt-8 text-[15px] text-muted">
+      <p className="mt-8 text-[15px] text-ink-muted">
         {t("have_account")}{" "}
         <Link href="/login" className="font-semibold text-ink underline-offset-4 hover:underline">
           {t("login_link")}

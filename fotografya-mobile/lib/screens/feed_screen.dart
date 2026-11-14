@@ -59,7 +59,7 @@ class FeedScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   sliver: SliverToBoxAdapter(
                     child: Container(
-                      color: p.mat,
+                      color: p.surface,
                       padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +71,7 @@ class FeedScreen extends ConsumerWidget {
                           const SizedBox(height: 8),
                           Text(
                             t('feed.empty_body'),
-                            style: font(15, height: 1.5, color: p.muted),
+                            style: font(15, height: 1.5, color: p.inkMuted),
                           ),
                           const SizedBox(height: 20),
                           FilledButton(

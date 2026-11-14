@@ -52,7 +52,7 @@ class ConversationsScreen extends ConsumerWidget {
           bottom: TabBar(
             labelStyle: font(15, weight: 600),
             labelColor: p.ink,
-            unselectedLabelColor: p.muted,
+            unselectedLabelColor: p.inkMuted,
             indicatorColor: p.ink,
             tabs: [
               Tab(text: t('messages.inbox')),
@@ -107,7 +107,7 @@ class _List extends ConsumerWidget {
               folder == 'requests'
                   ? t('messages.no_requests')
                   : t('messages.empty'),
-              style: font(15, height: 1.5, color: p.muted),
+              style: font(15, height: 1.5, color: p.inkMuted),
             ),
           ],
         ),
@@ -147,7 +147,7 @@ class _List extends ConsumerWidget {
                   ),
                   Text(
                     relativeTime(c.lastMessageAt, locale),
-                    style: font(12, color: p.muted),
+                    style: font(12, color: p.inkMuted),
                   ),
                 ],
               ),
@@ -158,7 +158,7 @@ class _List extends ConsumerWidget {
                       '${c.status == 'request' && !c.isRequestToMe ? '${t('messages.pending')} · ' : ''}$preview',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: font(13.5, color: c.unread > 0 ? p.ink : p.muted),
+                      style: font(13.5, color: c.unread > 0 ? p.ink : p.inkMuted),
                     ),
                   ),
                   if (c.unread > 0)
@@ -408,7 +408,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: font(15.5, weight: 600, color: p.ink),
                     ),
-                    Text('@${other.username}', style: font(12, color: p.muted)),
+                    Text('@${other.username}', style: font(12, color: p.inkMuted)),
                   ],
                 ),
               ),
@@ -441,7 +441,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       child: Text(
                         t('messages.new_hint', {'name': other.displayName}),
                         textAlign: TextAlign.center,
-                        style: font(14.5, height: 1.5, color: p.muted),
+                        style: font(14.5, height: 1.5, color: p.inkMuted),
                       ),
                     ),
                   )
@@ -457,7 +457,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           child: Text(
                             t('messages.seen'),
                             textAlign: TextAlign.right,
-                            style: font(11, color: p.muted),
+                            style: font(11, color: p.inkMuted),
                           ),
                         );
                       }
@@ -474,7 +474,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Text(
                                 _day(m.createdAt, locale),
-                                style: font(12, weight: 500, color: p.muted),
+                                style: font(12, weight: 500, color: p.inkMuted),
                               ),
                             ),
                           _Bubble(m: m, mine: m.senderId == me?.id),
@@ -485,7 +485,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           if (requestToMe)
             Container(
-              color: p.mat,
+              color: p.surface,
               padding: EdgeInsets.fromLTRB(
                 16,
                 14,
@@ -502,7 +502,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   const SizedBox(height: 4),
                   Text(
                     t('messages.request_hint'),
-                    style: font(13, height: 1.4, color: p.muted),
+                    style: font(13, height: 1.4, color: p.inkMuted),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -538,7 +538,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         padding: const EdgeInsets.fromLTRB(12, 0, 0, 6),
                         child: Text(
                           t('messages.pending_hint'),
-                          style: font(12, color: p.muted),
+                          style: font(12, color: p.inkMuted),
                         ),
                       ),
                     Row(
@@ -549,13 +549,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           onPressed: _sending ? null : _sharePhoto,
                           icon: Icon(
                             Icons.add_photo_alternate_outlined,
-                            color: p.muted,
+                            color: p.inkMuted,
                           ),
                         ),
                         IconButton(
                           tooltip: t('messages.attach_location'),
                           onPressed: _sending ? null : _shareLocation,
-                          icon: Icon(Icons.my_location, color: p.muted),
+                          icon: Icon(Icons.my_location, color: p.inkMuted),
                         ),
                         Expanded(
                           child: TextField(
@@ -593,7 +593,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 : () => _send({'body': v.text.trim()}),
                             style: IconButton.styleFrom(
                               backgroundColor: p.ink,
-                              foregroundColor: p.mat,
+                              foregroundColor: p.surface,
                             ),
                             icon: const Icon(Icons.send_rounded, size: 20),
                           ),
@@ -628,8 +628,8 @@ class _Bubble extends StatelessWidget {
     final p = context.palette;
     final t = L10n.of(context);
     final time = DateFormat.Hm(t.locale.languageCode).format(m.createdAt);
-    final bg = mine ? p.ink : p.mat;
-    final fg = mine ? p.mat : p.ink;
+    final bg = mine ? p.ink : p.surface;
+    final fg = mine ? p.surface : p.ink;
     final img = m.photo?.feed;
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -648,7 +648,7 @@ class _Bubble extends StatelessWidget {
                 GestureDetector(
                   onTap: () => context.push('/p/${m.photo!.id}'),
                   child: Container(
-                    color: p.mat,
+                    color: p.surface,
                     padding: const EdgeInsets.all(5),
                     margin: const EdgeInsets.only(bottom: 4),
                     child: Column(
@@ -665,7 +665,7 @@ class _Bubble extends StatelessWidget {
                           padding: const EdgeInsets.fromLTRB(2, 5, 2, 1),
                           child: Text(
                             m.photo!.title ?? m.photo!.user.displayName,
-                            style: font(12, color: p.muted),
+                            style: font(12, color: p.inkMuted),
                           ),
                         ),
                       ],
@@ -722,7 +722,7 @@ class _Bubble extends StatelessWidget {
                 ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 3, 4, 0),
-                child: Text(time, style: font(11, color: p.muted)),
+                child: Text(time, style: font(11, color: p.inkMuted)),
               ),
             ],
           ),

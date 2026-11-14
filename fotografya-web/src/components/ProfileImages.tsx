@@ -58,29 +58,29 @@ export function ProfileImages({ me }: { me: Me }) {
             <Camera className="h-4 w-4" /> {busy("cover") ? t("uploading") : t("change_cover")}
           </span>
           {!me.cover_url && !busy("cover") && (
-            <span className="absolute inset-0 flex items-center justify-center text-sm text-muted group-hover:opacity-0">{t("add_cover")}</span>
+            <span className="absolute inset-0 flex items-center justify-center text-sm text-ink-muted group-hover:opacity-0">{t("add_cover")}</span>
           )}
         </button>
         <button
           type="button"
           onClick={() => avatarInput.current?.click()}
-          className="absolute -bottom-8 left-5 rounded-full ring-4 ring-wall"
+          className="absolute -bottom-8 left-5 rounded-full ring-4 ring-bg"
           aria-label={t("change_avatar")}
         >
           <Avatar name={me.display_name} url={me.avatar_url} size={88} className={busy("avatar") ? "opacity-50" : undefined} />
-          <span className="absolute bottom-0 right-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink text-mat">
+          <span className="absolute bottom-0 right-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink text-surface">
             <Camera className="h-4 w-4" />
           </span>
         </button>
       </div>
       <div className="flex flex-wrap gap-x-5 gap-y-1 pl-[120px] text-sm">
         {me.avatar_url && (
-          <button type="button" className="text-muted hover:text-ink" onClick={() => remove.mutate("avatar")}>
+          <button type="button" className="text-ink-muted hover:text-ink" onClick={() => remove.mutate("avatar")}>
             {t("remove_avatar")}
           </button>
         )}
         {me.cover_url && (
-          <button type="button" className="text-muted hover:text-ink" onClick={() => remove.mutate("cover")}>
+          <button type="button" className="text-ink-muted hover:text-ink" onClick={() => remove.mutate("cover")}>
             {t("remove_cover")}
           </button>
         )}
@@ -88,7 +88,7 @@ export function ProfileImages({ me }: { me: Me }) {
       {upload.error && (
         <Notice tone="error">{upload.error instanceof ApiError && upload.error.message ? upload.error.message : t("upload_failed")}</Notice>
       )}
-      <p className="text-sm text-muted">{t("images_hint")}</p>
+      <p className="text-sm text-ink-muted">{t("images_hint")}</p>
       <input ref={avatarInput} type="file" accept={TYPES.join(",")} className="sr-only" onChange={pick("avatar")} />
       <input ref={coverInput} type="file" accept={TYPES.join(",")} className="sr-only" onChange={pick("cover")} />
     </div>
@@ -122,7 +122,7 @@ export function NotificationSettingsForm() {
               aria-label={t(`push.${type}`)}
             />
             <span className="h-7 w-12 rounded-full bg-line transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
-            <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-mat transition-transform peer-checked:translate-x-5" />
+            <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-surface transition-transform peer-checked:translate-x-5" />
           </label>
         </li>
       ))}

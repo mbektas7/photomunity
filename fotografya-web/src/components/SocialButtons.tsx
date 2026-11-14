@@ -104,7 +104,7 @@ export function SocialButtons({ onError }: { onError: (message: string) => void 
           type="button"
           onClick={apple}
           disabled={busy}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-ink text-[15px] font-semibold text-mat"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-ink text-[15px] font-semibold text-surface"
         >
           <svg viewBox="0 0 17 20" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden>
             <path d="M14.1 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9C3.6 4.8 2 5.8 1.1 7.4c-1.8 3.2-.5 7.9 1.3 10.5.9 1.3 1.9 2.7 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.6 1-1.5 1.4-2.9 1.4-3-.1 0-2.7-1-2.7-4.3zM11.5 3c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3-1.5z" />
@@ -112,7 +112,7 @@ export function SocialButtons({ onError }: { onError: (message: string) => void 
           {t("continue_apple")}
         </button>
       )}
-      <div className="my-2 flex items-center gap-3 text-sm text-muted">
+      <div className="my-2 flex items-center gap-3 text-sm text-ink-muted">
         <span className="h-px flex-1 bg-line" />
         {t("or_email")}
         <span className="h-px flex-1 bg-line" />

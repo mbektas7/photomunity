@@ -65,10 +65,10 @@ function CommunityView() {
           <CommunityLogo name={c.name} url={c.logo_url} size={84} />
           <div className="min-w-0 flex-1">
             <h1 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold leading-[1.02] tracking-[-0.04em]">{c.name}</h1>
-            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-muted">
+            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-ink-muted">
               {place && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {place}</span>}
               <span className="tnum">{t("members_count", { count: c.member_count })}</span>
-              {c.open_contests > 0 && <span className="font-medium text-accent">{t("active_contests", { count: c.open_contests })}</span>}
+              {c.open_contests > 0 && <span className="font-medium text-accent-text">{t("active_contests", { count: c.open_contests })}</span>}
             </p>
           </div>
           <div className="flex gap-2">
@@ -94,7 +94,7 @@ function CommunityView() {
               key={key}
               href={key === "feed" ? `/c/${slug}` : `/c/${slug}?tab=${key}`}
               aria-current={tab === key ? "page" : undefined}
-              className={clsx("-mb-px border-b-2 px-4 py-3 text-[15px] font-medium", tab === key ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink")}
+              className={clsx("-mb-px border-b-2 px-4 py-3 text-[15px] font-medium", tab === key ? "border-ink text-ink" : "border-transparent text-ink-muted hover:text-ink")}
             >
               {t(`tab_${key}`)}
             </Link>
@@ -131,7 +131,7 @@ function Composer({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
   });
 
   return (
-    <div className="mb-6 bg-mat px-4 py-4 sm:px-5">
+    <div className="mb-6 bg-surface px-4 py-4 sm:px-5">
       {!news ? (
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setPicker(true)}><Plus className="h-4 w-4" /> {t("share_photo")}</Button>
@@ -170,21 +170,21 @@ function FeedTab({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
   return (
     <div className="mx-auto max-w-[680px]">
       {c.my_role && <Composer c={c} isAdmin={isAdmin} />}
-      {q.isSuccess && items.length === 0 && <p className="px-4 py-10 text-muted">{t("feed_empty")}</p>}
+      {q.isSuccess && items.length === 0 && <p className="px-4 py-10 text-ink-muted">{t("feed_empty")}</p>}
       <div className="flex flex-col gap-6 sm:gap-8">
         {items.map((p) =>
           p.kind === "photo" && p.photo ? (
             <PhotoPrint key={p.id} photo={p.photo} />
           ) : p.kind === "contest" && p.contest ? (
             <div key={p.id}>
-              <p className="mb-2 px-4 text-sm text-muted sm:px-0">{t("contest_announced", { time: relativeTime(p.created_at, locale) })}</p>
+              <p className="mb-2 px-4 text-sm text-ink-muted sm:px-0">{t("contest_announced", { time: relativeTime(p.created_at, locale) })}</p>
               <ContestRow c={p.contest} showCommunity={false} />
             </div>
           ) : (
-            <article key={p.id} className="bg-mat px-5 py-5">
+            <article key={p.id} className="bg-surface px-5 py-5">
               <header className="flex items-center gap-3">
                 <Avatar name={p.author.display_name} url={p.author.avatar_url} size={32} />
-                <span className="text-sm"><span className="font-semibold">{p.author.display_name}</span> <span className="text-muted">· {relativeTime(p.created_at, locale)}</span></span>
+                <span className="text-sm"><span className="font-semibold">{p.author.display_name}</span> <span className="text-ink-muted">· {relativeTime(p.created_at, locale)}</span></span>
               </header>
               {p.title && <h3 className="mt-4 text-[20px] font-semibold leading-snug tracking-[-0.015em]">{p.title}</h3>}
               {p.body && <p className="mt-2 whitespace-pre-line leading-relaxed">{p.body}</p>}
@@ -209,7 +209,7 @@ function ContestsTab({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
       )}
       <div className="flex flex-col gap-2">
         {q.data?.map((x) => <ContestRow key={x.id} c={x} showCommunity={false} />)}
-        {q.isSuccess && q.data.length === 0 && <p className="px-4 py-10 text-muted">{t("contests_empty")}</p>}
+        {q.isSuccess && q.data.length === 0 && <p className="px-4 py-10 text-ink-muted">{t("contests_empty")}</p>}
       </div>
     </div>
   );
@@ -223,14 +223,14 @@ function MembersTab({ c }: { c: Community }) {
   return (
     <ul className="mx-auto grid max-w-[900px] gap-px bg-line sm:grid-cols-2">
       {members.map((m) => (
-        <li key={m.user.id} className="bg-mat">
+        <li key={m.user.id} className="bg-surface">
           <Link href={`/u/${m.user.username}`} className="flex items-center gap-3 px-4 py-3">
             <Avatar name={m.user.display_name} url={m.user.avatar_url} size={40} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-semibold">{m.user.display_name}</span>
-              <span className="block truncate text-sm text-muted">@{m.user.username}</span>
+              <span className="block truncate text-sm text-ink-muted">@{m.user.username}</span>
             </span>
-            {m.role !== "member" && <span className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">{t(`role.${m.role}`)}</span>}
+            {m.role !== "member" && <span className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted">{t(`role.${m.role}`)}</span>}
           </Link>
         </li>
       ))}

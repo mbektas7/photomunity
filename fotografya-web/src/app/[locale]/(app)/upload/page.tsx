@@ -115,7 +115,7 @@ export default function UploadPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-8 sm:px-6 sm:pt-12">
       <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("heading")}</h1>
-      <p className="mt-3 max-w-[60ch] text-muted">{t("requirements")}</p>
+      <p className="mt-3 max-w-[60ch] text-ink-muted">{t("requirements")}</p>
 
       <form onSubmit={submit} className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div>
@@ -131,22 +131,22 @@ export default function UploadPage() {
                 choose(e.dataTransfer.files[0]);
               }}
               className={clsx(
-                "flex aspect-[3/2] w-full flex-col items-center justify-center gap-3 border-2 border-dashed bg-mat text-center transition-colors",
+                "flex aspect-[3/2] w-full flex-col items-center justify-center gap-3 border-2 border-dashed bg-surface text-center transition-colors",
                 dragging ? "border-accent" : "border-line hover:border-ink",
               )}
             >
               <ImagePlus className="h-8 w-8" strokeWidth={1.6} />
               <span className="text-lg font-semibold">{t("choose")}</span>
-              <span className="text-sm text-muted">{t("drop")}</span>
+              <span className="text-sm text-ink-muted">{t("drop")}</span>
             </button>
           ) : (
-            <div className="bg-mat p-3 sm:p-5">
-              <div className="relative flex justify-center bg-wall">
+            <div className="bg-surface p-3 sm:p-5">
+              <div className="relative flex justify-center bg-bg">
                 {preview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={preview} alt="" className="max-h-[62vh] w-auto max-w-full object-contain" />
                 ) : (
-                  <p className="px-6 py-24 text-muted">{t("no_preview")}</p>
+                  <p className="px-6 py-24 text-ink-muted">{t("no_preview")}</p>
                 )}
                 {!uploading && (
                   <button
@@ -159,7 +159,7 @@ export default function UploadPage() {
                   </button>
                 )}
               </div>
-              <p className="tnum mt-3 truncate text-sm text-muted">
+              <p className="tnum mt-3 truncate text-sm text-ink-muted">
                 {file.name}   {(file.size / 1_000_000).toFixed(1)} MB
               </p>
             </div>
@@ -195,7 +195,7 @@ export default function UploadPage() {
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium">{t("location")}</span>
               {location ? (
-                <button type="button" onClick={() => setLocation(null)} className="text-sm font-medium text-muted hover:text-ink">
+                <button type="button" onClick={() => setLocation(null)} className="text-sm font-medium text-ink-muted hover:text-ink">
                   {t("remove_location")}
                 </button>
               ) : (
@@ -207,7 +207,7 @@ export default function UploadPage() {
             </div>
             {location ? (
               <>
-                <p className="tnum text-sm text-muted">
+                <p className="tnum text-sm text-ink-muted">
                   {location.latitude}, {location.longitude}
                 </p>
                 <TextField
@@ -219,7 +219,7 @@ export default function UploadPage() {
                 />
               </>
             ) : (
-              <p className="text-sm text-muted">{t("location_hint")}</p>
+              <p className="text-sm text-ink-muted">{t("location_hint")}</p>
             )}
           </fieldset>
 
@@ -230,14 +230,14 @@ export default function UploadPage() {
               <div className="h-1 bg-line">
                 <div className="h-full bg-accent transition-[width]" style={{ width: `${Math.round((progress ?? 0) * 100)}%` }} />
               </div>
-              <p className="tnum mt-2 text-sm text-muted">{t("uploading", { pct: Math.round((progress ?? 0) * 100) })}</p>
+              <p className="tnum mt-2 text-sm text-ink-muted">{t("uploading", { pct: Math.round((progress ?? 0) * 100) })}</p>
             </div>
           )}
 
           <Button type="submit" className="h-12 text-base" disabled={!file || issues.length > 0} busy={uploading}>
             {t("publish")}
           </Button>
-          <p className="text-sm text-muted">{t("quality_note")}</p>
+          <p className="text-sm text-ink-muted">{t("quality_note")}</p>
         </div>
       </form>
     </div>

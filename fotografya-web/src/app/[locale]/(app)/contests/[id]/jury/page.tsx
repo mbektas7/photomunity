@@ -61,7 +61,7 @@ export default function JuryPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 pt-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href={`/contests/${c.id}`} className="text-sm text-muted hover:text-ink">← {c.title}</Link>
+        <Link href={`/contests/${c.id}`} className="text-sm text-ink-muted hover:text-ink">← {c.title}</Link>
         <span className="tnum text-sm font-medium">{t("progress", { done, total: scorable.length })}</span>
       </div>
       <div className="mt-2 h-1 bg-line"><div className="h-full bg-accent transition-[width]" style={{ width: `${scorable.length ? (done / scorable.length) * 100 : 0}%` }} /></div>
@@ -79,7 +79,7 @@ export default function JuryPage() {
             </button>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <span className="tnum text-sm text-muted">{t("position", { n: i + 1, total: list.length })}</span>
+            <span className="tnum text-sm text-ink-muted">{t("position", { n: i + 1, total: list.length })}</span>
             {current.mine ? <span className="rounded-full bg-ink/[0.06] px-4 py-2.5 text-sm font-medium">{t("own_entry")}</span> : (
             <div role="radiogroup" aria-label={t("score")} className="grid grid-cols-10 gap-1">
               {Array.from({ length: 10 }, (_, k) => k + 1).map((v) => (
@@ -90,7 +90,7 @@ export default function JuryPage() {
                   aria-checked={current.my_score === v}
                   onClick={() => give(v)}
                   className={clsx("tnum h-11 w-11 rounded-[10px] border text-[16px] font-semibold transition-colors sm:h-12 sm:w-12",
-                    current.my_score === v ? "border-accent bg-accent text-accent-ink" : "border-line bg-mat hover:border-ink")}
+                    current.my_score === v ? "border-accent bg-accent text-accent-ink" : "border-line bg-surface hover:border-ink")}
                 >
                   {v}
                 </button>
@@ -98,7 +98,7 @@ export default function JuryPage() {
             </div>
             )}
           </div>
-          <p className="mt-2 text-right text-xs text-muted">{t("keys")}</p>
+          <p className="mt-2 text-right text-xs text-ink-muted">{t("keys")}</p>
         </>
       )}
       {score.error && <div className="mt-3"><Notice tone="error">{score.error instanceof ApiError ? score.error.message : t("error")}</Notice></div>}

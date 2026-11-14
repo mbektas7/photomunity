@@ -20,7 +20,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const inputClass = "h-11 rounded-[10px] border border-line bg-mat px-3 text-[15px] outline-none focus:border-ink";
+const inputClass = "h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px] outline-none focus:border-ink";
 
 function SensorSelect({ value, onChange }: { value: SensorId; onChange: (s: SensorId) => void }) {
   const t = useTranslations("tools");
@@ -64,9 +64,9 @@ export function NpfCalculator() {
   const core = npfSeconds(sensor, mp, focal, aperture, -29.0078);
   const r500 = rule500Seconds(sensor, focal);
   return (
-    <section id="npf" className="scroll-mt-24 bg-mat px-5 py-6 sm:px-6">
+    <section id="npf" className="scroll-mt-24 bg-surface px-5 py-6 sm:px-6">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">{t("npf_title")}</h2>
-      <p className="mt-1 max-w-[62ch] text-[15px] text-muted">{t("npf_lead")}</p>
+      <p className="mt-1 max-w-[62ch] text-[15px] text-ink-muted">{t("npf_lead")}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-4">
         <Field label={t("sensor_label")}><SensorSelect value={sensor} onChange={setSensor} /></Field>
         <Field label={t("megapixels")}><input type="number" min={6} max={150} value={mp} onChange={(e) => setMp(Number(e.target.value) || 24)} className={inputClass} /></Field>
@@ -78,7 +78,7 @@ export function NpfCalculator() {
         { value: formatShutter(core, locale), label: t("npf_core") },
         { value: formatShutter(r500, locale), label: t("rule500") },
       ]} />
-      <p className="mt-3 text-sm text-muted">{t("npf_note", { pitch: pixelPitch(sensor, mp).toFixed(1) })}</p>
+      <p className="mt-3 text-sm text-ink-muted">{t("npf_note", { pitch: pixelPitch(sensor, mp).toFixed(1) })}</p>
     </section>
   );
 }
@@ -93,9 +93,9 @@ export function DofCalculator() {
   const r = depthOfField(sensor, focal, aperture, distance);
   const total = r.far === null ? null : r.far - r.near;
   return (
-    <section id="dof" className="scroll-mt-24 bg-mat px-5 py-6 sm:px-6">
+    <section id="dof" className="scroll-mt-24 bg-surface px-5 py-6 sm:px-6">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">{t("dof_title")}</h2>
-      <p className="mt-1 max-w-[62ch] text-[15px] text-muted">{t("dof_lead")}</p>
+      <p className="mt-1 max-w-[62ch] text-[15px] text-ink-muted">{t("dof_lead")}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-4">
         <Field label={t("sensor_label")}><SensorSelect value={sensor} onChange={setSensor} /></Field>
         <Field label={t("focal")}><input type="number" min={8} max={800} value={focal} onChange={(e) => setFocal(Number(e.target.value) || 24)} className={inputClass} /></Field>
@@ -107,7 +107,7 @@ export function DofCalculator() {
         { value: formatDistance(r.near, locale), label: t("near") },
         { value: formatDistance(r.far, locale), label: t("far") },
       ]} />
-      <p className="mt-3 text-sm text-muted">
+      <p className="mt-3 text-sm text-ink-muted">
         {total === null ? t("dof_infinite", { near: formatDistance(r.near, locale) }) : t("dof_total", { total: formatDistance(total, locale) })}{" "}
         {t("dof_hyperfocal_tip", { h: formatDistance(r.hyperfocal, locale), half: formatDistance(r.hyperfocal / 2, locale) })}
       </p>
@@ -122,9 +122,9 @@ export function NdCalculator() {
   const [stops, setStops] = useState(10);
   const out = ndSeconds(base, stops);
   return (
-    <section id="nd" className="scroll-mt-24 bg-mat px-5 py-6 sm:px-6">
+    <section id="nd" className="scroll-mt-24 bg-surface px-5 py-6 sm:px-6">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">{t("nd_title")}</h2>
-      <p className="mt-1 max-w-[62ch] text-[15px] text-muted">{t("nd_lead")}</p>
+      <p className="mt-1 max-w-[62ch] text-[15px] text-ink-muted">{t("nd_lead")}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label={t("nd_base")}>
           <select value={base} onChange={(e) => setBase(Number(e.target.value))} className={inputClass}>
@@ -135,7 +135,7 @@ export function NdCalculator() {
           <div className="flex flex-wrap gap-2">
             {ND_FILTERS.map((f) => (
               <button key={f.label} type="button" onClick={() => setStops(f.stops)} aria-pressed={stops === f.stops}
-                className={clsx("h-11 rounded-full border px-4 text-sm font-medium", stops === f.stops ? "border-ink bg-ink text-mat" : "border-line hover:border-ink")}>
+                className={clsx("h-11 rounded-full border px-4 text-sm font-medium", stops === f.stops ? "border-ink bg-ink text-surface" : "border-line hover:border-ink")}>
                 {f.label} · {t("stops", { n: f.stops })}
               </button>
             ))}
@@ -143,7 +143,7 @@ export function NdCalculator() {
         </Field>
       </div>
       <Readout items={[{ value: formatShutter(out, locale), label: t("nd_result"), strong: true }]} />
-      {out > 30 && <p className="mt-3 text-sm text-muted">{t("nd_bulb")}</p>}
+      {out > 30 && <p className="mt-3 text-sm text-ink-muted">{t("nd_bulb")}</p>}
     </section>
   );
 }

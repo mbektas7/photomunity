@@ -57,7 +57,7 @@ export function ConversationList({ folder, meId, activeId }: { folder: "inbox" |
     refetchInterval: 30_000,
   });
   if (q.isSuccess && q.data.length === 0) {
-    return <p className="px-4 py-10 text-[15px] text-muted">{folder === "requests" ? t("no_requests") : t("empty")}</p>;
+    return <p className="px-4 py-10 text-[15px] text-ink-muted">{folder === "requests" ? t("no_requests") : t("empty")}</p>;
   }
   return (
     <ul>
@@ -72,10 +72,10 @@ export function ConversationList({ folder, meId, activeId }: { folder: "inbox" |
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline justify-between gap-2">
                 <span className={clsx("truncate text-[15px]", c.unread ? "font-semibold" : "font-medium")}>{c.other.display_name}</span>
-                <span className="shrink-0 text-xs text-muted">{relativeTime(c.last_message_at, locale)}</span>
+                <span className="shrink-0 text-xs text-ink-muted">{relativeTime(c.last_message_at, locale)}</span>
               </span>
               <span className="flex items-center gap-2">
-                <span className={clsx("min-w-0 flex-1 truncate text-sm", c.unread ? "text-ink" : "text-muted")}>
+                <span className={clsx("min-w-0 flex-1 truncate text-sm", c.unread ? "text-ink" : "text-ink-muted")}>
                   {c.status === "request" && !c.is_request_to_me ? `${t("pending")} · ` : ""}
                   {preview(c, meId, t)}
                 </span>

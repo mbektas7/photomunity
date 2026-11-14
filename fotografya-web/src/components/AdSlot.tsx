@@ -50,8 +50,8 @@ export function AdSlot({ kind, className }: { kind: "feed" | "banner"; className
 
   if (!show) return null;
   return (
-    <aside aria-label={t("label")} className={clsx("bg-mat px-3 pb-3 pt-2", className)}>
-      <div className="mb-2 flex items-center justify-between text-[11px] text-muted">
+    <aside aria-label={t("label")} className={clsx("bg-surface px-3 pb-3 pt-2", className)}>
+      <div className="mb-2 flex items-center justify-between text-[11px] text-ink-muted">
         <span>{t("label")}</span>
         <Link href="/pro" className="font-medium hover:text-ink">{t("remove")}</Link>
       </div>

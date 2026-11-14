@@ -101,7 +101,7 @@ class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Text(
                   _mine ? t('community.empty_mine') : t('community.empty'),
-                  style: font(15, color: p.muted),
+                  style: font(15, color: p.inkMuted),
                 ),
               ),
             ],
@@ -155,7 +155,7 @@ class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Text(
                   t('contest.empty_$_contestStatus'),
-                  style: font(15, color: p.muted),
+                  style: font(15, color: p.inkMuted),
                 ),
               ),
             ],
@@ -242,7 +242,7 @@ class _NewCommunityScreenState extends ConsumerState<NewCommunityScreen> {
         children: [
           Text(
             t('community.new_lead'),
-            style: font(15, height: 1.45, color: p.muted),
+            style: font(15, height: 1.45, color: p.inkMuted),
           ),
           const SizedBox(height: 20),
           TextField(
@@ -466,7 +466,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                                   'count': c.memberCount,
                                 }),
                               ].join('  ·  '),
-                              style: font(13.5, color: p.muted),
+                              style: font(13.5, color: p.inkMuted),
                             ),
                             if (c.openContests > 0)
                               Text(
@@ -510,7 +510,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             delegate: _TabsHeader(
               TabBar(
                 labelStyle: font(15, weight: 600),
-                unselectedLabelColor: p.muted,
+                unselectedLabelColor: p.inkMuted,
                 labelColor: p.ink,
                 indicatorColor: p.ink,
                 tabs: [
@@ -519,7 +519,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   Tab(text: t('community.tab_members')),
                 ],
               ),
-              p.wall,
+              p.bg,
             ),
           ),
         ],
@@ -563,7 +563,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Text(
                   t('community.feed_empty'),
-                  style: font(15, color: p.muted),
+                  style: font(15, color: p.inkMuted),
                 ),
               ),
             ],
@@ -584,7 +584,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             t('community.contest_announced', {
                               'time': relativeTime(post.createdAt, locale),
                             }),
-                            style: font(13, color: p.muted),
+                            style: font(13, color: p.inkMuted),
                           ),
                           const SizedBox(height: 6),
                           ContestTile(c: post.contest!, showCommunity: false),
@@ -594,13 +594,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     _ => Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(18),
-                      color: p.mat,
+                      color: p.surface,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '${post.author.displayName} · ${relativeTime(post.createdAt, locale)}',
-                            style: font(13, color: p.muted),
+                            style: font(13, color: p.inkMuted),
                           ),
                           if (post.title != null) ...[
                             const SizedBox(height: 10),
@@ -665,7 +665,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           AsyncData(:final value) when value.isEmpty => [
             Text(
               t('community.contests_empty'),
-              style: font(15, color: p.muted),
+              style: font(15, color: p.inkMuted),
             ),
           ],
           AsyncData(:final value) => [
@@ -718,13 +718,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             ),
             subtitle: Text(
               '@${m.user.username}',
-              style: font(13, color: p.muted),
+              style: font(13, color: p.inkMuted),
             ),
             trailing: m.role == 'member'
                 ? null
                 : Text(
                     t('community.role.${m.role}'),
-                    style: font(12.5, color: p.muted),
+                    style: font(12.5, color: p.inkMuted),
                   ),
           );
         },

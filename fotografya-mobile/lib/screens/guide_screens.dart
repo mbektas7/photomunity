@@ -36,7 +36,7 @@ class GuideHubScreen extends ConsumerWidget {
       String route, {
       bool accent = false,
     }) => Material(
-      color: accent ? p.ink : p.mat,
+      color: accent ? p.ink : p.surface,
       child: InkWell(
         onTap: () => context.push(route),
         child: Padding(
@@ -44,18 +44,18 @@ class GuideHubScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: accent ? p.mat : p.ink),
+              Icon(icon, color: accent ? p.surface : p.ink),
               const SizedBox(height: 12),
               Text(
                 title,
-                style: font(15.5, weight: 600, color: accent ? p.mat : p.ink),
+                style: font(15.5, weight: 600, color: accent ? p.surface : p.ink),
               ),
               const SizedBox(height: 2),
               Text(
                 body,
                 style: font(
                   13,
-                  color: accent ? p.mat.withValues(alpha: 0.7) : p.muted,
+                  color: accent ? p.surface.withValues(alpha: 0.7) : p.inkMuted,
                 ),
               ),
             ],
@@ -68,7 +68,7 @@ class GuideHubScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
-          Text(t('guide.lead'), style: font(15, height: 1.45, color: p.muted)),
+          Text(t('guide.lead'), style: font(15, height: 1.45, color: p.inkMuted)),
           const SizedBox(height: 16),
           tool(
             Icons.nightlight_outlined,
@@ -122,7 +122,7 @@ class GuideHubScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Material(
-                        color: p.mat,
+                        color: p.surface,
                         child: ListTile(
                           onTap: () => context.push('/guide/${g['slug']}'),
                           title: Text(
@@ -131,9 +131,9 @@ class GuideHubScreen extends ConsumerWidget {
                           ),
                           subtitle: Text(
                             g['summary'] as String,
-                            style: font(13.5, height: 1.4, color: p.muted),
+                            style: font(13.5, height: 1.4, color: p.inkMuted),
                           ),
-                          trailing: Icon(Icons.chevron_right, color: p.muted),
+                          trailing: Icon(Icons.chevron_right, color: p.inkMuted),
                         ),
                       ),
                     ),
@@ -194,7 +194,7 @@ class GuideScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     value['summary'] as String,
-                    style: font(16, height: 1.45, color: p.muted),
+                    style: font(16, height: 1.45, color: p.inkMuted),
                   ),
                 ],
               ),
@@ -249,7 +249,7 @@ class GuideScreen extends ConsumerWidget {
                         children: [
                           Text(
                             t('guide.setting.$k'),
-                            style: font(12.5, color: p.muted),
+                            style: font(12.5, color: p.inkMuted),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -529,7 +529,7 @@ class _CalculatorCardState extends State<CalculatorCard> {
               t('tools.npf_note', {
                 'pitch': pixelPitch(_sensor, _mp).toStringAsFixed(1),
               }),
-              style: font(12.5, height: 1.4, color: p.muted),
+              style: font(12.5, height: 1.4, color: p.inkMuted),
             ),
           ],
         ),
@@ -591,7 +591,7 @@ class _CalculatorCardState extends State<CalculatorCard> {
                     'h': formatDistance(r.hyperfocal, locale),
                     'half': formatDistance(r.hyperfocal / 2, locale),
                   }),
-                  style: font(12.5, height: 1.4, color: p.muted),
+                  style: font(12.5, height: 1.4, color: p.inkMuted),
                 ),
               ],
             );
@@ -631,7 +631,7 @@ class _CalculatorCardState extends State<CalculatorCard> {
             ]),
             if (ndSeconds(_base, _stops) > 30) ...[
               const SizedBox(height: 8),
-              Text(t('tools.nd_bulb'), style: font(12.5, color: p.muted)),
+              Text(t('tools.nd_bulb'), style: font(12.5, color: p.inkMuted)),
             ],
           ],
         ),
@@ -639,14 +639,14 @@ class _CalculatorCardState extends State<CalculatorCard> {
     };
 
     return Container(
-      color: p.mat,
+      color: p.surface,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(title, style: font(18, weight: 600, color: p.ink)),
           const SizedBox(height: 4),
-          Text(lead, style: font(13.5, height: 1.4, color: p.muted)),
+          Text(lead, style: font(13.5, height: 1.4, color: p.inkMuted)),
           const SizedBox(height: 14),
           body,
         ],

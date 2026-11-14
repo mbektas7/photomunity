@@ -62,9 +62,9 @@ function Pro() {
 
   return (
     <div className="mx-auto max-w-[920px] px-4 pt-10 sm:px-6 sm:pt-16">
-      <div className="flex items-center gap-3"><ProBadge className="px-2 py-0.5 text-[12px]" /><span className="text-sm text-muted">Fotografya Pro</span></div>
+      <div className="flex items-center gap-3"><ProBadge className="px-2 py-0.5 text-[12px]" /><span className="text-sm text-ink-muted">Fotografya Pro</span></div>
       <h1 className="mt-4 max-w-[16ch] text-[clamp(2.4rem,6vw,4.2rem)] font-bold leading-[0.98] tracking-[-0.045em]">{t("title")}</h1>
-      <p className="mt-4 max-w-[52ch] text-lg text-muted">{t("lead")}</p>
+      <p className="mt-4 max-w-[52ch] text-lg text-ink-muted">{t("lead")}</p>
 
       {returned && !s?.is_pro && <div className="mt-8"><Notice>{t("activating")}</Notice></div>}
 
@@ -75,18 +75,18 @@ function Pro() {
               <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="h-4 w-4" strokeWidth={3} /></span>
               <span>
                 <span className="block text-[17px] font-semibold">{t(`perk.${k}`)}</span>
-                <span className="mt-0.5 block text-[15px] text-muted">{t(`perk.${k}_body`)}</span>
+                <span className="mt-0.5 block text-[15px] text-ink-muted">{t(`perk.${k}_body`)}</span>
               </span>
             </li>
           ))}
         </ul>
 
-        <div className="order-first self-start bg-mat p-5 md:order-none">
+        <div className="order-first self-start bg-surface p-5 md:order-none">
           {s?.is_pro ? (
             <>
-              <p className="flex items-center gap-2 text-lg font-semibold"><Check className="h-5 w-5 text-accent" strokeWidth={3} /> {t("you_are_pro")}</p>
+              <p className="flex items-center gap-2 text-lg font-semibold"><Check className="h-5 w-5 text-accent-text" strokeWidth={3} /> {t("you_are_pro")}</p>
               {s.period_end && (
-                <p className="mt-2 text-[15px] text-muted">
+                <p className="mt-2 text-[15px] text-ink-muted">
                   {s.will_renew ? t("renews", { date: formatDate(s.period_end, locale) ?? "" }) : t("ends", { date: formatDate(s.period_end, locale) ?? "" })}
                 </p>
               )}
@@ -94,7 +94,7 @@ function Pro() {
               {s.can_manage_on_web ? (
                 <Button variant="secondary" className="mt-5 w-full" busy={portal.isPending} onClick={() => portal.mutate()}>{t("manage")}</Button>
               ) : (
-                <p className="mt-5 text-sm text-muted">{t(s.store === "play_store" ? "manage_play" : "manage_apple")}</p>
+                <p className="mt-5 text-sm text-ink-muted">{t(s.store === "play_store" ? "manage_play" : "manage_apple")}</p>
               )}
             </>
           ) : (
@@ -103,9 +103,9 @@ function Pro() {
                 {(["monthly", "yearly"] as const).map((p) => (
                   <button key={p} type="button" role="radio" aria-checked={plan === p} onClick={() => setPlan(p)}
                     className={clsx("relative border px-3 py-3 text-left", plan === p ? "border-ink" : "border-line hover:border-ink/40")}>
-                    <span className="block text-sm text-muted">{t(p)}</span>
+                    <span className="block text-sm text-ink-muted">{t(p)}</span>
                     <span className="tnum mt-1 block text-[22px] font-semibold">{prices[p]}</span>
-                    <span className="block text-xs text-muted">{t(`per_${p}`)}</span>
+                    <span className="block text-xs text-ink-muted">{t(`per_${p}`)}</span>
                     {p === "yearly" && saving > 0 && (
                       <span className="absolute -top-2.5 right-2 bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-ink">{t("save", { pct: saving })}</span>
                     )}
@@ -117,7 +117,7 @@ function Pro() {
                 onClick={() => (me ? checkout.mutate() : router.push(`/login?next=${encodeURIComponent(pathname)}`))}>
                 {t("cta")}
               </Button>
-              <p className="mt-3 text-xs leading-relaxed text-muted">{t("fine_print")}</p>
+              <p className="mt-3 text-xs leading-relaxed text-ink-muted">{t("fine_print")}</p>
             </>
           )}
         </div>

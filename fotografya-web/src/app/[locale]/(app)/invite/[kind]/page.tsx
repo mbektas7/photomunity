@@ -52,14 +52,14 @@ function Accept() {
       <h1 className="text-[34px] font-bold leading-tight tracking-[-0.035em]">{t(`${kind}_title`)}</h1>
       {!isLoading && !me && (
         <>
-          <p className="mt-3 leading-relaxed text-muted">{t("login_needed")}</p>
+          <p className="mt-3 leading-relaxed text-ink-muted">{t("login_needed")}</p>
           <div className="mt-6 flex gap-3">
             <Link href={`/register?next=${next}`} className={buttonClass("primary")}>{t("register")}</Link>
             <Link href={`/login?next=${next}`} className={buttonClass("secondary")}>{t("login")}</Link>
           </div>
         </>
       )}
-      {accept.isPending && <p className="mt-4 text-muted">{t("accepting")}</p>}
+      {accept.isPending && <p className="mt-4 text-ink-muted">{t("accepting")}</p>}
       {accept.error && <div className="mt-6"><Notice tone="error">{accept.error instanceof ApiError ? accept.error.message : t("error")}</Notice></div>}
     </div>
   );

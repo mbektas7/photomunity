@@ -29,7 +29,7 @@ function Section({ title, lead, children }: { title: string; lead?: string; chil
   return (
     <section className="mt-12 border-t border-line pt-8">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">{title}</h2>
-      {lead && <p className="mt-1 max-w-[64ch] text-[15px] text-muted">{lead}</p>}
+      {lead && <p className="mt-1 max-w-[64ch] text-[15px] text-ink-muted">{lead}</p>}
       <div className="mt-6">{children}</div>
     </section>
   );
@@ -59,19 +59,19 @@ function Manage() {
 
   return (
     <div className="mx-auto max-w-[860px] px-4 pt-8 sm:px-6 sm:pt-12">
-      <Link href={`/contests/${c.id}`} className="text-sm text-muted hover:text-ink">← {t("view_public")}</Link>
+      <Link href={`/contests/${c.id}`} className="text-sm text-ink-muted hover:text-ink">← {t("view_public")}</Link>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <StatusBadge status={c.status} />
-        <span className="text-sm text-muted">{c.community.name}</span>
+        <span className="text-sm text-ink-muted">{c.community.name}</span>
       </div>
       <h1 className="mt-2 text-[clamp(1.9rem,4.5vw,2.8rem)] font-bold leading-[1.02] tracking-[-0.04em]">{c.title}</h1>
       {created && <div className="mt-6"><Notice tone="success">{t("created")}</Notice></div>}
       <div className="mt-6"><ContestTimeline c={c} /></div>
 
       {draft && (
-        <div className="mt-8 bg-mat px-5 py-5">
+        <div className="mt-8 bg-surface px-5 py-5">
           <p className="font-semibold">{t("publish_title")}</p>
-          <p className="mt-1 text-[15px] text-muted">{c.judging_mode === "jury" ? t("publish_body_jury") : t("publish_body")}</p>
+          <p className="mt-1 text-[15px] text-ink-muted">{c.judging_mode === "jury" ? t("publish_body_jury") : t("publish_body")}</p>
           {publish.error && <div className="mt-3"><Notice tone="error">{errorText(publish.error, t("error"))}</Notice></div>}
           <Button className="mt-4" busy={publish.isPending} onClick={() => window.confirm(t("publish_confirm")) && publish.mutate()}>{t("publish")}</Button>
         </div>
@@ -111,8 +111,8 @@ function Summary({ c }: { c: Contest }) {
     <Section title={t("summary")}>
       <dl className="grid grid-cols-3 gap-px bg-line">
         {stats.map((x) => (
-          <div key={x.label} className="flex flex-col-reverse bg-mat px-4 py-4">
-            <dt className="text-sm text-muted">{x.label}</dt>
+          <div key={x.label} className="flex flex-col-reverse bg-surface px-4 py-4">
+            <dt className="text-sm text-ink-muted">{x.label}</dt>
             <dd className="tnum text-[28px] font-semibold leading-none">{x.n}</dd>
           </div>
         ))}
@@ -153,19 +153,19 @@ function Judges({ c }: { c: Contest }) {
               {j.user ? <Avatar name={j.user.display_name} url={j.user.avatar_url} size={36} /> : <span className="h-9 w-9 rounded-full border border-dashed border-line" />}
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{j.user ? j.user.display_name : j.email}</span>
-                <span className="block text-sm text-muted">{j.pending ? t("invite_pending") : t("scored", { count: j.scored })}</span>
+                <span className="block text-sm text-ink-muted">{j.pending ? t("invite_pending") : t("scored", { count: j.scored })}</span>
               </span>
-              <label className="flex items-center gap-2 text-sm text-muted">
+              <label className="flex items-center gap-2 text-sm text-ink-muted">
                 {t("weight")}
                 <input
                   type="number" min={0.1} max={10} step={0.5} defaultValue={j.weight} disabled={locked}
                   onBlur={(e) => Number(e.target.value) !== j.weight && update.mutate({ id: j.id, w: Number(e.target.value) })}
-                  className="tnum h-9 w-20 rounded-[8px] border border-line bg-mat px-2 text-ink"
+                  className="tnum h-9 w-20 rounded-[8px] border border-line bg-surface px-2 text-ink"
                 />
               </label>
-              <span className="tnum w-14 text-right text-sm text-muted">{!j.pending && total ? `%${Math.round((j.weight / total) * 100)}` : ""}</span>
+              <span className="tnum w-14 text-right text-sm text-ink-muted">{!j.pending && total ? `%${Math.round((j.weight / total) * 100)}` : ""}</span>
               {!locked && (
-                <button type="button" onClick={() => remove.mutate(j.id)} className="rounded-full p-2 text-muted hover:bg-ink/5" aria-label={t("remove_judge")}>
+                <button type="button" onClick={() => remove.mutate(j.id)} className="rounded-full p-2 text-ink-muted hover:bg-ink/5" aria-label={t("remove_judge")}>
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -181,7 +181,7 @@ function Judges({ c }: { c: Contest }) {
         </form>
       )}
       {add.error && <div className="mt-3"><Notice tone="error">{errorText(add.error, t("error"))}</Notice></div>}
-      <p className="mt-4 text-sm text-muted">{t("weight_hint")}</p>
+      <p className="mt-4 text-sm text-ink-muted">{t("weight_hint")}</p>
     </Section>
   );
 }
@@ -198,7 +198,7 @@ function Entries({ c }: { c: Contest }) {
   const list = q.data ?? [];
   return (
     <Section title={t("entries", { count: list.filter((e) => !e.disqualified).length })} lead={c.status === "open" ? t("entries_private") : undefined}>
-      {list.length === 0 && <p className="text-muted">{t("no_entries")}</p>}
+      {list.length === 0 && <p className="text-ink-muted">{t("no_entries")}</p>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {list.map((e) => (
           <figure key={e.id} className={e.disqualified ? "opacity-40" : undefined}>
@@ -213,7 +213,7 @@ function Entries({ c }: { c: Contest }) {
               ) : c.status !== "finished" ? (
                 <button
                   type="button"
-                  className="shrink-0 rounded-full p-1.5 text-muted hover:bg-ink/5 hover:text-danger"
+                  className="shrink-0 rounded-full p-1.5 text-ink-muted hover:bg-ink/5 hover:text-danger"
                   aria-label={t("disqualify")}
                   title={t("disqualify")}
                   onClick={() => { const reason = window.prompt(t("disqualify_reason")); if (reason?.trim()) dq.mutate({ id: e.id, reason: reason.trim() }); }}
@@ -243,7 +243,7 @@ function Preview({ c }: { c: Contest }) {
               <img src={r.entry.images.thumb.url} alt="" className="h-12 w-16 bg-ink/5 object-contain" />
             )}
             <span className="min-w-0 flex-1 truncate">{r.entry.user?.display_name}</span>
-            <span className="tnum text-sm text-muted">{r.score !== null ? r.score.toFixed(2) : "–"} · {c.judging_mode === "jury" ? t("judges_count", { count: r.count }) : t("votes_count", { count: r.count })}</span>
+            <span className="tnum text-sm text-ink-muted">{r.score !== null ? r.score.toFixed(2) : "–"} · {c.judging_mode === "jury" ? t("judges_count", { count: r.count }) : t("votes_count", { count: r.count })}</span>
           </li>
         ))}
       </ol>

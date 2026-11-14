@@ -152,7 +152,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
                     const SizedBox(width: 8),
                     Text(
                       '${t('contest.mode.${c.judgingMode}')} · ${t('contest.entries', {'count': c.entryCount})}',
-                      style: font(12.5, color: p.muted),
+                      style: font(12.5, color: p.inkMuted),
                     ),
                   ],
                 ),
@@ -231,7 +231,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
                     style: font(15, weight: 600, color: p.ink),
                   ),
                   const SizedBox(height: 6),
-                  Text(c.rules!, style: font(15, height: 1.5, color: p.muted)),
+                  Text(c.rules!, style: font(15, height: 1.5, color: p.inkMuted)),
                 ],
               ],
             ),
@@ -242,7 +242,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
   }
 
   Widget _panel(Palette p, List<Widget> children) => Container(
-    color: p.mat,
+    color: p.surface,
     padding: const EdgeInsets.all(20),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +277,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
             const SizedBox(height: 6),
             Text(
               t('contest.entered_body'),
-              style: font(14.5, height: 1.45, color: p.muted),
+              style: font(14.5, height: 1.45, color: p.inkMuted),
             ),
             TextButton(
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
@@ -294,7 +294,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           const SizedBox(height: 6),
           Text(
             t('contest.enter_body'),
-            style: font(15, height: 1.45, color: p.muted),
+            style: font(15, height: 1.45, color: p.inkMuted),
           ),
           const SizedBox(height: 16),
           FilledButton(
@@ -313,7 +313,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           const SizedBox(height: 4),
           Text(
             t('contest.jury_body'),
-            style: font(15, height: 1.45, color: p.muted),
+            style: font(15, height: 1.45, color: p.inkMuted),
           ),
           if (c.isJudge) ...[
             const SizedBox(height: 16),
@@ -334,7 +334,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
             t('contest.closed_body', {
               'date': DateFormat.yMMMMd(locale).add_Hm().format(c.resultsAt),
             }),
-            style: font(15, color: p.muted),
+            style: font(15, color: p.inkMuted),
           ),
         ]);
       default:
@@ -383,7 +383,7 @@ class _Voting extends ConsumerWidget {
             Container(
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(10),
-              color: p.mat,
+              color: p.surface,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -403,7 +403,7 @@ class _Voting extends ConsumerWidget {
                           e.user?.displayName ?? e.title ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: font(13.5, color: p.muted),
+                          style: font(13.5, color: p.inkMuted),
                         ),
                       ),
                       if (e.mine)
@@ -438,7 +438,7 @@ class _Voting extends ConsumerWidget {
               ),
             ),
           if (value.isEmpty)
-            Text(t('contest.no_entries'), style: font(15, color: p.muted)),
+            Text(t('contest.no_entries'), style: font(15, color: p.inkMuted)),
         ],
       ),
       AsyncError(:final error) => ErrorView(
@@ -505,7 +505,7 @@ class _Results extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: p.mat,
+                color: p.surface,
                 border: e.rank == 1
                     ? Border.all(color: p.accent, width: 2)
                     : null,
@@ -558,7 +558,7 @@ class _Results extends ConsumerWidget {
                                 style: font(15, weight: 600, color: p.ink),
                               ),
                               if (e.title != null)
-                                Text(e.title!, style: font(13, color: p.muted)),
+                                Text(e.title!, style: font(13, color: p.inkMuted)),
                             ],
                           ),
                         ),
@@ -576,7 +576,7 @@ class _Results extends ConsumerWidget {
                               t('contest.score', {
                                 'score': e.score!.toStringAsFixed(2),
                               }),
-                              style: font(12.5, color: p.muted),
+                              style: font(12.5, color: p.inkMuted),
                             ),
                         ],
                       ),
@@ -690,7 +690,7 @@ class _JuryScreenState extends ConsumerState<JuryScreen> {
                   ),
                 ),
                 Container(
-                  color: p.wall,
+                  color: p.bg,
                   padding: EdgeInsets.fromLTRB(
                     12,
                     14,
@@ -704,7 +704,7 @@ class _JuryScreenState extends ConsumerState<JuryScreen> {
                           'n': _index + 1,
                           'total': list.length,
                         }),
-                        style: font(13, color: p.muted),
+                        style: font(13, color: p.inkMuted),
                       ),
                       const SizedBox(height: 10),
                       if (list[_index].mine)

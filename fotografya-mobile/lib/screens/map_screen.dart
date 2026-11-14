@@ -114,7 +114,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: p.ink.withValues(alpha: 0.2), width: 4),
         ),
-        child: Text('${c.count}', style: font(13, weight: 600, color: p.mat)),
+        child: Text('${c.count}', style: font(13, weight: 600, color: p.surface)),
       ),
     );
   }
@@ -263,7 +263,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Material(
-                  color: p.mat,
+                  color: p.surface,
                   shape: const StadiumBorder(),
                   elevation: 3,
                   child: Padding(
@@ -291,7 +291,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 if (!_photos) ...[
                   const SizedBox(height: 8),
                   Material(
-                    color: p.mat,
+                    color: p.surface,
                     shape: const StadiumBorder(),
                     elevation: 3,
                     child: Padding(
@@ -324,7 +324,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       vertical: 5,
                     ),
                     decoration: ShapeDecoration(
-                      color: p.mat.withValues(alpha: 0.92),
+                      color: p.surface.withValues(alpha: 0.92),
                       shape: const StadiumBorder(),
                     ),
                     child: Text(
@@ -334,7 +334,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             : 'map.count_photographers',
                         {'count': total},
                       ),
-                      style: font(12, color: p.muted),
+                      style: font(12, color: p.inkMuted),
                     ),
                   ),
                 ],
@@ -358,7 +358,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final p = context.palette;
     final s = _selected;
     return Material(
-      color: p.mat,
+      color: p.surface,
       elevation: 8,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -385,7 +385,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                         Text(
                           u.city ?? t('map.approximate'),
-                          style: font(13.5, color: p.muted),
+                          style: font(13.5, color: p.inkMuted),
                         ),
                       ],
                     ),
@@ -438,7 +438,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(t('map.privacy_note'), style: font(11.5, color: p.muted)),
+              Text(t('map.privacy_note'), style: font(11.5, color: p.inkMuted)),
             ],
           ),
           MapPhotoPoint ph => InkWell(
@@ -462,7 +462,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       ),
                       Text(
                         ph.user.displayName,
-                        style: font(13.5, color: p.muted),
+                        style: font(13.5, color: p.inkMuted),
                       ),
                       const SizedBox(height: 6),
                       Text(

@@ -345,7 +345,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     if (kit.isNotEmpty) ...[
                       const SizedBox(height: 22),
                       Container(
-                        color: p.mat,
+                        color: p.surface,
                         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,7 +377,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     Text(
                                       t('equipment.${e.type}'),
-                                      style: font(13, color: p.muted),
+                                      style: font(13, color: p.inkMuted),
                                     ),
                                   ],
                                 ),
@@ -395,7 +395,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverToBoxAdapter(
                   child: Container(
-                    color: p.mat,
+                    color: p.surface,
                     padding: const EdgeInsets.all(22),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,7 +409,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 4),
                         Text(
                           t('profile.private_body'),
-                          style: font(15, color: p.muted),
+                          style: font(15, color: p.inkMuted),
                         ),
                       ],
                     ),
@@ -421,7 +421,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverToBoxAdapter(
                   child: Container(
-                    color: p.mat,
+                    color: p.surface,
                     padding: const EdgeInsets.all(22),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,7 +430,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           prof.isMe
                               ? t('profile.empty_me')
                               : t('profile.empty'),
-                          style: font(15, color: p.muted),
+                          style: font(15, color: p.inkMuted),
                         ),
                         if (prof.isMe) ...[
                           const SizedBox(height: 14),
@@ -471,7 +471,7 @@ class _Stat extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('$n', style: font(19, weight: 600, color: p.ink, tabular: true)),
-          Text(label, style: font(12.5, color: p.muted)),
+          Text(label, style: font(12.5, color: p.inkMuted)),
         ],
       ),
     );
@@ -489,9 +489,9 @@ class _Meta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: p.muted),
+        Icon(icon, size: 14, color: p.inkMuted),
         const SizedBox(width: 4),
-        Text(text, style: font(13.5, color: p.muted)),
+        Text(text, style: font(13.5, color: p.inkMuted)),
       ],
     );
   }

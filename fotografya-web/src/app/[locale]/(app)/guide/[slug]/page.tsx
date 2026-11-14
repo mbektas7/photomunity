@@ -27,9 +27,9 @@ export default function GuidePage() {
 
   return (
     <div className="mx-auto max-w-[860px] px-4 pt-8 sm:px-6 sm:pt-12">
-      <Link href="/guide" className="text-sm text-muted hover:text-ink">← {t("title")}</Link>
+      <Link href="/guide" className="text-sm text-ink-muted hover:text-ink">← {t("title")}</Link>
       <h1 className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] font-bold leading-[0.98] tracking-[-0.045em]">{g.title}</h1>
-      <p className="mt-3 max-w-[60ch] text-lg text-muted">{g.summary}</p>
+      <p className="mt-3 max-w-[60ch] text-lg text-ink-muted">{g.summary}</p>
 
       {/* Vizör şeridi: üç temel ayar */}
       <dl className="mt-8 grid gap-px bg-black sm:grid-cols-3">
@@ -43,7 +43,7 @@ export default function GuidePage() {
       <dl className="divide-y divide-line border-b border-line">
         {rest.map(([k, v]) => (
           <div key={k} className="grid gap-1 py-3.5 sm:grid-cols-[180px_1fr]">
-            <dt className="text-sm text-muted">{t(`setting.${k}`)}</dt>
+            <dt className="text-sm text-ink-muted">{t(`setting.${k}`)}</dt>
             <dd className="text-[15px]">{v}</dd>
           </div>
         ))}
@@ -53,7 +53,7 @@ export default function GuidePage() {
         <section>
           <h2 className="text-lg font-semibold">{t("tips")}</h2>
           <ul className="mt-3 flex flex-col gap-3">
-            {g.tips.map((x) => <li key={x} className="flex gap-3 text-[15px] leading-relaxed"><Check className="mt-1 h-4 w-4 shrink-0 text-accent" strokeWidth={2.5} /> {x}</li>)}
+            {g.tips.map((x) => <li key={x} className="flex gap-3 text-[15px] leading-relaxed"><Check className="mt-1 h-4 w-4 shrink-0 text-accent-text" strokeWidth={2.5} /> {x}</li>)}
           </ul>
         </section>
         <section>

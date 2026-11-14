@@ -80,9 +80,9 @@ class StatusBadge extends StatelessWidget {
     final t = L10n.of(context);
     final (bg, fg, border) = switch (status) {
       'open' => (p.accent, p.accentInk, null),
-      'judging' => (p.ink, p.mat, null),
+      'judging' => (p.ink, p.surface, null),
       'finished' => (Colors.transparent, p.ink, p.ink),
-      _ => (Colors.transparent, p.muted, p.line),
+      _ => (Colors.transparent, p.inkMuted, p.line),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -118,7 +118,7 @@ class ContestTile extends StatelessWidget {
     };
     final left = key.isEmpty ? '' : remainingText(at, locale);
     return Material(
-      color: p.mat,
+      color: p.surface,
       child: InkWell(
         onTap: () => context.push('/contests/${c.id}'),
         child: Padding(
@@ -132,7 +132,7 @@ class ContestTile extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     t('contest.mode.${c.judgingMode}'),
-                    style: font(12, color: p.muted),
+                    style: font(12, color: p.inkMuted),
                   ),
                 ],
               ),
@@ -153,10 +153,10 @@ class ContestTile extends StatelessWidget {
                 runSpacing: 2,
                 children: [
                   if (showCommunity)
-                    Text(c.community.name, style: font(13.5, color: p.muted)),
+                    Text(c.community.name, style: font(13.5, color: p.inkMuted)),
                   Text(
                     t('contest.entries', {'count': c.entryCount}),
-                    style: font(13.5, color: p.muted),
+                    style: font(13.5, color: p.inkMuted),
                   ),
                   if (left.isNotEmpty)
                     Text(
@@ -186,7 +186,7 @@ class CommunityTile extends StatelessWidget {
       t('community.members', {'count': c.memberCount}),
     ].join('  ·  ');
     return Material(
-      color: p.mat,
+      color: p.surface,
       child: InkWell(
         onTap: () => context.push('/c/${c.slug}'),
         child: Padding(
@@ -210,7 +210,7 @@ class CommunityTile extends StatelessWidget {
                       meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: font(13.5, color: p.muted),
+                      style: font(13.5, color: p.inkMuted),
                     ),
                   ],
                 ),
@@ -226,7 +226,7 @@ class CommunityTile extends StatelessWidget {
                   ),
                   child: Text(
                     t('community.role.${c.myRole}'),
-                    style: font(12, color: p.muted),
+                    style: font(12, color: p.inkMuted),
                   ),
                 ),
             ],
@@ -270,7 +270,7 @@ class ContestTimeline extends StatelessWidget {
             if (i > 0) const SizedBox(width: 1),
             Expanded(
               child: Container(
-                color: active ? p.ink : p.mat,
+                color: active ? p.ink : p.surface,
                 padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +280,7 @@ class ContestTimeline extends StatelessWidget {
                       style: font(
                         13,
                         weight: 600,
-                        color: active ? p.mat : (i < current ? p.ink : p.muted),
+                        color: active ? p.surface : (i < current ? p.ink : p.inkMuted),
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -288,7 +288,7 @@ class ContestTimeline extends StatelessWidget {
                       fmt.format(at),
                       style: font(
                         11.5,
-                        color: active ? p.mat.withValues(alpha: 0.75) : p.muted,
+                        color: active ? p.surface.withValues(alpha: 0.75) : p.inkMuted,
                       ),
                     ),
                   ],
@@ -329,7 +329,7 @@ class StarRating extends StatelessWidget {
                       ? Icons.star_rounded
                       : Icons.star_outline_rounded,
                   size: 30,
-                  color: n <= (value ?? 0) ? p.accent : p.muted,
+                  color: n <= (value ?? 0) ? p.accent : p.inkMuted,
                 ),
               ),
             ),
@@ -381,7 +381,7 @@ class _PhotoPicker extends ConsumerWidget {
                   ? Center(
                       child: Text(
                         t('contest.no_photos'),
-                        style: font(15, color: p.muted),
+                        style: font(15, color: p.inkMuted),
                       ),
                     )
                   : GridView.builder(

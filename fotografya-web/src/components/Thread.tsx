@@ -31,24 +31,24 @@ function Bubble({ m, mine }: { m: ChatMessage; mine: boolean }) {
     <div className={clsx("flex", mine ? "justify-end" : "justify-start")}>
       <div className={clsx("max-w-[78%] sm:max-w-[62%]", mine ? "items-end" : "items-start", "flex flex-col gap-1")}>
         {m.photo && img && (
-          <Link href={`/p/${m.photo.id}`} className="block overflow-hidden bg-mat p-1.5">
+          <Link href={`/p/${m.photo.id}`} className="block overflow-hidden bg-surface p-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img.url} alt={m.photo.title ?? ""} className="block max-h-[320px] w-auto max-w-full" />
-            <span className="block px-1 pb-0.5 pt-1.5 text-xs text-muted">{m.photo.title ?? m.photo.user.display_name}</span>
+            <span className="block px-1 pb-0.5 pt-1.5 text-xs text-ink-muted">{m.photo.title ?? m.photo.user.display_name}</span>
           </Link>
         )}
         {m.location && (
           <a href={`/map?lat=${m.location.latitude}&lng=${m.location.longitude}&z=12&layer=photos`}
-            className={clsx("inline-flex items-center gap-1.5 rounded-[18px] px-3.5 py-2 text-[15px]", mine ? "bg-ink text-mat" : "bg-mat")}>
+            className={clsx("inline-flex items-center gap-1.5 rounded-[18px] px-3.5 py-2 text-[15px]", mine ? "bg-ink text-surface" : "bg-surface")}>
             <MapPin className="h-4 w-4" /> {m.location.name || t("shared_location")}
           </a>
         )}
         {m.body && (
-          <p className={clsx("whitespace-pre-wrap break-words rounded-[18px] px-3.5 py-2 text-[15px] leading-snug", mine ? "rounded-br-[6px] bg-ink text-mat" : "rounded-bl-[6px] bg-mat")}>
+          <p className={clsx("whitespace-pre-wrap break-words rounded-[18px] px-3.5 py-2 text-[15px] leading-snug", mine ? "rounded-br-[6px] bg-ink text-surface" : "rounded-bl-[6px] bg-surface")}>
             {m.body}
           </p>
         )}
-        <span className="tnum px-1 text-[11px] text-muted">{time}</span>
+        <span className="tnum px-1 text-[11px] text-ink-muted">{time}</span>
       </div>
     </div>
   );
@@ -166,14 +166,14 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
           <Avatar name={other.display_name} url={other.avatar_url} size={38} />
           <span className="min-w-0">
             <span className="block truncate font-semibold">{other.display_name}</span>
-            <span className="block truncate text-xs text-muted">@{other.username}</span>
+            <span className="block truncate text-xs text-ink-muted">@{other.username}</span>
           </span>
         </Link>
         {cid && (
           <div className="relative">
             <button type="button" onClick={() => setMenu((x) => !x)} aria-label={t("more")} aria-expanded={menu} className="rounded-full p-2 hover:bg-ink/5"><MoreHorizontal className="h-5 w-5" /></button>
             {menu && (
-              <div className="absolute right-0 top-11 z-20 w-48 border border-line bg-mat p-1.5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.25)]">
+              <div className="absolute right-0 top-11 z-20 w-48 border border-line bg-surface p-1.5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.25)]">
                 <button type="button" className="block w-full rounded-md px-3 py-2 text-left text-[15px] text-danger hover:bg-ink/5"
                   onClick={() => window.confirm(t("block_confirm", { name: other.display_name })) && act.mutate("block")}>
                   {t("block")}
@@ -191,26 +191,26 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
           if (el.scrollTop < 120 && q.hasNextPage && !q.isFetchingNextPage) q.fetchNextPage();
         }}>
         <div ref={content}>
-        {!cid && <p className="mx-auto mt-10 max-w-[44ch] text-center text-sm text-muted">{t("new_hint", { name: other.display_name })}</p>}
+        {!cid && <p className="mx-auto mt-10 max-w-[44ch] text-center text-sm text-ink-muted">{t("new_hint", { name: other.display_name })}</p>}
         <div className="flex flex-col gap-2.5">
           {messages.map((m, i) => {
             const showDay = i === 0 || new Date(messages[i - 1]!.created_at).toDateString() !== new Date(m.created_at).toDateString();
             return (
               <div key={m.id} className="flex flex-col gap-2.5">
-                {showDay && <p className="my-2 text-center text-xs font-medium text-muted">{dayLabel(m.created_at, locale)}</p>}
+                {showDay && <p className="my-2 text-center text-xs font-medium text-ink-muted">{dayLabel(m.created_at, locale)}</p>}
                 <Bubble m={m} mine={m.sender_id === meId} />
               </div>
             );
           })}
         </div>
-        {seen && <p className="mt-1 px-1 text-right text-[11px] text-muted">{t("seen")}</p>}
+        {seen && <p className="mt-1 px-1 text-right text-[11px] text-ink-muted">{t("seen")}</p>}
         </div>
       </div>
 
       {conversation?.is_request_to_me && conversation.status === "request" ? (
-        <div className="border-t border-line bg-mat px-4 py-4">
+        <div className="border-t border-line bg-surface px-4 py-4">
           <p className="text-[15px]">{t("request_from", { name: other.display_name })}</p>
-          <p className="mt-1 text-sm text-muted">{t("request_hint")}</p>
+          <p className="mt-1 text-sm text-ink-muted">{t("request_hint")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button busy={act.isPending && act.variables === "accept"} onClick={() => act.mutate("accept")}>{t("accept")}</Button>
             <Button variant="secondary" onClick={() => act.mutate("decline")}>{t("decline")}</Button>
@@ -219,11 +219,11 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
         </div>
       ) : (
         <div className="border-t border-line px-3 py-3 sm:px-4">
-          {pendingMine && <p className="mb-2 text-xs text-muted">{t("pending_hint")}</p>}
+          {pendingMine && <p className="mb-2 text-xs text-ink-muted">{t("pending_hint")}</p>}
           {send.error && <div className="mb-2"><Notice tone="error">{send.error instanceof ApiError ? send.error.message : t("error")}</Notice></div>}
           <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-            <button type="button" onClick={() => setPicker(true)} aria-label={t("attach_photo")} className="mb-0.5 rounded-full p-2.5 text-muted hover:bg-ink/5 hover:text-ink"><ImagePlus className="h-5 w-5" /></button>
-            <button type="button" onClick={shareLocation} aria-label={t("attach_location")} className="mb-0.5 rounded-full p-2.5 text-muted hover:bg-ink/5 hover:text-ink"><LocateFixed className="h-5 w-5" /></button>
+            <button type="button" onClick={() => setPicker(true)} aria-label={t("attach_photo")} className="mb-0.5 rounded-full p-2.5 text-ink-muted hover:bg-ink/5 hover:text-ink"><ImagePlus className="h-5 w-5" /></button>
+            <button type="button" onClick={shareLocation} aria-label={t("attach_location")} className="mb-0.5 rounded-full p-2.5 text-ink-muted hover:bg-ink/5 hover:text-ink"><LocateFixed className="h-5 w-5" /></button>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -232,10 +232,10 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
               maxLength={4000}
               placeholder={t("placeholder")}
               aria-label={t("placeholder")}
-              className="max-h-40 min-h-11 flex-1 resize-none rounded-[22px] border border-line bg-mat px-4 py-2.5 text-[15px] leading-snug outline-none [field-sizing:content] focus:border-ink"
+              className="max-h-40 min-h-11 flex-1 resize-none rounded-[22px] border border-line bg-surface px-4 py-2.5 text-[15px] leading-snug outline-none [field-sizing:content] focus:border-ink"
             />
             <button type="submit" disabled={!text.trim() || send.isPending} aria-label={t("send")}
-              className="mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-mat transition-opacity disabled:opacity-30">
+              className="mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-surface transition-opacity disabled:opacity-30">
               <SendHorizontal className="h-[18px] w-[18px]" />
             </button>
           </form>

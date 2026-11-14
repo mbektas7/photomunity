@@ -1,11 +1,18 @@
-import "@fontsource-variable/schibsted-grotesk";
 import "../globals.css";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Bricolage_Grotesque } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { routing } from "@/i18n/routing";
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz"],
+  variable: "--font-bricolage",
+  display: "swap",
+});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -22,8 +29,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#e6e6e3" },
-    { media: "(prefers-color-scheme: dark)", color: "#121315" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f3f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1115" },
   ],
 };
 
@@ -32,7 +39,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   return (
-    <html lang={locale}>
+    <html lang={locale} className={bricolage.variable}>
       <body className="min-h-dvh">
         <NextIntlClientProvider>
           <Providers>{children}</Providers>

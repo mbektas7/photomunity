@@ -40,7 +40,7 @@ function SettingsView() {
 
   return (
     <div className="mx-auto max-w-[720px] px-4 pt-8 sm:px-6 sm:pt-12">
-      <Link href={`/c/${slug}`} className="text-sm text-muted hover:text-ink">← {c.name}</Link>
+      <Link href={`/c/${slug}`} className="text-sm text-ink-muted hover:text-ink">← {c.name}</Link>
       <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("settings_title")}</h1>
       {created && <div className="mt-6"><Notice tone="success">{t("created")}</Notice></div>}
       <Images c={c} />
@@ -54,7 +54,7 @@ function Section({ title, lead, children }: { title: string; lead?: string; chil
   return (
     <section className="mt-12 border-t border-line pt-8">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">{title}</h2>
-      {lead && <p className="mt-1 text-[15px] text-muted">{lead}</p>}
+      {lead && <p className="mt-1 text-[15px] text-ink-muted">{lead}</p>}
       <div className="mt-6">{children}</div>
     </section>
   );
@@ -80,16 +80,16 @@ function Images({ c }: { c: Community }) {
         <button type="button" onClick={() => cover.current?.click()} className="group relative block aspect-[3/1] w-full overflow-hidden bg-ink/[0.06]" aria-label={t("change_cover")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {c.cover_url && <img src={c.cover_url} alt="" className="h-full w-full object-cover" />}
-          <span className="absolute inset-0 flex items-center justify-center gap-2 text-sm font-semibold text-muted group-hover:bg-black/35 group-hover:text-white">
+          <span className="absolute inset-0 flex items-center justify-center gap-2 text-sm font-semibold text-ink-muted group-hover:bg-black/35 group-hover:text-white">
             <Camera className="h-4 w-4" /> {up.isPending && up.variables?.kind === "cover" ? t("uploading") : c.cover_url ? t("change_cover") : t("add_cover")}
           </span>
         </button>
-        <button type="button" onClick={() => logo.current?.click()} className="absolute -bottom-8 left-5 rounded-[22px] ring-4 ring-wall" aria-label={t("change_logo")}>
+        <button type="button" onClick={() => logo.current?.click()} className="absolute -bottom-8 left-5 rounded-[22px] ring-4 ring-bg" aria-label={t("change_logo")}>
           <CommunityLogo name={c.name} url={c.logo_url} size={88} />
-          <span className="absolute -bottom-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink text-mat"><Camera className="h-4 w-4" /></span>
+          <span className="absolute -bottom-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink text-surface"><Camera className="h-4 w-4" /></span>
         </button>
       </div>
-      <p className="mt-12 text-sm text-muted">{t("images_hint")}</p>
+      <p className="mt-12 text-sm text-ink-muted">{t("images_hint")}</p>
       {up.error && <div className="mt-3"><Notice tone="error">{up.error instanceof ApiError ? up.error.message : t("error")}</Notice></div>}
       <input ref={logo} type="file" accept={TYPES} className="sr-only" onChange={pick("logo")} />
       <input ref={cover} type="file" accept={TYPES} className="sr-only" onChange={pick("cover")} />
@@ -149,13 +149,13 @@ function Admins({ c }: { c: Community }) {
         <li className="flex items-center gap-3 py-3">
           <Avatar name={c.owner.display_name} url={c.owner.avatar_url} size={36} />
           <span className="flex-1 font-medium">{c.owner.display_name}</span>
-          <span className="text-sm text-muted">{t("role.owner")}</span>
+          <span className="text-sm text-ink-muted">{t("role.owner")}</span>
         </li>
         {c.admins.map((a) => (
           <li key={a.id} className="flex items-center gap-3 py-3">
             <Avatar name={a.display_name} url={a.avatar_url} size={36} />
-            <span className="flex-1"><span className="font-medium">{a.display_name}</span> <span className="text-sm text-muted">@{a.username}</span></span>
-            <button type="button" onClick={() => remove.mutate(a.username)} className="rounded-full p-2 text-muted hover:bg-ink/5 hover:text-ink" aria-label={t("remove_admin", { name: a.display_name })}>
+            <span className="flex-1"><span className="font-medium">{a.display_name}</span> <span className="text-sm text-ink-muted">@{a.username}</span></span>
+            <button type="button" onClick={() => remove.mutate(a.username)} className="rounded-full p-2 text-ink-muted hover:bg-ink/5 hover:text-ink" aria-label={t("remove_admin", { name: a.display_name })}>
               <X className="h-4 w-4" />
             </button>
           </li>

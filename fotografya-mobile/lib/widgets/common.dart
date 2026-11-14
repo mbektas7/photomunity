@@ -39,7 +39,7 @@ class Avatar extends StatelessWidget {
       decoration: BoxDecoration(color: p.ink, shape: BoxShape.circle),
       child: Text(
         _initials,
-        style: font(size * 0.38, weight: 600, color: p.mat),
+        style: font(size * 0.38, weight: 600, color: p.surface),
       ),
     );
   }
@@ -113,7 +113,7 @@ class Notice extends StatelessWidget {
               height: 1.4,
               color: tone == NoticeTone.error
                   ? p.danger
-                  : (tone == NoticeTone.info ? p.muted : p.ink),
+                  : (tone == NoticeTone.info ? p.inkMuted : p.ink),
             ),
           ),
           if (action != null)

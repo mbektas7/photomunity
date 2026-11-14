@@ -39,7 +39,7 @@ function Verify() {
   if (verify.isError || !token) {
     return <Notice tone="error">{verify.error instanceof ApiError ? verify.error.message : t("invalid_link")}</Notice>;
   }
-  return <p className="text-muted">{t("verifying")}</p>;
+  return <p className="text-ink-muted">{t("verifying")}</p>;
 }
 
 export default function VerifyEmailPage() {

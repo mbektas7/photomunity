@@ -68,7 +68,7 @@ class ExploreScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text(
                           t('explore.lead'),
-                          style: font(15, color: p.muted),
+                          style: font(15, color: p.inkMuted),
                         ),
                       ],
                     ),
@@ -89,7 +89,7 @@ class ExploreScreen extends ConsumerWidget {
                   sliver: SliverToBoxAdapter(
                     child: Text(
                       t('explore.empty'),
-                      style: font(15, color: p.muted),
+                      style: font(15, color: p.inkMuted),
                     ),
                   ),
                 )

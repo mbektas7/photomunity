@@ -81,7 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(height: 12),
                 ],
                 Material(
-                  color: context.palette.mat,
+                  color: context.palette.surface,
                   child: ListTile(
                     onTap: () => context.push('/pro'),
                     leading: const ProBadge(),
@@ -97,7 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       me.isPro
                           ? t('pro.settings_manage')
                           : t('pro.settings_body'),
-                      style: font(13, color: context.palette.muted),
+                      style: font(13, color: context.palette.inkMuted),
                     ),
                     trailing: const Icon(Icons.chevron_right),
                   ),
@@ -326,7 +326,7 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
                       _lat != null
                           ? t('settings.map_location_set')
                           : t('settings.map_location_hint'),
-                      style: font(13, height: 1.4, color: p.muted),
+                      style: font(13, height: 1.4, color: p.inkMuted),
                     ),
                   ],
                 ),
@@ -361,7 +361,7 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
               FilterChip(
                 label: Text(t('specialties.$s')),
                 selected: _specs.contains(s),
-                labelStyle: font(14, color: _specs.contains(s) ? p.mat : p.ink),
+                labelStyle: font(14, color: _specs.contains(s) ? p.surface : p.ink),
                 side: BorderSide(color: _specs.contains(s) ? p.ink : p.line),
                 onSelected: (on) => setState(
                   () => _specs = on
@@ -380,7 +380,7 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
           ),
           subtitle: Text(
             _public ? t('settings.public_on') : t('settings.public_off'),
-            style: font(13, height: 1.4, color: p.muted),
+            style: font(13, height: 1.4, color: p.inkMuted),
           ),
           value: _public,
           onChanged: (v) => setState(() => _public = v),
@@ -482,7 +482,7 @@ class _EquipmentSectionState extends ConsumerState<_EquipmentSection> {
           Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.fromLTRB(12, 10, 4, 12),
-            color: p.mat,
+            color: p.surface,
             child: Column(
               children: [
                 Row(
@@ -505,7 +505,7 @@ class _EquipmentSectionState extends ConsumerState<_EquipmentSection> {
                     ),
                     IconButton(
                       tooltip: t('settings.remove'),
-                      icon: Icon(Icons.delete_outline, color: p.muted),
+                      icon: Icon(Icons.delete_outline, color: p.inkMuted),
                       onPressed: () => setState(() => _rows.removeAt(i)),
                     ),
                   ],
@@ -658,7 +658,7 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
         const SizedBox(height: 2),
         Text(
           t('settings.change_password_hint'),
-          style: font(13, color: p.muted),
+          style: font(13, color: p.inkMuted),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -706,7 +706,7 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
               const SizedBox(height: 4),
               Text(
                 t('settings.delete_account_body'),
-                style: font(13.5, height: 1.45, color: p.muted),
+                style: font(13.5, height: 1.45, color: p.inkMuted),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -822,7 +822,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
                             _busy == 'cover'
                                 ? t('settings.uploading')
                                 : t('settings.add_cover'),
-                            style: font(14, color: p.muted),
+                            style: font(14, color: p.inkMuted),
                           ),
                   ),
                 ),
@@ -837,7 +837,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
                       Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: p.wall, width: 4),
+                          border: Border.all(color: p.bg, width: 4),
                         ),
                         child: Opacity(
                           opacity: _busy == 'avatar' ? 0.5 : 1,
@@ -857,7 +857,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
                           child: Icon(
                             Icons.photo_camera_outlined,
                             size: 16,
-                            color: p.mat,
+                            color: p.surface,
                           ),
                         ),
                       ),
@@ -890,7 +890,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
         ),
         Text(
           t('settings.images_hint'),
-          style: font(13, height: 1.4, color: p.muted),
+          style: font(13, height: 1.4, color: p.inkMuted),
         ),
       ],
     );

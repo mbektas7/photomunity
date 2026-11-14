@@ -93,7 +93,7 @@ class UserRow extends StatelessWidget {
                   '@${user.username}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: font(13, color: p.muted),
+                  style: font(13, color: p.inkMuted),
                 ),
               ],
             ),
@@ -115,7 +115,7 @@ class PhotoPrint extends StatelessWidget {
     final img = photo.feed;
     final locale = L10n.of(context).locale.languageCode;
     return ColoredBox(
-      color: p.mat,
+      color: p.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -154,7 +154,7 @@ class PhotoPrint extends StatelessWidget {
                   Text(
                     DateFormat.yMMMd(locale)
                         .format(photo.publishedAt!.toLocal()),
-                    style: font(13, color: p.muted),
+                    style: font(13, color: p.inkMuted),
                   ),
                 ],
               ],

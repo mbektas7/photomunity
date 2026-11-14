@@ -96,7 +96,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                 ),
                 Text(
                   t('pro.perk.${k}_body'),
-                  style: font(14, height: 1.4, color: p.muted),
+                  style: font(14, height: 1.4, color: p.inkMuted),
                 ),
               ],
             ),
@@ -123,11 +123,11 @@ class _ProScreenState extends ConsumerState<ProScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Text(t('pro.lead'), style: font(16, height: 1.45, color: p.muted)),
+          Text(t('pro.lead'), style: font(16, height: 1.45, color: p.inkMuted)),
           const SizedBox(height: 22),
           if (status?.isPro ?? false)
             Container(
-              color: p.mat,
+              color: p.surface,
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +149,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                         'date': DateFormat.yMMMMd(locale)
                             .format(status.periodEnd!),
                       }),
-                      style: font(14, color: p.muted),
+                      style: font(14, color: p.inkMuted),
                     ),
                   ],
                   if (status.status == 'grace') ...[
@@ -160,7 +160,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                   if (status.store == 'stripe')
                     Text(
                       t('pro.manage_web'),
-                      style: font(13.5, height: 1.4, color: p.muted),
+                      style: font(13.5, height: 1.4, color: p.inkMuted),
                     )
                   else
                     OutlinedButton(
@@ -205,7 +205,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
-                                        color: p.mat,
+                                        color: p.surface,
                                         border: Border.all(
                                           color: _yearly == yearly
                                               ? p.ink
@@ -223,7 +223,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                                                   ? 'pro.yearly'
                                                   : 'pro.monthly',
                                             ),
-                                            style: font(13.5, color: p.muted),
+                                            style: font(13.5, color: p.inkMuted),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
@@ -240,7 +240,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                                                   ? 'pro.per_yearly'
                                                   : 'pro.per_monthly',
                                             ),
-                                            style: font(12, color: p.muted),
+                                            style: font(12, color: p.inkMuted),
                                           ),
                                         ],
                                       ),
@@ -279,7 +279,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                     ? 'pro.fine_print_ios'
                     : 'pro.fine_print_android',
               ),
-              style: font(12, height: 1.45, color: p.muted),
+              style: font(12, height: 1.45, color: p.inkMuted),
             ),
           ],
           const SizedBox(height: 28),

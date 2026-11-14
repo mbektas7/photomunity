@@ -123,11 +123,11 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           const SizedBox(height: 6),
           Text(
             '${_label.isEmpty ? '' : '$_label · '}${_lat!.toStringAsFixed(2)}, ${_lng!.toStringAsFixed(2)}',
-            style: font(13, color: p.muted),
+            style: font(13, color: p.inkMuted),
           ),
           const SizedBox(height: 14),
           Container(
-            color: best != null ? p.ink : p.mat,
+            color: best != null ? p.ink : p.surface,
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,8 +137,8 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                   style: font(
                     13,
                     color: best != null
-                        ? p.mat.withValues(alpha: 0.7)
-                        : p.muted,
+                        ? p.surface.withValues(alpha: 0.7)
+                        : p.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -149,7 +149,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                   style: font(
                     24,
                     weight: 600,
-                    color: best != null ? p.mat : p.ink,
+                    color: best != null ? p.surface : p.ink,
                   ),
                 ),
                 if (plan.coreTransit != null)
@@ -162,8 +162,8 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                     style: font(
                       13,
                       color: best != null
-                          ? p.mat.withValues(alpha: 0.7)
-                          : p.muted,
+                          ? p.surface.withValues(alpha: 0.7)
+                          : p.inkMuted,
                     ),
                   ),
               ],
@@ -178,7 +178,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                     : plan.coreTransit == null
                     ? t('planner.why_core')
                     : t('planner.why_dark'),
-                style: font(13, height: 1.4, color: p.muted),
+                style: font(13, height: 1.4, color: p.inkMuted),
               ),
             ),
           const SizedBox(height: 1),
@@ -186,7 +186,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
             children: [
               Expanded(
                 child: Container(
-                  color: p.mat,
+                  color: p.surface,
                   padding: const EdgeInsets.all(14),
                   child: Row(
                     children: [
@@ -211,7 +211,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                               t('planner.illuminated', {
                                 'pct': (plan.illumination * 100).round(),
                               }),
-                              style: font(12.5, color: p.muted),
+                              style: font(12.5, color: p.inkMuted),
                             ),
                           ],
                         ),
@@ -223,14 +223,14 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
               const SizedBox(width: 1),
               Expanded(
                 child: Container(
-                  color: p.mat,
+                  color: p.surface,
                   padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         t('planner.dark_window'),
-                        style: font(12.5, color: p.muted),
+                        style: font(12.5, color: p.inkMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -247,7 +247,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           ),
           const SizedBox(height: 14),
           Container(
-            color: p.mat,
+            color: p.surface,
             padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
             child: Column(
               children: [
@@ -263,7 +263,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     t('planner.chart_hint'),
-                    style: font(11.5, color: p.muted),
+                    style: font(11.5, color: p.inkMuted),
                   ),
                 ),
               ],
@@ -271,7 +271,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           ),
           const SizedBox(height: 14),
           Container(
-            color: p.mat,
+            color: p.surface,
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +283,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 const SizedBox(height: 8),
                 for (final (name, pos, color) in [
                   (t('planner.core'), core, p.accent),
-                  (t('planner.moon'), moon, p.muted),
+                  (t('planner.moon'), moon, p.inkMuted),
                 ])
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
@@ -305,7 +305,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                           pos.alt < 0
                               ? t('planner.below_horizon')
                               : '${compassPoint(pos.az, locale)} ${pos.az.round()}° · ${pos.alt.round()}°',
-                          style: font(14, color: pos.alt < 0 ? p.muted : p.ink),
+                          style: font(14, color: pos.alt < 0 ? p.inkMuted : p.ink),
                         ),
                       ],
                     ),
@@ -339,7 +339,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 SizedBox(
                   width: (MediaQuery.sizeOf(context).width - 33) / 2,
                   child: Container(
-                    color: p.mat,
+                    color: p.surface,
                     padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +347,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                         Text(tm(v), style: font(17, weight: 600, color: p.ink)),
                         Text(
                           t('planner.event.$k'),
-                          style: font(12.5, color: p.muted),
+                          style: font(12.5, color: p.inkMuted),
                         ),
                       ],
                     ),
@@ -358,7 +358,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           const SizedBox(height: 12),
           Text(
             t('planner.accuracy'),
-            style: font(11.5, height: 1.4, color: p.muted),
+            style: font(11.5, height: 1.4, color: p.inkMuted),
           ),
         ],
       ),
@@ -459,7 +459,7 @@ class _ChartPainter extends CustomPainter {
       Offset(0, y(0)),
       Offset(size.width, y(0)),
       Paint()
-        ..color = p.muted
+        ..color = p.inkMuted
         ..strokeWidth = 1,
     );
 
@@ -483,7 +483,7 @@ class _ChartPainter extends CustomPainter {
     }
 
     curve((v) => v.sun.alt, const Color(0xFFE8A33D), 2);
-    curve((v) => v.moon.alt, p.muted, 2);
+    curve((v) => v.moon.alt, p.inkMuted, 2);
     curve((v) => v.core.alt, p.accent, 3);
     final ax = x(at.millisecondsSinceEpoch);
     canvas.drawLine(
@@ -500,7 +500,7 @@ class _ChartPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: fmt.format(DateTime.fromMillisecondsSinceEpoch(t.round())),
-          style: font(10, color: p.muted),
+          style: font(10, color: p.inkMuted),
         ),
         textDirection: TextDirection.ltr,
       )..layout();

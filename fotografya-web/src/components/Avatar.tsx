@@ -11,7 +11,7 @@ export function Avatar({ name, url, size = 40, className }: { name: string; url?
     <span
       aria-hidden
       style={style}
-      className={clsx("inline-flex shrink-0 items-center justify-center rounded-full bg-ink font-semibold text-mat", className)}
+      className={clsx("inline-flex shrink-0 items-center justify-center rounded-full bg-ink font-semibold text-surface", className)}
     >
       {initials(name)}
     </span>

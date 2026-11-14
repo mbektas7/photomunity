@@ -31,7 +31,7 @@ export default function NewCommunityPage() {
   return (
     <div className="mx-auto max-w-[620px] px-4 pt-8 sm:pt-12">
       <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("new_title")}</h1>
-      <p className="mt-3 text-muted">{t("new_lead")}</p>
+      <p className="mt-3 text-ink-muted">{t("new_lead")}</p>
       <form
         className="mt-8 flex flex-col gap-5"
         onSubmit={(e) => {

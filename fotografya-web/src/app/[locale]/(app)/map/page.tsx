@@ -30,7 +30,7 @@ function clusterEl(c: MapCluster) {
     badge.textContent = String(c.count);
     el.appendChild(badge);
   } else {
-    el.className = "flex items-center justify-center rounded-full bg-[var(--ink)] text-[13px] font-semibold text-[var(--mat)] ring-4 ring-[color-mix(in_srgb,var(--ink)_18%,transparent)]";
+    el.className = "flex items-center justify-center rounded-full bg-[var(--ink)] text-[13px] font-semibold text-[var(--surface)] ring-4 ring-[color-mix(in_srgb,var(--ink)_18%,transparent)]";
     el.style.cssText = `width:${size}px;height:${size}px`;
     el.textContent = String(c.count);
   }
@@ -39,7 +39,7 @@ function clusterEl(c: MapCluster) {
 
 function avatarEl(p: MapPhotographer, selected: boolean) {
   const el = document.createElement("div");
-  el.className = clsx("flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[3px] bg-[var(--ink)] text-[14px] font-semibold text-[var(--mat)] shadow-[0_6px_18px_-6px_rgba(0,0,0,.5)]",
+  el.className = clsx("flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-[3px] bg-[var(--ink)] text-[14px] font-semibold text-[var(--surface)] shadow-[0_6px_18px_-6px_rgba(0,0,0,.5)]",
     selected ? "border-[var(--accent)]" : "border-white");
   if (p.user.avatar_url) {
     const img = document.createElement("img");
@@ -127,23 +127,23 @@ function MapScreen() {
       <MapView initial={initial} markers={markers} onView={setView} flyTo={flyTo} />
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 sm:left-4 sm:top-4">
-        <div className="pointer-events-auto flex rounded-full border border-line bg-mat p-1 shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)]">
+        <div className="pointer-events-auto flex rounded-full border border-line bg-surface p-1 shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)]">
           {(["photographers", "photos"] as const).map((k) => (
             <button key={k} type="button" onClick={() => { setLayer(k); setSelected(null); }} aria-pressed={layer === k}
-              className={clsx("h-9 rounded-full px-4 text-sm font-medium", layer === k ? "bg-ink text-mat" : "text-muted hover:text-ink")}>
+              className={clsx("h-9 rounded-full px-4 text-sm font-medium", layer === k ? "bg-ink text-surface" : "text-ink-muted hover:text-ink")}>
               {t(`layer_${k}`)}
             </button>
           ))}
         </div>
         {layer === "photographers" && (
           <select value={specialty} onChange={(e) => setSpecialty(e.target.value)} aria-label={t("specialty")}
-            className="pointer-events-auto h-10 rounded-full border border-line bg-mat px-4 text-sm shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)]">
+            className="pointer-events-auto h-10 rounded-full border border-line bg-surface px-4 text-sm shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)]">
             <option value="">{t("all_specialties")}</option>
             {SPECIALTIES.map((s) => <option key={s} value={s}>{ts(s)}</option>)}
           </select>
         )}
         {total !== undefined && (
-          <span className="pointer-events-auto rounded-full bg-mat/90 px-3 py-1.5 text-xs text-muted backdrop-blur">
+          <span className="pointer-events-auto rounded-full bg-surface/90 px-3 py-1.5 text-xs text-ink-muted backdrop-blur">
             {t(layer === "photographers" ? "count_photographers" : "count_photos", { count: total })}
           </span>
         )}
@@ -159,15 +159,15 @@ function SelectedCard({ s, meId, onClose }: { s: { kind: "user"; p: MapPhotograp
   const ts = useTranslations("specialties");
   const locale = useLocale();
   return (
-    <div className="absolute inset-x-3 bottom-3 z-10 bg-mat p-4 shadow-[0_18px_50px_-15px_rgba(0,0,0,.5)] sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-20 sm:w-[340px]">
-      <button type="button" onClick={onClose} aria-label={t("close")} className="absolute right-2 top-2 rounded-full p-1.5 text-muted hover:bg-ink/5"><X className="h-4 w-4" /></button>
+    <div className="absolute inset-x-3 bottom-3 z-10 bg-surface p-4 shadow-[0_18px_50px_-15px_rgba(0,0,0,.5)] sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-20 sm:w-[340px]">
+      <button type="button" onClick={onClose} aria-label={t("close")} className="absolute right-2 top-2 rounded-full p-1.5 text-ink-muted hover:bg-ink/5"><X className="h-4 w-4" /></button>
       {s.kind === "user" ? (
         <>
           <div className="flex items-center gap-3 pr-8">
             <Avatar name={s.p.user.display_name} url={s.p.user.avatar_url} size={52} />
             <div className="min-w-0">
               <p className="truncate font-semibold">{s.p.user.display_name}</p>
-              <p className="flex items-center gap-1 truncate text-sm text-muted">
+              <p className="flex items-center gap-1 truncate text-sm text-ink-muted">
                 <MapPin className="h-3.5 w-3.5 shrink-0" /> {[s.p.city, countryName(s.p.country, locale)].filter(Boolean).join(", ") || t("approximate")}
               </p>
             </div>
@@ -185,7 +185,7 @@ function SelectedCard({ s, meId, onClose }: { s: { kind: "user"; p: MapPhotograp
               </Link>
             )}
           </div>
-          <p className="mt-3 text-xs text-muted">{t("privacy_note")}</p>
+          <p className="mt-3 text-xs text-ink-muted">{t("privacy_note")}</p>
         </>
       ) : (
         <>
@@ -194,7 +194,7 @@ function SelectedCard({ s, meId, onClose }: { s: { kind: "user"; p: MapPhotograp
             {s.p.thumb_url && <img src={s.p.thumb_url} alt={s.p.title ?? ""} className="max-h-[220px] w-full bg-ink/5 object-contain" />}
           </Link>
           <p className="mt-3 font-semibold">{s.p.title}</p>
-          <Link href={`/u/${s.p.user.username}`} className="text-sm text-muted hover:text-ink">{s.p.user.display_name}</Link>
+          <Link href={`/u/${s.p.user.username}`} className="text-sm text-ink-muted hover:text-ink">{s.p.user.display_name}</Link>
           <Link href={`/p/${s.p.photo_id}`} className={buttonClass("primary", "mt-4 h-10 w-full")}>{t("open_photo")}</Link>
         </>
       )}

@@ -19,9 +19,9 @@ export default function NewContestPage() {
   });
   return (
     <div className="mx-auto max-w-[760px] px-4 pt-8 sm:px-6 sm:pt-12">
-      {community.data && <Link href={`/c/${slug}?tab=contests`} className="text-sm text-muted hover:text-ink">← {community.data.name}</Link>}
+      {community.data && <Link href={`/c/${slug}?tab=contests`} className="text-sm text-ink-muted hover:text-ink">← {community.data.name}</Link>}
       <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("new_title")}</h1>
-      <p className="mt-3 max-w-[60ch] text-muted">{t("new_lead")}</p>
+      <p className="mt-3 max-w-[60ch] text-ink-muted">{t("new_lead")}</p>
       <div className="mt-10">
         <ContestForm
           busy={create.isPending}

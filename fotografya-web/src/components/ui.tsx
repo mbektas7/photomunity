@@ -2,12 +2,12 @@
 
 import clsx from "clsx";
 import { forwardRef } from "react";
-import { buttonClass } from "@/lib/button-class";
+import { buttonClass, type ButtonVariant } from "@/lib/button-class";
 
 export { buttonClass };
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: ButtonVariant;
   busy?: boolean;
 };
 
@@ -37,11 +37,11 @@ export const TextField = forwardRef<HTMLInputElement, FieldProps>(function TextF
         id={fieldId}
         aria-invalid={!!error}
         aria-describedby={hint || error ? `${fieldId}-hint` : undefined}
-        className="h-11 rounded-[10px] border border-line bg-mat px-3.5 text-[15px] outline-none transition-colors placeholder:text-muted/70 focus:border-ink aria-[invalid=true]:border-danger"
+        className="h-11 rounded-box border border-ring-idle bg-surface px-4 text-[15px] outline-none transition-colors placeholder:text-ink-muted focus:border-accent aria-[invalid=true]:border-danger"
         {...rest}
       />
       {(error || hint) && (
-        <p id={`${fieldId}-hint`} className={clsx("text-sm", error ? "text-danger" : "text-muted")}>
+        <p id={`${fieldId}-hint`} className={clsx("text-sm", error ? "text-danger" : "text-ink-muted")}>
           {error ?? hint}
         </p>
       )}
@@ -61,10 +61,10 @@ export function TextArea({ label, hint, id, ...rest }: AreaProps) {
       <textarea
         id={fieldId}
         rows={4}
-        className="rounded-[10px] border border-line bg-mat px-3.5 py-3 text-[15px] leading-relaxed outline-none focus:border-ink"
+        className="rounded-box border border-ring-idle bg-surface px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-accent"
         {...rest}
       />
-      {hint && <p className="text-sm text-muted">{hint}</p>}
+      {hint && <p className="text-sm text-ink-muted">{hint}</p>}
     </div>
   );
 }
@@ -74,10 +74,10 @@ export function Notice({ tone = "info", children }: { tone?: "info" | "error" | 
     <div
       role={tone === "error" ? "alert" : "status"}
       className={clsx(
-        "rounded-[10px] border px-4 py-3 text-[15px]",
-        tone === "error" && "border-danger/40 text-danger",
-        tone === "success" && "border-accent/40 text-ink",
-        tone === "info" && "border-line text-muted",
+        "rounded-box px-4 py-3 text-[15px]",
+        tone === "error" && "bg-danger/10 text-danger",
+        tone === "success" && "bg-accent-tint text-ink",
+        tone === "info" && "bg-surface-2 text-ink-muted",
       )}
     >
       {children}
@@ -90,12 +90,12 @@ export function Toggle({ checked, onChange, label, hint }: { checked: boolean; o
     <label className="flex cursor-pointer items-start justify-between gap-6">
       <span>
         <span className="block text-[15px] font-medium">{label}</span>
-        {hint && <span className="mt-0.5 block text-sm text-muted">{hint}</span>}
+        {hint && <span className="mt-0.5 block text-sm text-ink-muted">{hint}</span>}
       </span>
       <span className="relative mt-0.5 inline-flex shrink-0">
         <input type="checkbox" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <span className="h-7 w-12 rounded-full bg-line transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
-        <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-mat transition-transform peer-checked:translate-x-5" />
+        <span className="h-7 w-12 rounded-full bg-ring-idle transition-colors peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
+        <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
       </span>
     </label>
   );

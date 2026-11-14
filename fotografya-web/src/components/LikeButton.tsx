@@ -21,7 +21,7 @@ export function LikeButton({ id, liked, count, size = "md" }: { id: string; like
       className={clsx(
         "inline-flex items-center gap-1.5 rounded-full font-semibold transition-colors",
         size === "lg" ? "h-11 px-4 text-[15px]" : "h-9 px-3 text-sm",
-        liked ? "text-accent" : "text-ink hover:bg-ink/5",
+        liked ? "text-accent-text" : "text-ink hover:bg-ink/5",
       )}
     >
       <Heart
