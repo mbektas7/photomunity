@@ -14,6 +14,8 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
+import 'feed_screen.dart' show navClearance;
+import '../widgets/design.dart';
 
 const _types = {
   'jpg': 'image/jpeg',
@@ -190,166 +192,207 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     final t = L10n.of(context);
     final p = context.palette;
     final uploading = _progress != null;
+    final canPublish = _file != null && _issues.isEmpty && !uploading;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(t('upload.heading'))),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        children: [
-          Text(
-            t('upload.requirements'),
-            style: font(14.5, height: 1.45, color: p.inkMuted),
-          ),
-          const SizedBox(height: 18),
-          if (_file == null)
-            InkWell(
-              onTap: _pick,
-              child: Container(
-                height: 220,
-                decoration: BoxDecoration(
-                  color: p.surface,
-                  border: Border.all(color: p.line, width: 1.5),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      LucideIcons.imagePlus,
-                      size: 34,
-                      color: p.ink,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      t('upload.choose'),
-                      style: font(17, weight: 600, color: p.ink),
-                    ),
-                  ],
+    Widget field(TextEditingController c, String label, {int minLines = 1, int maxLines = 1, int? maxLength, String? hint}) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: font(14, weight: 500, color: p.inkMuted)),
+              TextField(
+                controller: c,
+                minLines: minLines,
+                maxLines: maxLines,
+                maxLength: maxLength,
+                style: font(19, weight: 600, color: p.ink),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  isDense: true,
+                  filled: false,
+                  counterText: '',
+                  contentPadding: const EdgeInsets.only(top: 6),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                 ),
               ),
-            )
-          else
-            Container(
-              color: p.surface,
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 380),
-                    child: Image.file(
-                      File(_file!.path),
-                      fit: BoxFit.contain,
-                      cacheWidth: 1200,
-                      errorBuilder: (_, _, _) => const SizedBox(
-                        height: 160,
-                        child: Center(child: Icon(LucideIcons.image)),
+            ],
+          ),
+        );
+
+    Widget iconTile(IconData icon) => Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(Radii.photo)),
+      child: Icon(icon, size: 22, color: p.ink),
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 68,
+        leading: _file == null
+            ? null
+            : IconButton(
+                tooltip: t('ui.close'),
+                icon: const Icon(LucideIcons.x, size: 28),
+                onPressed: uploading ? null : _reset,
+              ),
+        title: Text(t('upload.heading'), style: font(24, weight: 700, spacing: -0.7, color: p.ink)),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton(
+              onPressed: canPublish ? _publish : null,
+              child: Text(t('upload.publish')),
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, navClearance),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        children: [
+          SurfaceCard(
+            padding: const EdgeInsets.all(Space.s3),
+            child: _file == null
+                ? InkWell(
+                    onTap: _pick,
+                    borderRadius: BorderRadius.circular(Radii.photo),
+                    child: Container(
+                      height: 240,
+                      decoration: BoxDecoration(
+                        color: p.surface2,
+                        borderRadius: BorderRadius.circular(Radii.photo),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
+                            child: Icon(LucideIcons.imagePlus, size: 30, color: p.accentText),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(t('upload.choose'), style: font(18, weight: 700, color: p.ink)),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              t('upload.requirements'),
+                              textAlign: TextAlign.center,
+                              style: font(13.5, height: 1.4, color: p.inkMuted),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  Row(
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: Text(
-                          _file!.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: font(13, color: p.inkMuted),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 380),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(Radii.photo),
+                          child: Image.file(
+                            File(_file!.path),
+                            fit: BoxFit.contain,
+                            cacheWidth: 1200,
+                            errorBuilder: (_, _, _) => const SizedBox(
+                              height: 160,
+                              child: Center(child: Icon(LucideIcons.image)),
+                            ),
+                          ),
                         ),
                       ),
-                      if (!uploading)
-                        TextButton(
-                          onPressed: _pick,
-                          child: Text(t('upload.change')),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _file!.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.caption(p.inkMuted),
+                            ),
+                          ),
+                          if (!uploading)
+                            TextButton(onPressed: _pick, child: Text(t('upload.change'))),
+                        ],
+                      ),
+                      if (_issues.isNotEmpty)
+                        Notice(
+                          _issues.map((c) => t('quality.$c')).join('\n'),
+                          tone: NoticeTone.error,
                         ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          if (_issues.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Notice(
-              _issues.map((c) => t('quality.$c')).join('\n'),
-              tone: NoticeTone.error,
-            ),
-          ],
-          const SizedBox(height: 22),
-          TextField(
-            controller: _title,
-            maxLength: 150,
-            decoration: InputDecoration(labelText: t('upload.title')),
           ),
-          const SizedBox(height: 4),
-          TextField(
-            controller: _desc,
-            maxLength: 2000,
-            minLines: 3,
-            maxLines: 6,
-            decoration: InputDecoration(labelText: t('upload.description')),
-          ),
-          const SizedBox(height: 4),
-          TextField(
-            controller: _tags,
-            decoration: InputDecoration(
-              labelText: t('upload.tags'),
-              helperText: t('upload.tags_hint'),
-            ),
-          ),
-          const SizedBox(height: 22),
-          Divider(color: p.line),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  t('upload.location'),
-                  style: font(15, weight: 600, color: p.ink),
-                ),
-              ),
-              if (_location != null)
-                TextButton(
-                  onPressed: () => setState(() => _location = null),
-                  child: Text(t('upload.remove_location')),
-                )
-              else
-                TextButton.icon(
-                  onPressed: _locating ? null : _locate,
-                  icon: const Icon(LucideIcons.locateFixed, size: 18),
-                  label: Text(
-                    _locating
-                        ? t('upload.locating')
-                        : t('upload.use_my_location'),
+          const SizedBox(height: Space.s3),
+          SurfaceCard(
+            padding: const EdgeInsets.fromLTRB(Space.s4, 4, Space.s4, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                field(_title, t('upload.title'), maxLength: 150),
+                Divider(color: p.line),
+                field(_desc, t('upload.description'), minLines: 1, maxLines: 6, maxLength: 2000),
+                Divider(color: p.line),
+                field(_tags, t('upload.tags'), hint: t('upload.tags_hint')),
+                Divider(color: p.line),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      iconTile(LucideIcons.mapPin),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(t('upload.location'), style: font(17, weight: 600, color: p.ink)),
+                            Text(
+                              _locating
+                                  ? t('upload.locating')
+                                  : _location == null
+                                  ? t('upload.use_my_location')
+                                  : (_place.text.trim().isNotEmpty
+                                        ? _place.text.trim()
+                                        : '${_location!.latitude.toStringAsFixed(3)}, ${_location!.longitude.toStringAsFixed(3)}'),
+                              style: font(14, color: p.inkMuted, tabular: true),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _location != null,
+                        onChanged: _locating
+                            ? null
+                            : (on) => on ? _locate() : setState(() => _location = null),
+                      ),
+                    ],
                   ),
                 ),
-            ],
+                if (_location != null) ...[
+                  Divider(color: p.line),
+                  field(_place, t('upload.place_name'), hint: t('upload.place_placeholder')),
+                ],
+              ],
+            ),
           ),
-          if (_location == null)
-            Text(
-              t('upload.location_hint'),
-              style: font(13.5, height: 1.45, color: p.inkMuted),
-            )
-          else ...[
-            Text(
-              '${_location!.latitude}, ${_location!.longitude}',
-              style: font(13.5, color: p.inkMuted, tabular: true),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _place,
-              decoration: InputDecoration(
-                labelText: t('upload.place_name'),
-                hintText: t('upload.place_placeholder'),
-              ),
-            ),
-          ],
-          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Space.s3, Space.s4, Space.s3, 0),
+            child: Text(t('upload.location_hint'), style: font(14, height: 1.45, color: p.inkMuted)),
+          ),
+          const SizedBox(height: Space.s5),
           if (_error != null) ...[
             Notice(_error!, tone: NoticeTone.error),
             const SizedBox(height: 14),
           ],
           if (uploading) ...[
-            LinearProgressIndicator(value: _progress),
+            LinearProgressIndicator(value: _progress, borderRadius: BorderRadius.circular(4)),
             const SizedBox(height: 8),
             Text(
               t('upload.uploading', {'pct': (_progress! * 100).round()}),
@@ -357,17 +400,13 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             ),
             const SizedBox(height: 14),
           ],
-          FilledButton(
-            onPressed: _file == null || _issues.isNotEmpty || uploading
-                ? null
-                : _publish,
-            child: BusyLabel(busy: uploading, label: t('upload.publish')),
+          LargeButton(
+            label: t('upload.publish'),
+            busy: uploading,
+            onPressed: canPublish ? _publish : null,
           ),
           const SizedBox(height: 12),
-          Text(
-            t('upload.quality_note'),
-            style: font(13.5, height: 1.45, color: p.inkMuted),
-          ),
+          Text(t('upload.quality_note'), style: font(13.5, height: 1.45, color: p.inkMuted)),
         ],
       ),
     );
