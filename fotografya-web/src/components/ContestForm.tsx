@@ -102,10 +102,10 @@ export function ContestForm({ initial, locked = false, busy, error, submitLabel,
               value={p.title}
               maxLength={200}
               onChange={(e) => set("prizes", f.prizes.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-              className="h-11 min-w-0 flex-1 rounded-[10px] border border-line bg-surface px-3.5 text-[15px] outline-none focus:border-ink"
+              className="h-11 min-w-0 flex-1 rounded-box border border-ring-idle bg-surface px-3.5 text-[15px] outline-none focus:border-accent"
             />
             {f.prizes.length > 1 && (
-              <button type="button" onClick={() => set("prizes", f.prizes.filter((_, j) => j !== i))} className="rounded-full p-2 text-ink-muted hover:bg-ink/5" aria-label={t("remove_prize")}>
+              <button type="button" onClick={() => set("prizes", f.prizes.filter((_, j) => j !== i))} className="rounded-full p-2 text-ink-muted hover:bg-surface-2" aria-label={t("remove_prize")}>
                 <X className="h-4 w-4" />
               </button>
             )}

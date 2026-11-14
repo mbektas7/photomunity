@@ -127,7 +127,7 @@ function MapScreen() {
       <MapView initial={initial} markers={markers} onView={setView} flyTo={flyTo} />
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 sm:left-4 sm:top-4">
-        <div className="pointer-events-auto flex rounded-full border border-line bg-surface p-1 shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)]">
+        <div className="pointer-events-auto flex rounded-full border border-ring-idle bg-surface p-1 shadow-float">
           {(["photographers", "photos"] as const).map((k) => (
             <button key={k} type="button" onClick={() => { setLayer(k); setSelected(null); }} aria-pressed={layer === k}
               className={clsx("h-9 rounded-full px-4 text-sm font-medium", layer === k ? "bg-ink text-surface" : "text-ink-muted hover:text-ink")}>
@@ -137,7 +137,7 @@ function MapScreen() {
         </div>
         {layer === "photographers" && (
           <select value={specialty} onChange={(e) => setSpecialty(e.target.value)} aria-label={t("specialty")}
-            className="pointer-events-auto h-10 rounded-full border border-line bg-surface px-4 text-sm shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)]">
+            className="pointer-events-auto h-10 rounded-full border border-ring-idle bg-surface px-4 text-sm shadow-float">
             <option value="">{t("all_specialties")}</option>
             {SPECIALTIES.map((s) => <option key={s} value={s}>{ts(s)}</option>)}
           </select>
@@ -160,7 +160,7 @@ function SelectedCard({ s, meId, onClose }: { s: { kind: "user"; p: MapPhotograp
   const locale = useLocale();
   return (
     <div className="absolute inset-x-3 bottom-3 z-10 bg-surface p-4 shadow-[0_18px_50px_-15px_rgba(0,0,0,.5)] sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-20 sm:w-[340px]">
-      <button type="button" onClick={onClose} aria-label={t("close")} className="absolute right-2 top-2 rounded-full p-1.5 text-ink-muted hover:bg-ink/5"><X className="h-4 w-4" /></button>
+      <button type="button" onClick={onClose} aria-label={t("close")} className="absolute right-2 top-2 rounded-full p-1.5 text-ink-muted hover:bg-surface-2"><X className="h-4 w-4" /></button>
       {s.kind === "user" ? (
         <>
           <div className="flex items-center gap-3 pr-8">
@@ -174,7 +174,7 @@ function SelectedCard({ s, meId, onClose }: { s: { kind: "user"; p: MapPhotograp
           </div>
           {s.p.specialties.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-1.5">
-              {s.p.specialties.slice(0, 5).map((x) => <li key={x} className="rounded-full bg-ink/[0.06] px-2.5 py-1 text-xs">{ts.has(x) ? ts(x) : x}</li>)}
+              {s.p.specialties.slice(0, 5).map((x) => <li key={x} className="rounded-full bg-surface-2 px-2.5 py-1 text-xs">{ts.has(x) ? ts(x) : x}</li>)}
             </ul>
           )}
           <div className="mt-4 flex gap-2">
@@ -191,7 +191,7 @@ function SelectedCard({ s, meId, onClose }: { s: { kind: "user"; p: MapPhotograp
         <>
           <Link href={`/p/${s.p.photo_id}`} className="block pr-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {s.p.thumb_url && <img src={s.p.thumb_url} alt={s.p.title ?? ""} className="max-h-[220px] w-full bg-ink/5 object-contain" />}
+            {s.p.thumb_url && <img src={s.p.thumb_url} alt={s.p.title ?? ""} className="max-h-[220px] w-full bg-surface-2 object-contain" />}
           </Link>
           <p className="mt-3 font-semibold">{s.p.title}</p>
           <Link href={`/u/${s.p.user.username}`} className="text-sm text-ink-muted hover:text-ink">{s.p.user.display_name}</Link>

@@ -32,21 +32,21 @@ function Shell({ children }: { children: React.ReactNode }) {
   }, [me, isLoading, router, pathname]);
 
   return (
-    <div data-fullbleed className="mx-auto grid h-[calc(100dvh-4rem-4.5rem)] max-w-[1200px] md:h-[calc(100dvh-4rem)] lg:grid-cols-[360px_minmax(0,1fr)] lg:border-x lg:border-line">
-      <aside className={clsx("flex min-h-0 flex-col border-line lg:border-r", !atRoot && "hidden lg:flex")}>
+    <div data-fullbleed className="mx-auto grid h-[calc(100dvh-4rem-4.5rem)] max-w-[1200px] gap-4 px-0 pb-3 md:h-[calc(100dvh-5rem)] lg:grid-cols-[360px_minmax(0,1fr)] lg:px-6">
+      <aside className={clsx("flex min-h-0 flex-col overflow-hidden lg:rounded-card lg:bg-surface", !atRoot && "hidden lg:flex")}>
         <div className="px-4 pb-3 pt-6">
-          <h1 className="text-[28px] font-bold tracking-[-0.035em]">{t("title")}</h1>
+          <h1 className="text-title">{t("title")}</h1>
           <div className="mt-4 flex gap-1">
             {(["inbox", "requests"] as const).map((f) => (
               <Link
                 key={f}
                 href={f === "inbox" ? pathname : `${pathname}?folder=requests`}
                 aria-current={folder === f ? "page" : undefined}
-                className={clsx("flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium", folder === f ? "bg-ink text-surface" : "text-ink-muted hover:text-ink")}
+                className={clsx("flex h-11 items-center gap-1.5 rounded-pill px-4 text-[14.5px] font-semibold", folder === f ? "bg-accent-tint text-accent-text" : "text-ink-muted hover:text-ink")}
               >
                 {t(f)}
                 {f === "requests" && (unread.data?.requests ?? 0) > 0 && (
-                  <span className={clsx("rounded-full px-1.5 text-[11px] font-semibold", folder === f ? "bg-surface text-ink" : "bg-accent text-accent-ink")}>{unread.data?.requests}</span>
+                  <span className={clsx("rounded-full px-1.5 text-[11px] font-semibold", "bg-accent text-accent-ink")}>{unread.data?.requests}</span>
                 )}
               </Link>
             ))}
@@ -54,7 +54,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">{me && <ConversationList folder={folder} meId={me.id} activeId={params.id} />}</div>
       </aside>
-      <section className={clsx("min-h-0", atRoot && "hidden lg:block")}>{children}</section>
+      <section className={clsx("min-h-0 overflow-hidden bg-bg lg:rounded-card", atRoot && "hidden lg:block")}>{children}</section>
     </div>
   );
 }

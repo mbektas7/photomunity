@@ -32,15 +32,15 @@ export default function GuidePage() {
       <p className="mt-3 max-w-[60ch] text-lg text-ink-muted">{g.summary}</p>
 
       {/* Vizör şeridi: üç temel ayar */}
-      <dl className="mt-8 grid gap-px bg-black sm:grid-cols-3">
+      <dl className="mt-8 grid gap-2 sm:grid-cols-3">
         {main.map(([k, v]) => (
-          <div key={k} className="flex flex-col-reverse bg-black px-5 py-5 text-[#f2f2ee]">
-            <dt className="mt-2 text-[13px] text-[#8d8d88]">{t(`setting.${k}`)}</dt>
+          <div key={k} className="flex flex-col-reverse rounded-box bg-surface-2 px-5 py-5 text-ink">
+            <dt className="mt-2 text-[13px] text-ink-muted">{t(`setting.${k}`)}</dt>
             <dd className="text-[19px] font-semibold leading-snug">{v}</dd>
           </div>
         ))}
       </dl>
-      <dl className="divide-y divide-line border-b border-line">
+      <dl className="divide-y divide-line overflow-hidden rounded-card bg-surface px-5">
         {rest.map(([k, v]) => (
           <div key={k} className="grid gap-1 py-3.5 sm:grid-cols-[180px_1fr]">
             <dt className="text-sm text-ink-muted">{t(`setting.${k}`)}</dt>

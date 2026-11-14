@@ -160,7 +160,7 @@ function ProfileSection({ me }: { me: Me }) {
           <TextField label={t("city")} name="city" value={form.city} onChange={(e) => set("city", e.target.value)} />
           <TextField label={t("country")} name="country" hint={t("country_hint")} maxLength={2} value={form.country} onChange={(e) => set("country", e.target.value.toUpperCase())} />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-line px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-box border border-line px-4 py-3">
           <span className="text-[15px]">
             <span className="block font-medium">{t("map_location")}</span>
             <span className="block text-sm text-ink-muted">
@@ -211,7 +211,7 @@ function ProfileSection({ me }: { me: Me }) {
             id="locale"
             value={form.locale}
             onChange={(e) => set("locale", e.target.value as Me["locale"])}
-            className="h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px]"
+            className="h-11 rounded-box border border-ring-idle bg-surface px-3 text-[15px]"
           >
             <option value="tr">Türkçe</option>
             <option value="en">English</option>
@@ -254,7 +254,7 @@ function EquipmentSection({ initial }: { initial: Equipment[] }) {
               aria-label={t("equipment_type")}
               value={it.type}
               onChange={(e) => update(i, { type: e.target.value as EquipmentType })}
-              className="h-11 rounded-[10px] border border-line bg-surface px-2.5 text-[15px]"
+              className="h-11 rounded-box border border-ring-idle bg-surface px-2.5 text-[15px]"
             >
               {EQUIPMENT_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -267,20 +267,20 @@ function EquipmentSection({ initial }: { initial: Equipment[] }) {
               placeholder={t("brand")}
               value={it.brand}
               onChange={(e) => update(i, { brand: e.target.value })}
-              className="h-11 min-w-0 rounded-[10px] border border-line bg-surface px-3 text-[15px] outline-none focus:border-ink"
+              className="h-11 min-w-0 rounded-box border border-ring-idle bg-surface px-3 text-[15px] outline-none focus:border-accent"
             />
             <input
               aria-label={t("model")}
               placeholder={t("model")}
               value={it.model}
               onChange={(e) => update(i, { model: e.target.value })}
-              className="col-span-2 row-start-2 h-11 min-w-0 rounded-[10px] border border-line bg-surface px-3 text-[15px] outline-none focus:border-ink sm:col-span-1 sm:row-start-auto"
+              className="col-span-2 row-start-2 h-11 min-w-0 rounded-box border border-ring-idle bg-surface px-3 text-[15px] outline-none focus:border-accent sm:col-span-1 sm:row-start-auto"
             />
             <button
               type="button"
               onClick={() => setItems((list) => list.filter((_, j) => j !== i))}
               aria-label={t("remove")}
-              className="col-start-3 row-start-1 inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink sm:col-start-auto sm:row-start-auto"
+              className="col-start-3 row-start-1 inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:bg-surface-2 hover:text-ink sm:col-start-auto sm:row-start-auto"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -341,7 +341,7 @@ function AccountSection() {
         </Button>
       </form>
 
-      <div className="mt-10 rounded-[10px] border border-danger/30 px-5 py-5">
+      <div className="mt-10 rounded-box border border-danger/30 px-5 py-5">
         <h3 className="font-semibold">{t("delete_account")}</h3>
         <p className="mt-1 text-sm text-ink-muted">{t("delete_account_body")}</p>
         <Button

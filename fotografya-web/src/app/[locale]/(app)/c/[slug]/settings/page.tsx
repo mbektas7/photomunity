@@ -77,7 +77,7 @@ function Images({ c }: { c: Community }) {
   return (
     <div className="mt-8">
       <div className="relative">
-        <button type="button" onClick={() => cover.current?.click()} className="group relative block aspect-[3/1] w-full overflow-hidden bg-ink/[0.06]" aria-label={t("change_cover")}>
+        <button type="button" onClick={() => cover.current?.click()} className="group relative block aspect-[3/1] w-full overflow-hidden bg-surface-2" aria-label={t("change_cover")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {c.cover_url && <img src={c.cover_url} alt="" className="h-full w-full object-cover" />}
           <span className="absolute inset-0 flex items-center justify-center gap-2 text-sm font-semibold text-ink-muted group-hover:bg-black/35 group-hover:text-white">
@@ -145,7 +145,7 @@ function Admins({ c }: { c: Community }) {
 
   return (
     <Section title={t("admins")} lead={t("admins_lead")}>
-      <ul className="divide-y divide-line border-y border-line">
+      <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         <li className="flex items-center gap-3 py-3">
           <Avatar name={c.owner.display_name} url={c.owner.avatar_url} size={36} />
           <span className="flex-1 font-medium">{c.owner.display_name}</span>
@@ -155,7 +155,7 @@ function Admins({ c }: { c: Community }) {
           <li key={a.id} className="flex items-center gap-3 py-3">
             <Avatar name={a.display_name} url={a.avatar_url} size={36} />
             <span className="flex-1"><span className="font-medium">{a.display_name}</span> <span className="text-sm text-ink-muted">@{a.username}</span></span>
-            <button type="button" onClick={() => remove.mutate(a.username)} className="rounded-full p-2 text-ink-muted hover:bg-ink/5 hover:text-ink" aria-label={t("remove_admin", { name: a.display_name })}>
+            <button type="button" onClick={() => remove.mutate(a.username)} className="rounded-full p-2 text-ink-muted hover:bg-surface-2 hover:text-ink" aria-label={t("remove_admin", { name: a.display_name })}>
               <X className="h-4 w-4" />
             </button>
           </li>

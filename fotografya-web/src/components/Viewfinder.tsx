@@ -32,7 +32,7 @@ export function Viewfinder({ exif }: { exif: Exif }) {
         <dl className="grid grid-cols-4 gap-x-3 sm:flex sm:flex-wrap sm:gap-x-9 sm:gap-y-4">
           {readings.map((r) => (
             <div key={r.label} className="flex flex-col-reverse">
-              <dt className="mt-1 text-[12px] leading-tight text-[#8d8d88] sm:text-[13px]">{r.label}</dt>
+              <dt className="mt-1 text-[12px] leading-tight text-ink-muted sm:text-[13px]">{r.label}</dt>
               <dd className="tnum text-[22px] font-semibold leading-none tracking-tight sm:text-[34px]">{r.value}</dd>
             </div>
           ))}

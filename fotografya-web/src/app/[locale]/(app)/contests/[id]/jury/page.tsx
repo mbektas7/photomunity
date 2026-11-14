@@ -68,7 +68,7 @@ export default function JuryPage() {
 
       {current && img && (
         <>
-          <div className="relative mt-5 flex items-center justify-center bg-black">
+          <div className="relative mt-5 flex items-center justify-center rounded-card bg-surface-2 p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img key={current.id} src={img.url} alt="" className="fade-in max-h-[calc(100dvh-17rem)] w-auto max-w-full object-contain" />
             <button type="button" onClick={() => setI((x) => Math.max(x - 1, 0))} disabled={i === 0} aria-label={t("prev")} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white disabled:opacity-0">
@@ -80,7 +80,7 @@ export default function JuryPage() {
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <span className="tnum text-sm text-ink-muted">{t("position", { n: i + 1, total: list.length })}</span>
-            {current.mine ? <span className="rounded-full bg-ink/[0.06] px-4 py-2.5 text-sm font-medium">{t("own_entry")}</span> : (
+            {current.mine ? <span className="rounded-full bg-surface-2 px-4 py-2.5 text-sm font-medium">{t("own_entry")}</span> : (
             <div role="radiogroup" aria-label={t("score")} className="grid grid-cols-10 gap-1">
               {Array.from({ length: 10 }, (_, k) => k + 1).map((v) => (
                 <button
@@ -89,7 +89,7 @@ export default function JuryPage() {
                   role="radio"
                   aria-checked={current.my_score === v}
                   onClick={() => give(v)}
-                  className={clsx("tnum h-11 w-11 rounded-[10px] border text-[16px] font-semibold transition-colors sm:h-12 sm:w-12",
+                  className={clsx("tnum h-11 w-11 rounded-box border text-[16px] font-semibold transition-colors sm:h-12 sm:w-12",
                     current.my_score === v ? "border-accent bg-accent text-accent-ink" : "border-line bg-surface hover:border-ink")}
                 >
                   {v}
@@ -106,7 +106,7 @@ export default function JuryPage() {
       <div className="mt-6 flex gap-1.5 overflow-x-auto pb-2">
         {list.map((e, j) => (
           <button key={e.id} type="button" onClick={() => setI(j)} aria-label={t("position", { n: j + 1, total: list.length })}
-            className={clsx("relative h-14 w-20 shrink-0 bg-ink/5", j === i && "outline outline-2 outline-offset-2 outline-ink")}>
+            className={clsx("relative h-14 w-20 shrink-0 bg-surface-2", j === i && "outline outline-2 outline-offset-2 outline-ink")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {e.images.thumb && <img src={e.images.thumb.url} alt="" className={clsx("h-full w-full object-cover", !e.my_score && "opacity-60")} />}
             {e.my_score && <span className="tnum absolute bottom-0.5 right-0.5 rounded bg-black/70 px-1 text-[11px] font-semibold text-white">{e.my_score}</span>}

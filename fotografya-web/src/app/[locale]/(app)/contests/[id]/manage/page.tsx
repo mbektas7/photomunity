@@ -111,7 +111,7 @@ function Summary({ c }: { c: Contest }) {
     <Section title={t("summary")}>
       <dl className="grid grid-cols-3 gap-px bg-line">
         {stats.map((x) => (
-          <div key={x.label} className="flex flex-col-reverse bg-surface px-4 py-4">
+          <div key={x.label} className="flex flex-col-reverse rounded-box bg-surface px-4 py-4">
             <dt className="text-sm text-ink-muted">{x.label}</dt>
             <dd className="tnum text-[28px] font-semibold leading-none">{x.n}</dd>
           </div>
@@ -147,7 +147,7 @@ function Judges({ c }: { c: Contest }) {
   return (
     <Section title={t("judges")} lead={t("judges_lead")}>
       {judges.length > 0 && (
-        <ul className="divide-y divide-line border-y border-line">
+        <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
           {judges.map((j) => (
             <li key={j.id} className="flex flex-wrap items-center gap-3 py-3">
               {j.user ? <Avatar name={j.user.display_name} url={j.user.avatar_url} size={36} /> : <span className="h-9 w-9 rounded-full border border-dashed border-line" />}
@@ -160,12 +160,12 @@ function Judges({ c }: { c: Contest }) {
                 <input
                   type="number" min={0.1} max={10} step={0.5} defaultValue={j.weight} disabled={locked}
                   onBlur={(e) => Number(e.target.value) !== j.weight && update.mutate({ id: j.id, w: Number(e.target.value) })}
-                  className="tnum h-9 w-20 rounded-[8px] border border-line bg-surface px-2 text-ink"
+                  className="tnum h-9 w-20 rounded-[8px] border border-ring-idle bg-surface px-2 text-ink"
                 />
               </label>
               <span className="tnum w-14 text-right text-sm text-ink-muted">{!j.pending && total ? `%${Math.round((j.weight / total) * 100)}` : ""}</span>
               {!locked && (
-                <button type="button" onClick={() => remove.mutate(j.id)} className="rounded-full p-2 text-ink-muted hover:bg-ink/5" aria-label={t("remove_judge")}>
+                <button type="button" onClick={() => remove.mutate(j.id)} className="rounded-full p-2 text-ink-muted hover:bg-surface-2" aria-label={t("remove_judge")}>
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -204,7 +204,7 @@ function Entries({ c }: { c: Contest }) {
           <figure key={e.id} className={e.disqualified ? "opacity-40" : undefined}>
             {e.images.thumb && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={e.images.thumb.url} alt={e.title ?? ""} className="aspect-[4/3] w-full bg-ink/5 object-contain" />
+              <img src={e.images.thumb.url} alt={e.title ?? ""} className="aspect-[4/3] w-full bg-surface-2 object-contain" />
             )}
             <figcaption className="mt-1.5 flex items-center justify-between gap-2 text-sm">
               <span className="min-w-0 truncate">{e.user?.display_name}</span>
@@ -213,7 +213,7 @@ function Entries({ c }: { c: Contest }) {
               ) : c.status !== "finished" ? (
                 <button
                   type="button"
-                  className="shrink-0 rounded-full p-1.5 text-ink-muted hover:bg-ink/5 hover:text-danger"
+                  className="shrink-0 rounded-full p-1.5 text-ink-muted hover:bg-surface-2 hover:text-danger"
                   aria-label={t("disqualify")}
                   title={t("disqualify")}
                   onClick={() => { const reason = window.prompt(t("disqualify_reason")); if (reason?.trim()) dq.mutate({ id: e.id, reason: reason.trim() }); }}
@@ -234,13 +234,13 @@ function Preview({ c }: { c: Contest }) {
   const q = useQuery({ queryKey: ["contest-preview", c.id], queryFn: () => api<ResultRow[]>(`contests/${c.id}/results`), refetchInterval: 30_000 });
   return (
     <Section title={t("preview")} lead={t("preview_lead")}>
-      <ol className="divide-y divide-line border-y border-line">
+      <ol className="divide-y divide-line overflow-hidden rounded-card bg-surface">
         {q.data?.map((r) => (
           <li key={r.entry.id} className="flex items-center gap-4 py-2.5">
             <span className="tnum w-8 text-right text-lg font-semibold">{r.rank ?? "–"}</span>
             {r.entry.images.thumb && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={r.entry.images.thumb.url} alt="" className="h-12 w-16 bg-ink/5 object-contain" />
+              <img src={r.entry.images.thumb.url} alt="" className="h-12 w-16 bg-surface-2 object-contain" />
             )}
             <span className="min-w-0 flex-1 truncate">{r.entry.user?.display_name}</span>
             <span className="tnum text-sm text-ink-muted">{r.score !== null ? r.score.toFixed(2) : "–"} · {c.judging_mode === "jury" ? t("judges_count", { count: r.count }) : t("votes_count", { count: r.count })}</span>

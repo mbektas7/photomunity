@@ -28,7 +28,7 @@ export default function ContestsPage() {
       </div>
       <div className="mt-6 flex flex-col gap-2">
         {q.data?.map((c) => <ContestRow key={c.id} c={c} />)}
-        {q.isSuccess && q.data.length === 0 && <p className="bg-surface px-6 py-10 text-ink-muted">{t(`empty_${tab}`)}</p>}
+        {q.isSuccess && q.data.length === 0 && <p className="rounded-card bg-surface px-6 py-10 text-ink-muted">{t(`empty_${tab}`)}</p>}
       </div>
     </div>
   );

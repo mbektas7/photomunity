@@ -181,7 +181,7 @@ function FeedTab({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
               <ContestRow c={p.contest} showCommunity={false} />
             </div>
           ) : (
-            <article key={p.id} className="bg-surface px-5 py-5">
+            <article key={p.id} className="rounded-card bg-surface px-5 py-5">
               <header className="flex items-center gap-3">
                 <Avatar name={p.author.display_name} url={p.author.avatar_url} size={32} />
                 <span className="text-sm"><span className="font-semibold">{p.author.display_name}</span> <span className="text-ink-muted">· {relativeTime(p.created_at, locale)}</span></span>
@@ -223,14 +223,14 @@ function MembersTab({ c }: { c: Community }) {
   return (
     <ul className="mx-auto grid max-w-[900px] gap-px bg-line sm:grid-cols-2">
       {members.map((m) => (
-        <li key={m.user.id} className="bg-surface">
+        <li key={m.user.id} className="rounded-card bg-surface">
           <Link href={`/u/${m.user.username}`} className="flex items-center gap-3 px-4 py-3">
             <Avatar name={m.user.display_name} url={m.user.avatar_url} size={40} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-semibold">{m.user.display_name}</span>
               <span className="block truncate text-sm text-ink-muted">@{m.user.username}</span>
             </span>
-            {m.role !== "member" && <span className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted">{t(`role.${m.role}`)}</span>}
+            {m.role !== "member" && <span className="rounded-pill bg-surface-2 px-2.5 py-1 text-caption font-semibold text-ink-muted">{t(`role.${m.role}`)}</span>}
           </Link>
         </li>
       ))}

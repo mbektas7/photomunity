@@ -47,7 +47,7 @@ export function ProfileImages({ me }: { me: Me }) {
         <button
           type="button"
           onClick={() => coverInput.current?.click()}
-          className="group relative block aspect-[3/1] w-full overflow-hidden bg-ink/[0.06]"
+          className="group relative block aspect-[3/1] w-full overflow-hidden bg-surface-2"
           aria-label={t("change_cover")}
         >
           {me.cover_url && (
@@ -109,7 +109,7 @@ export function NotificationSettingsForm() {
   });
   if (!data) return null;
   return (
-    <ul className="divide-y divide-line border-y border-line">
+    <ul className="divide-y divide-line overflow-hidden rounded-card bg-surface">
       {PUSH_TYPES.map((type) => (
         <li key={type} className="flex items-center justify-between gap-6 py-3">
           <span className="text-[15px]">{t(`push.${type}`)}</span>

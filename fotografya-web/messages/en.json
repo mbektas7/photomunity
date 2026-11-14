@@ -137,7 +137,8 @@
     "lead": "The newest frames from public profiles, each in its own aspect ratio.",
     "empty": "No photos have been shared yet.",
     "loading": "Loading…",
-    "open_map": "Explore on the map"
+    "open_map": "Explore on the map",
+    "for_you": "For you"
   },
   "photo": {
     "settings": "Shooting settings",

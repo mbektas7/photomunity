@@ -20,7 +20,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const inputClass = "h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px] outline-none focus:border-ink";
+const inputClass = "h-11 rounded-box border border-ring-idle bg-surface px-3 text-[15px] outline-none focus:border-accent";
 
 function SensorSelect({ value, onChange }: { value: SensorId; onChange: (s: SensorId) => void }) {
   const t = useTranslations("tools");
@@ -42,10 +42,10 @@ function ApertureSelect({ value, onChange, from = 0 }: { value: number; onChange
 /** Sonuç kutuları: vizör şeridiyle aynı görsel dil (siyah bant, büyük rakam). */
 function Readout({ items }: { items: { value: string; label: string; strong?: boolean }[] }) {
   return (
-    <dl className="mt-6 grid grid-cols-2 gap-px bg-black sm:grid-cols-3">
+    <dl className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
       {items.map((r) => (
-        <div key={r.label} className="flex flex-col-reverse bg-black px-4 py-4 text-[#f2f2ee]">
-          <dt className="mt-1 text-[12.5px] text-[#8d8d88]">{r.label}</dt>
+        <div key={r.label} className="flex flex-col-reverse rounded-box bg-surface-2 px-4 py-4 text-ink">
+          <dt className="mt-1 text-[12.5px] text-ink-muted">{r.label}</dt>
           <dd className={clsx("tnum font-semibold leading-none tracking-tight", r.strong ? "text-[30px]" : "text-[22px]")}>{r.value}</dd>
         </div>
       ))}

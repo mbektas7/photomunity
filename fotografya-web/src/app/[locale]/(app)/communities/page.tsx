@@ -45,11 +45,11 @@ export default function CommunitiesPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("search_placeholder")}
-            className="h-11 w-full rounded-full border border-line bg-surface pl-10 pr-4 text-[15px] outline-none focus:border-ink"
+            className="h-11 w-full rounded-full border border-ring-idle bg-surface pl-10 pr-4 text-[15px] outline-none focus:border-accent"
           />
         </label>
         {me && (
-          <div className="flex rounded-full border border-line bg-surface p-1">
+          <div className="flex rounded-full border border-ring-idle bg-surface p-1">
             {[false, true].map((v) => (
               <button
                 key={String(v)}
@@ -68,7 +68,7 @@ export default function CommunitiesPage() {
       <div className="mt-6 flex flex-col gap-2">
         {list.data?.map((c) => <CommunityRow key={c.id} c={c} />)}
         {list.isSuccess && list.data.length === 0 && (
-          <div className="bg-surface px-6 py-10 text-ink-muted">{mine ? t("empty_mine") : query ? t("no_results") : t("empty")}</div>
+          <div className="rounded-card bg-surface px-6 py-10 text-ink-muted">{mine ? t("empty_mine") : query ? t("no_results") : t("empty")}</div>
         )}
       </div>
     </div>

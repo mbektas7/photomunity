@@ -59,7 +59,7 @@ export default function NotificationsPage() {
     <div className="mx-auto max-w-[680px] px-4 pt-8 sm:pt-12">
       <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
       {q.isSuccess && items.length === 0 && <p className="mt-8 text-ink-muted">{t("empty")}</p>}
-      <ul className="mt-8 divide-y divide-line border-y border-line">
+      <ul className="mt-8 divide-y divide-line overflow-hidden rounded-card bg-surface">
         {items.map((n) => (
           <li key={n.id}>
             <Link href={target(n)} className={clsx("flex items-center gap-3.5 py-3.5 pr-1", !n.read && "bg-accent/[0.06]")}>

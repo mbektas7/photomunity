@@ -16,7 +16,7 @@ export function MoonGlyph({ phase, fraction, size = 56 }: { phase: number; fract
   const r = size / 2;
   const waxing = phase < 0.5;
   const k = 1 - 2 * fraction; // terminatör elips yarıçap oranı
-  const d = `M ${r} 0 A ${r} ${r} 0 0 ${waxing ? 1 : 0} ${r} ${size} A ${Math.abs(k) * r} ${r} 0 0 ${(k > 0) === waxing ? 0 : 1} ${r} 0 Z`;
+  const d = `M ${r} 0 A ${r} ${r} 0 0 ${waxing ? 1 : 0} ${r} ${size} A ${(Math.abs(k) * r).toFixed(2)} ${r} 0 0 ${(k > 0) === waxing ? 0 : 1} ${r} 0 Z`;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
       <circle cx={r} cy={r} r={r} fill="var(--line)" />
@@ -66,7 +66,7 @@ function AltitudeChart({ plan, selected, onSelect }: { plan: NightPlan; selected
       {plan.bestWindows.map((w) => <rect key={w.start} x={x(w.start)} y={top} width={x(w.end) - x(w.start)} height={H - top - bottom} fill="color-mix(in srgb, var(--accent) 16%, transparent)" />)}
       <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="var(--ink-muted)" strokeDasharray="3 4" />
       {[30, 60].map((a) => <line key={a} x1={0} x2={W} y1={y(a)} y2={y(a)} stroke="var(--line)" />)}
-      <path d={path((i) => s[i]!.sun.alt)} fill="none" stroke="#e8a33d" strokeWidth={2} />
+      <path d={path((i) => s[i]!.sun.alt)} fill="none" stroke="var(--ink-subtle)" strokeWidth={2} strokeDasharray="3 3" />
       <path d={path((i) => s[i]!.moon.alt)} fill="none" stroke="var(--ink-muted)" strokeWidth={2} />
       <path d={path((i) => s[i]!.core.alt)} fill="none" stroke="var(--accent)" strokeWidth={3} />
       <line x1={x(selected)} x2={x(selected)} y1={top} y2={H - bottom} stroke="var(--ink)" strokeWidth={1.5} />
@@ -91,7 +91,7 @@ function Compass({ at, lat, lng }: { at: number; lat: number; lng: number }) {
   const bodies = [
     { key: "core", p: core, color: "var(--accent)", size: 9, label: t("core") },
     { key: "moon", p: moon, color: "var(--ink-muted)", size: 8, label: t("moon") },
-    { key: "sun", p: sun, color: "#e8a33d", size: 8, label: t("sun") },
+    { key: "sun", p: sun, color: "var(--ink-subtle)", size: 8, label: t("sun") },
   ].filter((b) => b.p.alt > -1);
   return (
     <div className="flex flex-wrap items-center gap-6">
@@ -160,15 +160,15 @@ export function SkyPlanner() {
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-medium">{t("date")}</span>
-          <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setSelected(null); }} className="h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px]" />
+          <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setSelected(null); }} className="h-11 rounded-box border border-ring-idle bg-surface px-3 text-[15px]" />
         </label>
         <label className="flex w-28 flex-col gap-1.5">
           <span className="text-sm font-medium">{t("lat")}</span>
-          <input inputMode="decimal" value={latInput} onChange={(e) => setLatInput(e.target.value)} className="h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px]" />
+          <input inputMode="decimal" value={latInput} onChange={(e) => setLatInput(e.target.value)} className="h-11 rounded-box border border-ring-idle bg-surface px-3 text-[15px]" />
         </label>
         <label className="flex w-28 flex-col gap-1.5">
           <span className="text-sm font-medium">{t("lng")}</span>
-          <input inputMode="decimal" value={lngInput} onChange={(e) => setLngInput(e.target.value)} className="h-11 rounded-[10px] border border-line bg-surface px-3 text-[15px]" />
+          <input inputMode="decimal" value={lngInput} onChange={(e) => setLngInput(e.target.value)} className="h-11 rounded-box border border-ring-idle bg-surface px-3 text-[15px]" />
         </label>
         <Button variant="secondary" onClick={() => {
           const lat = Number(latInput.replace(",", ".")), lng = Number(lngInput.replace(",", "."));
@@ -177,15 +177,15 @@ export function SkyPlanner() {
         <Button variant="ghost" onClick={locate}><LocateFixed className="h-4 w-4" /> {t("use_location")}</Button>
       </div>
 
-      <div className="grid gap-px bg-line sm:grid-cols-3">
-        <div className="flex items-center gap-4 bg-surface px-5 py-5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="flex items-center gap-4 rounded-card bg-surface px-5 py-5">
           <MoonGlyph phase={plan.phase} fraction={plan.illumination} />
           <div>
             <p className="font-semibold">{phaseName}</p>
             <p className="tnum text-sm text-ink-muted">{t("illuminated", { pct: Math.round(plan.illumination * 100) })}</p>
           </div>
         </div>
-        <div className="bg-surface px-5 py-5">
+        <div className="rounded-card bg-surface px-5 py-5">
           <p className="text-sm text-ink-muted">{t("dark_window")}</p>
           <p className="tnum mt-1 text-[22px] font-semibold">{plan.duskAstro ? `${fmtTime(plan.duskAstro, locale)} – ${fmtTime(plan.dawnAstro, locale)}` : t("no_darkness")}</p>
         </div>
@@ -197,18 +197,18 @@ export function SkyPlanner() {
       </div>
       {!best && <p className="-mt-4 text-sm text-ink-muted">{plan.illumination >= 0.25 && plan.coreTransit ? t("why_moon") : !plan.coreTransit ? t("why_core") : t("why_dark")}</p>}
 
-      <div className="bg-surface px-3 py-4 sm:px-5">
+      <div className="rounded-card bg-surface px-3 py-4 sm:px-5">
         <div className="mb-2 flex flex-wrap gap-x-5 gap-y-1 px-2 text-sm">
           <span className="flex items-center gap-2"><span className="h-[3px] w-5 bg-accent" /> {t("core")}</span>
           <span className="flex items-center gap-2"><span className="h-[2px] w-5 bg-ink-muted" /> {t("moon")}</span>
-          <span className="flex items-center gap-2"><span className="h-[2px] w-5 bg-[#e8a33d]" /> {t("sun")}</span>
+          <span className="flex items-center gap-2"><span className="h-[2px] w-5 bg-ink-subtle" /> {t("sun")}</span>
           <span className="flex items-center gap-2"><span className="h-3 w-5 bg-accent/20" /> {t("best_window")}</span>
         </div>
         <AltitudeChart plan={plan} selected={at} onSelect={setSelected} />
         <p className="px-2 text-xs text-ink-muted">{t("chart_hint")}</p>
       </div>
 
-      <div className="bg-surface px-5 py-5">
+      <div className="rounded-card bg-surface px-5 py-5">
         <p className="tnum mb-4 text-[15px] font-semibold">{t("at_time", { time: fmtTime(at, locale) })}</p>
         <Compass at={at} lat={loc.lat} lng={loc.lng} />
       </div>
@@ -216,7 +216,7 @@ export function SkyPlanner() {
       <dl className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
         {[["sunset", plan.sunset], ["sunrise", plan.sunrise], ["moonrise", plan.moonrise], ["moonset", plan.moonset],
           ["core_rise", plan.coreRise], ["core_set", plan.coreSet], ["dusk", plan.duskAstro], ["dawn", plan.dawnAstro]].map(([k, v]) => (
-          <div key={k as string} className="flex flex-col-reverse bg-surface px-4 py-3">
+          <div key={k as string} className="flex flex-col-reverse rounded-box bg-surface px-4 py-3">
             <dt className="text-sm text-ink-muted">{t(`event.${k}`)}</dt>
             <dd className="tnum text-lg font-semibold">{fmtTime(v as number | null, locale)}</dd>
           </div>

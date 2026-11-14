@@ -137,7 +137,8 @@
     "lead": "Herkese açık profillerden en yeni kareler, kendi en-boy oranlarıyla.",
     "empty": "Henüz paylaşılmış fotoğraf yok.",
     "loading": "Yükleniyor…",
-    "open_map": "Haritada keşfet"
+    "open_map": "Haritada keşfet",
+    "for_you": "Senin için"
   },
   "photo": {
     "settings": "Çekim ayarları",

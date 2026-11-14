@@ -66,7 +66,7 @@ export function ConversationList({ folder, meId, activeId }: { folder: "inbox" |
           <Link
             href={folder === "requests" ? `/messages/${c.id}?folder=requests` : `/messages/${c.id}`}
             aria-current={activeId === c.id ? "page" : undefined}
-            className={clsx("flex items-center gap-3 px-4 py-3 transition-colors hover:bg-ink/[0.04]", activeId === c.id && "bg-ink/[0.06]")}
+            className={clsx("flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2", activeId === c.id && "bg-accent-tint")}
           >
             <Avatar name={c.other.display_name} url={c.other.avatar_url} size={46} />
             <span className="min-w-0 flex-1">

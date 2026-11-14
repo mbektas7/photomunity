@@ -140,7 +140,7 @@ export default function UploadPage() {
               <span className="text-sm text-ink-muted">{t("drop")}</span>
             </button>
           ) : (
-            <div className="bg-surface p-3 sm:p-5">
+            <div className="rounded-card bg-surface p-3 sm:p-5">
               <div className="relative flex justify-center bg-bg">
                 {preview ? (
                   // eslint-disable-next-line @next/next/no-img-element
