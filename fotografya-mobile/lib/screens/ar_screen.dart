@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -199,7 +200,7 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: const Icon(LucideIcons.x, color: Colors.white),
                   ),
                   Expanded(
                     child: Text(

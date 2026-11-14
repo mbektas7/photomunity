@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -214,7 +215,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.add_photo_alternate_outlined,
+                      LucideIcons.imagePlus,
                       size: 34,
                       color: p.ink,
                     ),
@@ -242,7 +243,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                       cacheWidth: 1200,
                       errorBuilder: (_, _, _) => const SizedBox(
                         height: 160,
-                        child: Center(child: Icon(Icons.image_outlined)),
+                        child: Center(child: Icon(LucideIcons.image)),
                       ),
                     ),
                   ),
@@ -314,7 +315,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
               else
                 TextButton.icon(
                   onPressed: _locating ? null : _locate,
-                  icon: const Icon(Icons.my_location, size: 18),
+                  icon: const Icon(LucideIcons.locateFixed, size: 18),
                   label: Text(
                     _locating
                         ? t('upload.locating')

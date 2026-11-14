@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -130,7 +131,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (!widget.isTab && async.asData?.value.isMe == false)
             IconButton(
               tooltip: L10n.of(context)('report.button'),
-              icon: const Icon(Icons.flag_outlined),
+              icon: const Icon(LucideIcons.flag),
               onPressed: () => _report(async.asData!.value.id),
             ),
           if (!widget.isTab && async.asData?.value.isMe == false)
@@ -146,7 +147,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (widget.isTab)
             IconButton(
               onPressed: () => context.push('/settings'),
-              icon: const Icon(Icons.settings_outlined),
+              icon: const Icon(LucideIcons.settings),
               tooltip: L10n.of(context)('settings.heading'),
             ),
         ],
@@ -242,12 +243,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 children: [
                                   if (!prof.isPublic)
                                     _Meta(
-                                      icon: Icons.lock_outline,
+                                      icon: LucideIcons.lock,
                                       text: t('profile.private'),
                                     ),
                                   if (place.isNotEmpty)
                                     _Meta(
-                                      icon: Icons.place_outlined,
+                                      icon: LucideIcons.mapPin,
                                       text: place,
                                     ),
                                 ],
@@ -310,7 +311,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 '/messages/new/${prof.username}',
                               ),
                               icon: const Icon(
-                                Icons.chat_bubble_outline,
+                                LucideIcons.messageCircle,
                                 size: 20,
                               ),
                             ),
@@ -400,7 +401,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.lock_outline, color: p.ink),
+                        Icon(LucideIcons.lock, color: p.ink),
                         const SizedBox(height: 12),
                         Text(
                           t('profile.private_title'),

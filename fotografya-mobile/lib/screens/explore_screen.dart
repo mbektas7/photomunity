@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -53,14 +54,14 @@ class ExploreScreen extends ConsumerWidget {
                               tooltip: t('guide.title'),
                               onPressed: () => context.push('/guide'),
                               icon: const Icon(
-                                Icons.menu_book_outlined,
+                                LucideIcons.bookOpen,
                                 size: 20,
                               ),
                             ),
                             const SizedBox(width: 6),
                             OutlinedButton.icon(
                               onPressed: () => context.push('/map'),
-                              icon: const Icon(Icons.map_outlined, size: 18),
+                              icon: const Icon(LucideIcons.map, size: 18),
                               label: Text(t('explore.map')),
                             ),
                           ],

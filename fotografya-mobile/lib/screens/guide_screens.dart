@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -71,7 +72,7 @@ class GuideHubScreen extends ConsumerWidget {
           Text(t('guide.lead'), style: font(15, height: 1.45, color: p.inkMuted)),
           const SizedBox(height: 16),
           tool(
-            Icons.nightlight_outlined,
+            LucideIcons.moon,
             t('guide.planner_title'),
             t('guide.planner_body'),
             '/planner',
@@ -82,7 +83,7 @@ class GuideHubScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: tool(
-                  Icons.timer_outlined,
+                  LucideIcons.timer,
                   t('guide.npf_title'),
                   t('guide.npf_body'),
                   '/tools?c=npf',
@@ -91,7 +92,7 @@ class GuideHubScreen extends ConsumerWidget {
               const SizedBox(width: 1),
               Expanded(
                 child: tool(
-                  Icons.camera_outlined,
+                  LucideIcons.aperture,
                   t('guide.dof_title'),
                   t('guide.dof_body'),
                   '/tools?c=dof',
@@ -101,7 +102,7 @@ class GuideHubScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 1),
           tool(
-            Icons.filter_b_and_w_outlined,
+            LucideIcons.aperture,
             t('guide.nd_title'),
             t('guide.nd_body'),
             '/tools?c=nd',
@@ -133,7 +134,7 @@ class GuideHubScreen extends ConsumerWidget {
                             g['summary'] as String,
                             style: font(13.5, height: 1.4, color: p.inkMuted),
                           ),
-                          trailing: Icon(Icons.chevron_right, color: p.inkMuted),
+                          trailing: Icon(LucideIcons.chevronRight, color: p.inkMuted),
                         ),
                       ),
                     ),
@@ -270,7 +271,7 @@ class GuideScreen extends ConsumerWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.check, size: 18, color: p.accent),
+                          Icon(LucideIcons.check, size: 18, color: p.accent),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -292,7 +293,7 @@ class GuideScreen extends ConsumerWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.close, size: 18, color: p.danger),
+                          Icon(LucideIcons.x, size: 18, color: p.danger),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -307,7 +308,7 @@ class GuideScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     FilledButton.icon(
                       onPressed: () => context.push('/planner'),
-                      icon: const Icon(Icons.nightlight_outlined),
+                      icon: const Icon(LucideIcons.moon),
                       label: Text(t('guide.open_planner')),
                     ),
                   ],

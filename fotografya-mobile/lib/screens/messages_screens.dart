@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +30,7 @@ class MessagesButton extends ConsumerWidget {
         backgroundColor: p.accent,
         textColor: p.accentInk,
         label: Text(count > 99 ? '99+' : '$count'),
-        child: const Icon(Icons.chat_bubble_outline),
+        child: const Icon(LucideIcons.messageCircle),
       ),
     );
   }
@@ -548,14 +549,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           tooltip: t('messages.attach_photo'),
                           onPressed: _sending ? null : _sharePhoto,
                           icon: Icon(
-                            Icons.add_photo_alternate_outlined,
+                            LucideIcons.imagePlus,
                             color: p.inkMuted,
                           ),
                         ),
                         IconButton(
                           tooltip: t('messages.attach_location'),
                           onPressed: _sending ? null : _shareLocation,
-                          icon: Icon(Icons.my_location, color: p.inkMuted),
+                          icon: Icon(LucideIcons.locateFixed, color: p.inkMuted),
                         ),
                         Expanded(
                           child: TextField(
@@ -595,7 +596,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               backgroundColor: p.ink,
                               foregroundColor: p.surface,
                             ),
-                            icon: const Icon(Icons.send_rounded, size: 20),
+                            icon: const Icon(LucideIcons.send, size: 20),
                           ),
                         ),
                       ],
@@ -690,7 +691,7 @@ class _Bubble extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.place_outlined, size: 18, color: fg),
+                        Icon(LucideIcons.mapPin, size: 18, color: fg),
                         const SizedBox(width: 6),
                         Text(
                           m.location!.name ?? t('messages.shared_location'),

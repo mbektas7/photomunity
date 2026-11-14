@@ -5,6 +5,10 @@ import '../core/api_client.dart';
 import '../core/l10n.dart';
 import '../core/theme.dart';
 
+/// Yalnızca ekran görüntüsü testlerinde: ağ görsellerini (önbellek eklentisi olmadan) çizer.
+@visibleForTesting
+Widget Function(String url, BoxFit fit)? debugNetImage;
+
 class Avatar extends StatelessWidget {
   const Avatar({super.key, required this.name, this.url, this.size = 40});
   final String name;
@@ -24,11 +28,11 @@ class Avatar extends StatelessWidget {
     final p = context.palette;
     if (url != null) {
       return ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: url!,
+        child: SizedBox(
           width: size,
           height: size,
-          fit: BoxFit.cover,
+          child: debugNetImage?.call(url!, BoxFit.cover) ??
+              CachedNetworkImage(imageUrl: url!, fit: BoxFit.cover),
         ),
       );
     }
@@ -36,10 +40,10 @@ class Avatar extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: p.ink, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
       child: Text(
         _initials,
-        style: font(size * 0.38, weight: 600, color: p.surface),
+        style: font(size * 0.38, weight: 700, color: p.accentText),
       ),
     );
   }
@@ -63,13 +67,12 @@ class NetPhoto extends StatelessWidget {
     return Semantics(
       image: true,
       label: semanticLabel,
-      child: CachedNetworkImage(
+      child: debugNetImage?.call(url, fit) ?? CachedNetworkImage(
         imageUrl: url,
         fit: fit,
         fadeInDuration: const Duration(milliseconds: 380),
-        placeholder: (_, _) => ColoredBox(color: p.ink.withValues(alpha: 0.07)),
-        errorWidget: (_, _, _) =>
-            ColoredBox(color: p.ink.withValues(alpha: 0.07)),
+        placeholder: (_, _) => ColoredBox(color: p.surface2),
+        errorWidget: (_, _, _) => ColoredBox(color: p.surface2),
       ),
     );
   }
@@ -89,19 +92,17 @@ class Notice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final color = switch (tone) {
-      NoticeTone.error => p.danger,
-      NoticeTone.success => p.accent,
-      NoticeTone.info => p.line,
+    final bg = switch (tone) {
+      NoticeTone.error => p.danger.withValues(alpha: 0.1),
+      NoticeTone.success => p.accentTint,
+      NoticeTone.info => p.surface2,
     };
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: color.withValues(alpha: tone == NoticeTone.info ? 1 : 0.45),
-        ),
-        borderRadius: BorderRadius.circular(10),
+        color: bg,
+        borderRadius: BorderRadius.circular(Radii.box),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +153,7 @@ class ErrorView extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              OutlinedButton(
+              FilledButton(
                 onPressed: onRetry,
                 child: Text(t('common.retry')),
               ),

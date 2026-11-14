@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -37,7 +38,7 @@ class NotificationBell extends ConsumerWidget {
         backgroundColor: p.accent,
         textColor: p.accentInk,
         label: Text(count > 99 ? '99+' : '$count'),
-        child: const Icon(Icons.notifications_none),
+        child: const Icon(LucideIcons.bell),
       ),
     );
   }
@@ -111,7 +112,7 @@ class _Tile extends StatelessWidget {
                 : CircleAvatar(
                     radius: 21,
                     backgroundColor: p.ink,
-                    child: Icon(Icons.image_outlined, size: 19, color: p.surface),
+                    child: Icon(LucideIcons.image, size: 19, color: p.surface),
                   ),
             const SizedBox(width: 14),
             Expanded(

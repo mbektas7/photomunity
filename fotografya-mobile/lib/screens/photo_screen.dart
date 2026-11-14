@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -98,7 +99,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (photo != null && me != null && me.id != photo.user.id)
             IconButton(
               tooltip: L10n.of(context)('report.button'),
-              icon: const Icon(Icons.flag_outlined),
+              icon: const Icon(LucideIcons.flag),
               onPressed: () => _report(photo.id),
             ),
         ],
@@ -243,7 +244,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                     onPressed: () => context.push(
                       '/map?lat=${photo.location!.latitude}&lng=${photo.location!.longitude}&photos=1',
                     ),
-                    icon: const Icon(Icons.place_outlined, size: 18),
+                    icon: const Icon(LucideIcons.mapPin, size: 18),
                     label: Text(
                       photo.location!.name ??
                           '${photo.location!.latitude.toStringAsFixed(3)}, ${photo.location!.longitude.toStringAsFixed(3)}',

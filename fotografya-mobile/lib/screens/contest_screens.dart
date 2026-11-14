@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -86,13 +87,13 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           if (c != null)
             IconButton(
               tooltip: t('contest.share'),
-              icon: const Icon(Icons.link),
+              icon: const Icon(LucideIcons.link),
               onPressed: () => _share(c),
             ),
           if (c?.myRole == 'admin')
             IconButton(
               tooltip: t('contest.manage_web'),
-              icon: const Icon(Icons.tune),
+              icon: const Icon(LucideIcons.slidersHorizontal),
               onPressed: () =>
                   openWeb(context, '/contests/${widget.id}/manage'),
             ),
@@ -266,7 +267,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
             const SizedBox(height: 14),
             Row(
               children: [
-                Icon(Icons.check, color: p.accent, size: 20),
+                Icon(LucideIcons.check, color: p.accent, size: 20),
                 const SizedBox(width: 6),
                 Text(
                   t('contest.you_entered'),
@@ -491,7 +492,7 @@ class _Results extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.emoji_events_outlined, color: p.accent),
+              Icon(LucideIcons.trophy, color: p.accent),
               const SizedBox(width: 8),
               Text(
                 t('contest.results'),

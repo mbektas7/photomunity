@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -98,7 +99,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               OutlinedButton.icon(
-                icon: const Icon(Icons.calendar_today_outlined, size: 18),
+                icon: const Icon(LucideIcons.calendar, size: 18),
                 label: Text(DateFormat.yMMMd(locale).format(_date)),
                 onPressed: () async {
                   final d = await showDatePicker(
@@ -114,7 +115,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 },
               ),
               OutlinedButton.icon(
-                icon: const Icon(Icons.my_location, size: 18),
+                icon: const Icon(LucideIcons.locateFixed, size: 18),
                 label: Text(t('planner.use_location')),
                 onPressed: _locate,
               ),
@@ -318,7 +319,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
             onPressed: () => context.push(
               '/planner/ar?lat=$_lat&lng=$_lng&date=${_date.millisecondsSinceEpoch}',
             ),
-            icon: const Icon(Icons.view_in_ar_outlined),
+            icon: const Icon(LucideIcons.scan),
             label: Text(t('planner.open_ar')),
           ),
           const SizedBox(height: 14),

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,8 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import 'common.dart';
+import 'design.dart';
 
 /// Topluluk logosu yuvarlatılmış karedir; kişi avatarları yuvarlak — web ile aynı ayrım.
 class CommunityLogo extends StatelessWidget {
@@ -24,15 +27,14 @@ class CommunityLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final radius = BorderRadius.circular(size * 0.24);
+    final radius = BorderRadius.circular(size >= 48 ? Radii.photo : size * 0.3);
     if (url != null) {
       return ClipRRect(
         borderRadius: radius,
-        child: CachedNetworkImage(
-          imageUrl: url!,
+        child: SizedBox(
           width: size,
           height: size,
-          fit: BoxFit.cover,
+          child: NetPhoto(url: url!),
         ),
       );
     }
@@ -46,10 +48,10 @@ class CommunityLogo extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: p.accent, borderRadius: radius),
+      decoration: BoxDecoration(color: p.accentTint, borderRadius: radius),
       child: Text(
         initials,
-        style: font(size * 0.36, weight: 600, color: p.accentInk),
+        style: font(size * 0.36, weight: 700, color: p.accentText),
       ),
     );
   }
@@ -70,31 +72,43 @@ String remainingText(DateTime at, String locale) {
   return tr ? '${d.inMinutes} dakika' : '${d.inMinutes} min';
 }
 
+/// Canlı aşamalar (katılım, oylama) live rozeti; diğerleri sakin hap.
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({super.key, required this.status});
+  const StatusBadge({
+    super.key,
+    required this.status,
+    this.mode,
+    this.small = false,
+  });
   final String status;
+  final String? mode;
+  final bool small;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final t = L10n.of(context);
-    final (bg, fg, border) = switch (status) {
-      'open' => (p.accent, p.accentInk, null),
-      'judging' => (p.ink, p.surface, null),
-      'finished' => (Colors.transparent, p.ink, p.ink),
-      _ => (Colors.transparent, p.inkMuted, p.line),
-    };
+    if (status == 'open' || status == 'judging') {
+      return LiveBadge(
+        status == 'open'
+            ? t('contest.phase_open')
+            : (mode == 'jury'
+                  ? t('contest.phase_jury')
+                  : t('contest.phase_voting')),
+        small: small,
+      );
+    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      height: small ? 20 : 28,
+      padding: EdgeInsets.symmetric(horizontal: small ? 7 : 11),
+      alignment: Alignment.center,
       decoration: ShapeDecoration(
-        color: bg,
-        shape: StadiumBorder(
-          side: border == null ? BorderSide.none : BorderSide(color: border),
-        ),
+        color: p.surface2,
+        shape: const StadiumBorder(),
       ),
       child: Text(
         t('contest.status.$status'),
-        style: font(12, weight: 600, color: fg),
+        style: font(small ? 11 : 13, weight: 600, color: p.inkMuted),
       ),
     );
   }
@@ -119,51 +133,52 @@ class ContestTile extends StatelessWidget {
     final left = key.isEmpty ? '' : remainingText(at, locale);
     return Material(
       color: p.surface,
+      borderRadius: BorderRadius.circular(Radii.card),
       child: InkWell(
+        borderRadius: BorderRadius.circular(Radii.card),
         onTap: () => context.push('/contests/${c.id}'),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.all(14),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  StatusBadge(status: c.status),
-                  const SizedBox(width: 8),
-                  Text(
-                    t('contest.mode.${c.judgingMode}'),
-                    style: font(12, color: p.inkMuted),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                c.title,
-                style: font(
-                  18,
-                  weight: 600,
-                  height: 1.25,
-                  spacing: -0.2,
-                  color: p.ink,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 12,
-                runSpacing: 2,
-                children: [
-                  if (showCommunity)
-                    Text(c.community.name, style: font(13.5, color: p.inkMuted)),
-                  Text(
-                    t('contest.entries', {'count': c.entryCount}),
-                    style: font(13.5, color: p.inkMuted),
-                  ),
-                  if (left.isNotEmpty)
-                    Text(
-                      t(key, {'time': left}),
-                      style: font(13.5, weight: 500, color: p.ink),
+              CommunityLogo(name: c.community.name, url: c.community.logoUrl, size: 60),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        StatusBadge(status: c.status, mode: c.judgingMode, small: true),
+                        if (left.isNotEmpty)
+                          Text(
+                            t(key, {'time': left}),
+                            style: AppText.caption(p.inkMuted),
+                          ),
+                      ],
                     ),
-                ],
+                    const SizedBox(height: 5),
+                    Text(
+                      c.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: font(17, weight: 700, spacing: -0.2, color: p.ink),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        if (showCommunity) c.community.name,
+                        t('contest.entries', {'count': c.entryCount}),
+                      ].join('  ·  '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption(p.inkMuted),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -187,7 +202,9 @@ class CommunityTile extends StatelessWidget {
     ].join('  ·  ');
     return Material(
       color: p.surface,
+      borderRadius: BorderRadius.circular(Radii.card),
       child: InkWell(
+        borderRadius: BorderRadius.circular(Radii.card),
         onTap: () => context.push('/c/${c.slug}'),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -222,11 +239,12 @@ class CommunityTile extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: ShapeDecoration(
-                    shape: StadiumBorder(side: BorderSide(color: p.line)),
+                    color: p.surface2,
+                    shape: const StadiumBorder(),
                   ),
                   child: Text(
                     t('community.role.${c.myRole}'),
-                    style: font(12, color: p.inkMuted),
+                    style: font(12, weight: 600, color: p.inkMuted),
                   ),
                 ),
             ],
@@ -237,7 +255,7 @@ class CommunityTile extends StatelessWidget {
   }
 }
 
-/// Katılım → Değerlendirme → Sonuç; bulunulan adım siyah.
+/// Katılım → Oylama/Jüri → Sonuç. Üstte çubuk: geçmiş accent, şu an live, gelecek line.
 class ContestTimeline extends StatelessWidget {
   const ContestTimeline({super.key, required this.c});
   final ContestCard c;
@@ -246,58 +264,53 @@ class ContestTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = L10n.of(context);
     final p = context.palette;
-    final fmt = DateFormat.MMMd(t.locale.languageCode).add_Hm();
+    final fmt = DateFormat.MMMd(t.locale.languageCode);
     const order = ['open', 'judging', 'closed', 'finished'];
     final current = order
         .indexOf(c.status == 'draft' ? 'open' : c.status)
         .clamp(0, 3);
     final steps = [
-      (t('contest.step_entries'), c.submissionDeadline, current == 0),
+      (t('contest.step_entries'), c.submissionDeadline, 0),
       (
         c.judgingMode == 'jury'
             ? t('contest.step_jury')
             : t('contest.step_voting'),
         c.votingEnd,
-        current == 1 || current == 2,
+        1,
       ),
-      (t('contest.step_results'), c.resultsAt, current == 3),
+      (t('contest.step_results'), c.resultsAt, 3),
     ];
-    return Container(
-      color: p.line,
-      child: Row(
-        children: [
-          for (final (i, (label, at, active)) in steps.indexed) ...[
-            if (i > 0) const SizedBox(width: 1),
-            Expanded(
-              child: Container(
-                color: active ? p.ink : p.surface,
-                padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-                child: Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final (i, (label, at, idx)) in steps.indexed) ...[
+          if (i > 0) const SizedBox(width: 12),
+          Expanded(
+            child: Builder(
+              builder: (_) {
+                final active = current == idx || (idx == 1 && current == 2);
+                final done = !active && current > idx;
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      label,
-                      style: font(
-                        13,
-                        weight: 600,
-                        color: active ? p.surface : (i < current ? p.ink : p.inkMuted),
+                    Container(
+                      height: 4,
+                      decoration: ShapeDecoration(
+                        color: active ? p.live : (done ? p.accent : p.line),
+                        shape: const StadiumBorder(),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      fmt.format(at),
-                      style: font(
-                        11.5,
-                        color: active ? p.surface.withValues(alpha: 0.75) : p.inkMuted,
-                      ),
-                    ),
+                    const SizedBox(height: 8),
+                    Text(label, style: font(13.5, weight: 700, color: p.ink)),
+                    const SizedBox(height: 2),
+                    Text(fmt.format(at), style: AppText.caption(p.inkMuted)),
                   ],
-                ),
-              ),
+                );
+              },
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -327,7 +340,7 @@ class StarRating extends StatelessWidget {
                 child: Icon(
                   n <= (value ?? 0)
                       ? Icons.star_rounded
-                      : Icons.star_outline_rounded,
+                      : LucideIcons.star,
                   size: 30,
                   color: n <= (value ?? 0) ? p.accent : p.inkMuted,
                 ),

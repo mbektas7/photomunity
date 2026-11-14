@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,7 +31,7 @@ class CommunitiesScreen extends ConsumerStatefulWidget {
 }
 
 class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
-  int _segment = 0; // 0 topluluklar, 1 yarışmalar
+  int _segment = 1; // 0 topluluklar, 1 yarışmalar (alt menüde Yarışmalar)
   bool _mine = false;
   String _q = '';
   String _contestStatus = 'open';
@@ -54,7 +55,7 @@ class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
           if (_segment == 0)
             IconButton(
               tooltip: t('community.create'),
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               onPressed: () => context.push('/communities/new'),
             ),
         ],
@@ -72,7 +73,7 @@ class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
         children: [
           TextField(
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(LucideIcons.search),
               hintText: t('community.search'),
             ),
             textInputAction: TextInputAction.search,
@@ -429,7 +430,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               if (c.isAdmin)
                 IconButton(
                   tooltip: t('community.manage_web'),
-                  icon: const Icon(Icons.settings_outlined),
+                  icon: const Icon(LucideIcons.settings),
                   onPressed: () => openWeb(context, '/c/${c.slug}/settings'),
                 ),
             ],
@@ -546,7 +547,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 children: [
                   OutlinedButton.icon(
                     onPressed: _sharePhoto,
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const Icon(LucideIcons.plus, size: 18),
                     label: Text(t('community.share_photo')),
                   ),
                   if (c.isAdmin)
@@ -657,7 +658,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: OutlinedButton.icon(
               onPressed: () => openWeb(context, '/c/${c.slug}/contests/new'),
-              icon: const Icon(Icons.open_in_new, size: 18),
+              icon: const Icon(LucideIcons.externalLink, size: 18),
               label: Text(t('community.new_contest_web')),
             ),
           ),

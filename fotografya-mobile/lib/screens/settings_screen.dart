@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -62,7 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         leading: context.canPop()
             ? null
             : IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(LucideIcons.x),
                 onPressed: () => context.go('/feed'),
               ),
       ),
@@ -99,7 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           : t('pro.settings_body'),
                       style: font(13, color: context.palette.inkMuted),
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const Icon(LucideIcons.chevronRight),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -505,7 +506,7 @@ class _EquipmentSectionState extends ConsumerState<_EquipmentSection> {
                     ),
                     IconButton(
                       tooltip: t('settings.remove'),
-                      icon: Icon(Icons.delete_outline, color: p.inkMuted),
+                      icon: Icon(LucideIcons.trash2, color: p.inkMuted),
                       onPressed: () => setState(() => _rows.removeAt(i)),
                     ),
                   ],
@@ -552,7 +553,7 @@ class _EquipmentSectionState extends ConsumerState<_EquipmentSection> {
                   _EquipmentRow(_rows.isEmpty ? 'body' : 'lens', '', ''),
                 ),
               ),
-              icon: const Icon(Icons.add, size: 18),
+              icon: const Icon(LucideIcons.plus, size: 18),
               label: Text(t('settings.add_equipment')),
             ),
             FilledButton(
@@ -855,7 +856,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
                           radius: 15,
                           backgroundColor: p.ink,
                           child: Icon(
-                            Icons.photo_camera_outlined,
+                            LucideIcons.camera,
                             size: 16,
                             color: p.surface,
                           ),

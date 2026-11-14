@@ -7,7 +7,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/ad_widgets.dart';
-import '../widgets/photo_widgets.dart';
+import '../widgets/design.dart';
 import 'messages_screens.dart';
 import 'notifications_screen.dart';
 
@@ -16,6 +16,9 @@ bool loadMoreOnScroll(ScrollNotification n, VoidCallback loadMore) {
   if (n.metrics.extentAfter < 900) loadMore();
   return false;
 }
+
+/// Alt menünün altında içerik kalmasın diye kaydırma sonu boşluğu.
+const navClearance = 120.0;
 
 class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});
@@ -29,16 +32,23 @@ class FeedScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fotografya'),
+        toolbarHeight: 68,
+        titleSpacing: Space.s5,
+        title: Text(
+          'Fotografya',
+          style: font(30, weight: 700, spacing: -1.05, color: p.ink),
+        ),
         actions: const [
           MessagesButton(),
           NotificationBell(),
-          SizedBox(width: 4),
+          SizedBox(width: 10),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(unreadCountProvider);
+          ref.invalidate(contestsProvider);
+          ref.invalidate(communitiesProvider);
           await ctrl.refresh();
         },
         child: NotificationListener<ScrollNotification>(
@@ -46,6 +56,7 @@ class FeedScreen extends ConsumerWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
+              const SliverToBoxAdapter(child: _Stories()),
               if (pages.initialLoading)
                 const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
@@ -56,18 +67,14 @@ class FeedScreen extends ConsumerWidget {
                 )
               else if (pages.items.isEmpty)
                 SliverPadding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                   sliver: SliverToBoxAdapter(
-                    child: Container(
-                      color: p.surface,
-                      padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
+                    child: SurfaceCard(
+                      padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            t('feed.empty_title'),
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
+                          Text(t('feed.empty_title'), style: AppText.title(p.ink)),
                           const SizedBox(height: 8),
                           Text(
                             t('feed.empty_body'),
@@ -84,18 +91,21 @@ class FeedScreen extends ConsumerWidget {
                   ),
                 )
               else
-                SliverList.separated(
-                  itemCount: pages.items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (_, i) => (i + 1) % 8 == 0
-                      ? Column(
-                          children: [
-                            PhotoPrint(photo: pages.items[i]),
-                            const SizedBox(height: 14),
-                            const InlineAd(),
-                          ],
-                        )
-                      : PhotoPrint(photo: pages.items[i]),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                  sliver: SliverList.separated(
+                    itemCount: pages.items.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: Space.s3),
+                    itemBuilder: (_, i) => (i + 1) % 8 == 0
+                        ? Column(
+                            children: [
+                              PhotoCardView(photo: pages.items[i]),
+                              const SizedBox(height: Space.s3),
+                              const InlineAd(),
+                            ],
+                          )
+                        : PhotoCardView(photo: pages.items[i]),
+                  ),
                 ),
               if (pages.loading && pages.items.isNotEmpty)
                 const SliverToBoxAdapter(
@@ -104,9 +114,66 @@ class FeedScreen extends ConsumerWidget {
                     child: Center(child: CircularProgressIndicator()),
                   ),
                 ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              const SliverToBoxAdapter(child: SizedBox(height: navClearance)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hikâye halkaları. "Görülmemiş içerik" API'de yok: açık yarışmalar live,
+/// üye olunan topluluklar accent halkayla gösterilir (README → Veri gereksinimleri).
+class _Stories extends ConsumerWidget {
+  const _Stories();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = L10n.of(context);
+    final judging = ref.watch(contestsProvider('judging')).asData?.value ?? const [];
+    final open = ref.watch(contestsProvider('open')).asData?.value ?? const [];
+    final mine = ref.watch(communitiesProvider(('', true))).asData?.value ?? const [];
+    final contests = [...judging, ...open]
+      ..sort((a, b) => contestNextMoment(a)!.compareTo(contestNextMoment(b)!));
+    if (contests.isEmpty && mine.isEmpty) return const SizedBox(height: 4);
+    return Semantics(
+      label: t('feed.stories'),
+      container: true,
+      child: SizedBox(
+        height: 124,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+          children: [
+            for (final c in contests.take(6))
+              Builder(
+                builder: (_) {
+                  final left = shortRemaining(t, contestNextMoment(c)!);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: StoryRing(
+                      label: c.title,
+                      image: c.community.logoUrl,
+                      state: RingState.live,
+                      badge: left?.$1,
+                      semanticLabel: left == null ? c.title : '${c.title}, ${left.$2}',
+                      onTap: () => context.push('/contests/${c.id}'),
+                    ),
+                  );
+                },
+              ),
+            for (final c in mine)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: StoryRing(
+                  label: c.name,
+                  image: c.logoUrl,
+                  state: RingState.accent,
+                  onTap: () => context.push('/c/${c.slug}'),
+                ),
+              ),
+          ],
         ),
       ),
     );

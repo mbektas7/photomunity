@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -83,7 +84,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
           CircleAvatar(
             radius: 13,
             backgroundColor: p.accent,
-            child: Icon(Icons.check, size: 16, color: p.accentInk),
+            child: Icon(LucideIcons.check, size: 16, color: p.accentInk),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -134,7 +135,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.check_circle, color: p.accent),
+                      Icon(LucideIcons.circleCheck, color: p.accent),
                       const SizedBox(width: 8),
                       Text(
                         t('pro.you_are_pro'),

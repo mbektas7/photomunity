@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'core/l10n.dart';
+import 'widgets/design.dart';
 import 'screens/auth_screens.dart';
 import 'screens/community_screens.dart';
 import 'screens/contest_screens.dart';
@@ -214,50 +214,23 @@ class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
   final StatefulNavigationShell shell;
 
+  // Dal sırası: 0 akış, 1 keşfet, 2 topluluklar/yarışmalar, 3 yükle, 4 profil.
+  // Menü sırası: Akış, Keşfet, (Yükle), Yarışmalar, Profil.
+  static const _branchOfNav = [0, 1, 3, 2, 4];
+
   @override
   Widget build(BuildContext context) {
-    final t = L10n.of(context);
+    final nav = _branchOfNav.indexOf(shell.currentIndex);
     return Scaffold(
+      extendBody: true,
       body: shell,
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Theme.of(context).dividerColor),
-          ),
-        ),
-        child: NavigationBar(
-          selectedIndex: shell.currentIndex,
-          // Aynı sekmeye tekrar dokunmak o sekmenin başına döner
-          onDestinationSelected: (i) =>
-              shell.goBranch(i, initialLocation: i == shell.currentIndex),
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.photo_library_outlined),
-              selectedIcon: const Icon(Icons.photo_library),
-              label: t('nav.feed'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.explore_outlined),
-              selectedIcon: const Icon(Icons.explore),
-              label: t('nav.explore'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.groups_outlined),
-              selectedIcon: const Icon(Icons.groups),
-              label: t('nav.communities'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.add_box_outlined),
-              selectedIcon: const Icon(Icons.add_box),
-              label: t('nav.upload'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.person_outline),
-              selectedIcon: const Icon(Icons.person),
-              label: t('nav.profile'),
-            ),
-          ],
-        ),
+      bottomNavigationBar: FloatingBottomNav(
+        current: nav,
+        // Aynı hedefe tekrar dokunmak o sekmenin başına döner
+        onSelect: (i) {
+          final b = _branchOfNav[i];
+          shell.goBranch(b, initialLocation: b == shell.currentIndex);
+        },
       ),
     );
   }
