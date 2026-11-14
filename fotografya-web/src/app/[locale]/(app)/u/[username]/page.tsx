@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Lock, MapPin, MessageCircle } from "lucide-react";
+import { Lock, MapPin, MessageCircle, MoreVertical } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useCallback } from "react";
 import { Avatar } from "@/components/Avatar";
+import { ExifChip } from "@/components/ExifChip";
 import { FollowButton } from "@/components/FollowButton";
+import { ShareButton } from "@/components/ShareButton";
 import { JustifiedWall } from "@/components/JustifiedWall";
 import { ReportButton } from "@/components/ReportDialog";
 import { ProBadge } from "@/components/AdSlot";
@@ -25,6 +27,7 @@ export default function ProfilePage() {
   const t = useTranslations("profile");
   const te = useTranslations("equipment");
   const ts = useTranslations("specialties");
+  const tu = useTranslations("ui");
   const locale = useLocale();
 
   const profile = useQuery({ queryKey: ["profile", username], queryFn: () => api<Profile>(`users/${username}`) });
@@ -54,62 +57,49 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div>
-      {p.cover_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={p.cover_url} alt="" className="block aspect-[3/1] max-h-[360px] w-full object-cover" />
-      )}
-      <section className="mx-auto max-w-[1400px] px-4 pb-10 pt-10 sm:px-6 sm:pt-14">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="min-w-0">
-            <div className="flex items-start gap-5">
-              <Avatar name={p.display_name} url={p.avatar_url} size={88} className="text-[32px]" />
-              <div className="min-w-0 pt-1">
-                <h1 className="flex flex-wrap items-center gap-3 text-[clamp(1.8rem,4vw,2.8rem)] font-bold leading-none tracking-[-0.04em]">
-                  {p.display_name}
-                  {p.is_pro && <ProBadge />}
-                </h1>
-                <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-ink-muted">
-                  <span>@{p.username}</span>
-                  {!p.is_public && (
-                    <span className="inline-flex items-center gap-1">
-                      <Lock className="h-3.5 w-3.5" /> {t("private")}
-                    </span>
-                  )}
-                  {place && (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" /> {place}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {p.bio && <p className="mt-6 max-w-[60ch] whitespace-pre-line text-[16px] leading-relaxed">{p.bio}</p>}
+    <div className="mx-auto max-w-[1440px] px-3 pb-16 sm:px-6 lg:px-10">
+      <section className="flex flex-col gap-6 rounded-card bg-surface p-5 sm:rounded-[28px] sm:p-8 lg:flex-row lg:flex-wrap lg:gap-8">
+        {p.cover_url && (
+          // Kapak bir afiş görseli; kartın üstünde şerit olarak durur.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.cover_url} alt="" className="block aspect-[4/1] max-h-[260px] w-full rounded-photo object-cover lg:basis-full" />
+        )}
+        <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-5 sm:flex-row sm:gap-8">
+          <Avatar name={p.display_name} url={p.avatar_url} size={132} className="border-[3px] border-accent-tint text-[44px] max-sm:!h-[100px] max-sm:!w-[100px]" />
+          <div className="flex min-w-0 flex-1 flex-col gap-3.5">
+            <h1 className="flex flex-wrap items-center gap-3 text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[44px]">
+              {p.display_name}
+              {p.is_pro && <ProBadge />}
+            </h1>
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-ink-muted">
+              <span>@{p.username}</span>
+              {!p.is_public && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Lock className="h-4 w-4" strokeWidth={1.8} aria-hidden /> {t("private")}
+                </span>
+              )}
+              {place && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" strokeWidth={1.8} aria-hidden /> {place}
+                </span>
+              )}
+            </p>
+            {p.bio && <p className="max-w-[620px] whitespace-pre-line text-[16px] leading-[1.55]">{p.bio}</p>}
             {p.website && (
-              <a href={p.website} target="_blank" rel="noreferrer nofollow" className="mt-3 inline-block text-[15px] font-medium underline underline-offset-4">
+              <a href={p.website} target="_blank" rel="noreferrer nofollow" className="self-start text-[15px] font-semibold text-accent-text hover:underline">
                 {p.website.replace(/^https?:\/\//, "")}
               </a>
             )}
             {p.specialties.length > 0 && (
-              <ul className="mt-5 flex flex-wrap gap-2">
+              <ul className="flex flex-wrap gap-1.5">
                 {p.specialties.map((s) => (
-                  <li key={s} className="rounded-full bg-ink/[0.06] px-3 py-1 text-sm">
-                    {ts.has(s) ? ts(s) : s}
+                  <li key={s}>
+                    <ExifChip>{ts.has(s) ? ts(s) : s}</ExifChip>
                   </li>
                 ))}
               </ul>
             )}
-
-            <div className="mt-7 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <dl className="flex gap-7">
-                {stats.map((s) => (
-                  <div key={s.label} className="flex flex-col-reverse">
-                    <dt className="text-sm text-ink-muted">{s.label}</dt>
-                    <dd className="tnum text-xl font-semibold">{s.n}</dd>
-                  </div>
-                ))}
-              </dl>
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
               {p.is_me ? (
                 <Link href="/settings" className={buttonClass("secondary")}>
                   {t("edit_profile")}
@@ -119,58 +109,79 @@ export default function ProfilePage() {
                   <FollowButton profile={p} />
                   {p.is_public && (
                     <Link href={`/messages/new?to=${p.username}`} className={buttonClass("secondary")}>
-                      <MessageCircle className="h-4 w-4" /> {t("message")}
+                      <MessageCircle className="h-[19px] w-[19px]" strokeWidth={1.8} aria-hidden /> {t("message")}
                     </Link>
                   )}
-                  <ReportButton targetType="user" targetId={p.id} />
-                  <BlockButton username={p.username} name={p.display_name} />
                 </>
+              )}
+              <ShareButton title={p.display_name} size={46} />
+              {!p.is_me && (
+                <details className="relative">
+                  <summary
+                    aria-label={tu("more")}
+                    className="flex h-[46px] w-[46px] cursor-pointer list-none items-center justify-center rounded-full bg-surface-2 hover:bg-line [&::-webkit-details-marker]:hidden"
+                  >
+                    <MoreVertical className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+                  </summary>
+                  <div className="absolute left-0 top-14 z-20 flex w-56 flex-col rounded-box bg-surface p-1.5 shadow-float">
+                    <ReportButton targetType="user" targetId={p.id} />
+                    <BlockButton username={p.username} name={p.display_name} />
+                  </div>
+                </details>
               )}
             </div>
           </div>
+        </div>
 
+        <div className="flex flex-[0_1_300px] flex-col gap-3.5">
+          <dl className="flex gap-2">
+            {stats.map((s) => (
+              <div key={s.label} className="flex flex-1 flex-col-reverse gap-0.5 rounded-box bg-surface-2 px-[18px] py-3 lg:flex-none">
+                <dt className="text-caption text-ink-muted">{s.label.toLocaleLowerCase(locale)}</dt>
+                <dd className="tnum text-[24px] font-bold tracking-[-0.03em]">{s.n.toLocaleString(locale)}</dd>
+              </div>
+            ))}
+          </dl>
           {kit.length > 0 && (
-            <aside aria-labelledby="kit" className="self-start bg-surface px-5 py-5">
-              <h2 id="kit" className="text-[15px] font-semibold">
-                {t("kit")}
-              </h2>
-              <ul className="mt-3 divide-y divide-line">
+            <div>
+              <h2 className="mb-1 text-[14px] font-bold text-ink-muted">{t("kit")}</h2>
+              <ul>
                 {kit.map((e) => (
-                  <li key={e.id} className="flex items-baseline justify-between gap-4 py-2.5">
-                    <span className="min-w-0 truncate text-[15px]">
+                  <li key={e.id} className="flex flex-col border-t border-line py-2.5">
+                    <span className="text-[14.5px] font-semibold">
                       {e.brand} {e.model}
                     </span>
-                    <span className="shrink-0 text-[13px] text-ink-muted">{te(e.type)}</span>
+                    <span className="text-caption text-ink-muted">{te(e.type)}</span>
                   </li>
                 ))}
               </ul>
-            </aside>
+            </div>
           )}
         </div>
       </section>
 
-      <section aria-label={t("photos")} className="px-1.5">
+      <section aria-labelledby="photos-tab" className="mt-6">
+        <h2 id="photos-tab" className="mb-4 inline-flex h-[42px] items-center gap-2 rounded-pill bg-ink px-4 text-[15px] font-semibold text-bg">
+          {t("photos")}
+          <span className="tnum text-[13px] opacity-70">{p.photos_count}</span>
+        </h2>
         {!canView ? (
-          <div className="mx-auto max-w-[1400px] px-3 sm:px-5">
-            <div className="bg-surface px-6 py-14">
-              <Lock className="h-6 w-6" />
-              <h2 className="mt-4 text-xl font-semibold tracking-[-0.02em]">{t("private_title")}</h2>
-              <p className="mt-1.5 text-ink-muted">{t("private_body")}</p>
-            </div>
+          <div className="rounded-card bg-surface px-6 py-14">
+            <Lock className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+            <h3 className="mt-4 text-heading">{t("private_title")}</h3>
+            <p className="mt-1.5 text-ink-muted">{t("private_body")}</p>
           </div>
         ) : photos.isSuccess && items.length === 0 ? (
-          <div className="mx-auto max-w-[1400px] px-3 sm:px-5">
-            <div className="bg-surface px-6 py-14">
-              <p className="text-ink-muted">{p.is_me ? t("empty_me") : t("empty")}</p>
-              {p.is_me && (
-                <Link href="/upload" className={buttonClass("primary", "mt-5")}>
-                  {t("upload_first")}
-                </Link>
-              )}
-            </div>
+          <div className="rounded-card bg-surface px-6 py-14">
+            <p className="text-ink-muted">{p.is_me ? t("empty_me") : t("empty")}</p>
+            {p.is_me && (
+              <Link href="/upload" className={buttonClass("primary", "mt-5")}>
+                {t("upload_first")}
+              </Link>
+            )}
           </div>
         ) : (
-          <JustifiedWall photos={items} target={280} />
+          <JustifiedWall photos={items} target={360} />
         )}
         <div ref={sentinel} className="h-px" />
       </section>

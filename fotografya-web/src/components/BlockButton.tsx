@@ -21,7 +21,7 @@ export function BlockButton({ username, name }: { username: string; name: string
   });
   if (!me) return null;
   return (
-    <button type="button" onClick={() => window.confirm(t("block_confirm", { name })) && block.mutate()} className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-danger">
+    <button type="button" onClick={() => window.confirm(t("block_confirm", { name })) && block.mutate()} className="inline-flex min-h-11 w-full items-center gap-2 rounded-box px-3 text-[15px] font-medium text-danger hover:bg-danger/10">
       <Ban className="h-4 w-4" /> {t("block")}
     </button>
   );

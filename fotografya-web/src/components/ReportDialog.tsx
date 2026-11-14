@@ -21,15 +21,15 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
 
   return (
     <>
-      <button type="button" onClick={() => dialog.current?.showModal()} className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink">
+      <button type="button" onClick={() => dialog.current?.showModal()} className="inline-flex min-h-11 items-center gap-2 rounded-box px-3 text-[14.5px] font-medium text-ink-muted hover:bg-surface-2 hover:text-ink">
         <Flag className="h-4 w-4" /> {t("button")}
       </button>
       <dialog
         ref={dialog}
-        className="m-auto w-[min(440px,calc(100vw-2rem))] border border-line bg-surface p-6 text-ink backdrop:bg-black/50"
+        className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-sheet bg-surface p-6 text-ink shadow-float backdrop:bg-black/50"
         onClose={() => send.reset()}
       >
-        <h2 className="text-xl font-semibold tracking-[-0.02em]">{t("title")}</h2>
+        <h2 className="text-heading">{t("title")}</h2>
         {send.isSuccess || already ? (
           <>
             <p className="mt-3 text-ink-muted">{already ? send.error?.message : t("thanks")}</p>
@@ -48,7 +48,7 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
             <fieldset className="flex flex-col gap-1">
               <legend className="sr-only">{t("reason")}</legend>
               {REASONS.map((r) => (
-                <label key={r} className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-ink/5">
+                <label key={r} className="flex cursor-pointer items-center gap-3 min-h-11 rounded-box px-3 py-2 hover:bg-surface-2">
                   <input type="radio" name="reason" value={r} checked={reason === r} onChange={() => setReason(r)} className="accent-[var(--accent)]" />
                   <span className="text-[15px]">{t(`reasons.${r}`)}</span>
                 </label>
@@ -60,7 +60,7 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
               maxLength={1000}
               rows={3}
               placeholder={t("note")}
-              className="rounded-[10px] border border-line bg-surface px-3.5 py-3 text-[15px] outline-none focus:border-ink"
+              className="rounded-box border border-ring-idle bg-surface px-4 py-3 text-[15px] outline-none focus:border-accent"
             />
             {send.error && !already && <Notice tone="error">{send.error.message}</Notice>}
             <div className="flex gap-3">
