@@ -822,3 +822,56 @@ class FloatingBottomNav extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------- Follow
+
+/// Takip et (accent) / Takip ediliyor (surface-2). Durum profil sağlayıcısından gelir.
+class FollowButton extends ConsumerStatefulWidget {
+  const FollowButton({super.key, required this.username, this.height = 44});
+  final String username;
+  final double height;
+
+  @override
+  ConsumerState<FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends ConsumerState<FollowButton> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool following) async {
+    setState(() => _busy = true);
+    final api = ref.read(apiProvider);
+    try {
+      following
+          ? await api.delete<dynamic>('/users/${widget.username}/follow')
+          : await api.post<dynamic>('/users/${widget.username}/follow');
+      ref.invalidate(profileProvider(widget.username));
+      ref.invalidate(photoPagesProvider);
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final prof = ref.watch(profileProvider(widget.username)).asData?.value;
+    if (prof == null || prof.isMe) return const SizedBox.shrink();
+    final following = prof.isFollowing;
+    final style = FilledButton.styleFrom(
+      minimumSize: Size(0, widget.height),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      backgroundColor: following ? p.surface2 : p.accent,
+      foregroundColor: following ? p.ink : p.accentInk,
+      textStyle: font(15, weight: 600),
+    );
+    return FilledButton(
+      style: style,
+      onPressed: _busy ? null : () => _toggle(following),
+      child: Text(following ? t('profile.following_button') : t('profile.follow')),
+    );
+  }
+}

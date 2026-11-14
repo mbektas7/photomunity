@@ -11,8 +11,7 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
-import '../widgets/photo_widgets.dart';
-import '../widgets/viewfinder.dart';
+import '../widgets/design.dart';
 
 class PhotoScreen extends ConsumerStatefulWidget {
   const PhotoScreen({super.key, required this.id});
@@ -93,14 +92,39 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
 
     final me = ref.watch(authProvider).asData?.value;
     final photo = async.asData?.value;
+    final p = context.palette;
+    final t = L10n.of(context);
+    final ready = photo != null && !photo.isProcessing && photo.status != 'rejected';
+    final isOwner = photo != null && me?.id == photo.user.id;
     return Scaffold(
+      backgroundColor: p.surface,
+      extendBodyBehindAppBar: ready,
       appBar: AppBar(
+        backgroundColor: ready ? Colors.transparent : p.surface,
+        toolbarHeight: 72,
+        leadingWidth: 76,
+        automaticallyImplyLeading: false,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 14),
+          child: Center(
+            child: RoundIconButton(
+              icon: LucideIcons.chevronLeft,
+              label: t('ui.back'),
+              scrim: ready,
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        ),
         actions: [
-          if (photo != null && me != null && me.id != photo.user.id)
-            IconButton(
-              tooltip: L10n.of(context)('report.button'),
-              icon: const Icon(LucideIcons.flag),
-              onPressed: () => _report(photo.id),
+          if (photo != null && me != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: RoundIconButton(
+                icon: LucideIcons.ellipsisVertical,
+                label: t('ui.more'),
+                scrim: ready,
+                onPressed: () => _menu(photo, isOwner),
+              ),
             ),
         ],
       ),
@@ -113,7 +137,66 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               onRetry: () => ref.invalidate(photoProvider(widget.id)),
             )
           : const Center(child: CircularProgressIndicator()),
+      bottomNavigationBar: ready
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: p.surface,
+                border: Border(top: BorderSide(color: p.line)),
+              ),
+              child: SafeArea(
+                minimum: const EdgeInsets.fromLTRB(Space.s5, 12, Space.s5, 12),
+                child: Row(
+                  children: [
+                    Expanded(child: LikePill(photo: photo, wide: true)),
+                    const SizedBox(width: Space.s3),
+                    ShareButton(path: '/p/${photo.id}', title: photo.title, size: 52),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
+  }
+
+  Future<void> _menu(PhotoDetail photo, bool isOwner) async {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isOwner) ...[
+              ListTile(
+                leading: const Icon(LucideIcons.pencil),
+                title: Text(t('photo.edit')),
+                onTap: () => Navigator.pop(c, 'edit'),
+              ),
+              ListTile(
+                leading: Icon(LucideIcons.trash2, color: p.danger),
+                title: Text(t('common.delete'), style: TextStyle(color: p.danger)),
+                onTap: () => Navigator.pop(c, 'delete'),
+              ),
+            ] else
+              ListTile(
+                leading: const Icon(LucideIcons.flag),
+                title: Text(t('report.button')),
+                onTap: () => Navigator.pop(c, 'report'),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    switch (choice) {
+      case 'edit':
+        await _edit(photo);
+      case 'delete':
+        await _delete();
+      case 'report':
+        await _report(photo.id);
+    }
   }
 
   Widget _body(BuildContext context, PhotoDetail photo) {
@@ -139,11 +222,12 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
             for (final r in photo.rejection)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.only(left: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  border: Border(left: BorderSide(color: p.danger, width: 2)),
+                  color: p.danger.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(Radii.box),
                 ),
-                child: Text(r, style: font(15, color: p.ink)),
+                child: Text(r, style: font(15, color: p.danger)),
               ),
             const SizedBox(height: 16),
             FilledButton(
@@ -161,15 +245,35 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
 
     final img = photo.full;
     final locale = t.locale.languageCode;
+    final prof = ref.watch(profileProvider(photo.user.username)).asData?.value;
+    final when = photo.exif?.takenAt ?? photo.publishedAt;
+    final meta = [
+      prof?.city,
+      if (when != null) DateFormat.yMMMMd(locale).format(when.toLocal()),
+    ].whereType<String>().join(', ');
+    final exif = photo.exif;
+    final boxes = exif == null
+        ? const <(String, String)>[]
+        : [
+            if (formatShutter(exif.shutter, locale) != null)
+              (formatShutter(exif.shutter, locale)!, t('photo.shutter')),
+            if (formatAperture(exif.aperture) != null)
+              (formatAperture(exif.aperture)!, t('photo.aperture')),
+            if (exif.iso != null) ('${exif.iso}', 'ISO'),
+            if (formatFocal(exif.focalLength) != null)
+              (formatFocal(exif.focalLength)!, t('photo.focal_short')),
+          ];
+    final camera = [exif?.camera, exif?.lens].whereType<String>().join(', ');
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(photoProvider(widget.id)),
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
+          // Fotoğraf kendi oranında, kenardan kenara; asla kırpılmaz
           if (img != null)
             ConstrainedBox(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.72,
+                maxHeight: MediaQuery.sizeOf(context).height * 0.7,
               ),
               child: AspectRatio(
                 aspectRatio: img.ratio,
@@ -181,78 +285,139 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 6),
-            child: Row(
-              children: [
-                Expanded(child: UserRow(user: photo.user, size: 44)),
-                LikeButton(photo: photo, large: true),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: p.line),
-          ),
-          if (photo.exif != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Viewfinder(exif: photo.exif!),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+            padding: const EdgeInsets.fromLTRB(Space.s5, 18, Space.s5, 0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (photo.title != null)
-                  Text(
-                    photo.title!,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(Radii.box),
+                        onTap: () => context.push('/u/${photo.user.username}'),
+                        child: Row(
+                          children: [
+                            Avatar(name: photo.user.displayName, url: photo.user.avatarUrl, size: 40),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(photo.user.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                      style: font(16, weight: 600, color: p.ink)),
+                                  if (meta.isNotEmpty)
+                                    Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                        style: font(13.5, color: p.inkMuted)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    FollowButton(username: photo.user.username, height: 40),
+                  ],
+                ),
+                if (photo.title != null) ...[
+                  const SizedBox(height: Space.s4),
+                  Text(photo.title!, style: font(28, weight: 700, height: 1.1, spacing: -0.9, color: p.ink)),
+                ],
                 if (photo.description != null) ...[
                   const SizedBox(height: 10),
-                  Text(
-                    photo.description!,
-                    style: font(16, height: 1.55, color: p.ink),
-                  ),
+                  Text(photo.description!, style: font(15, height: 1.55, color: p.ink)),
                 ],
-                if (photo.tags.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                if (boxes.isNotEmpty) ...[
+                  const SizedBox(height: Space.s4),
+                  Row(
                     children: [
-                      for (final tag in photo.tags)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 5,
-                          ),
-                          decoration: ShapeDecoration(
-                            shape: StadiumBorder(
-                              side: BorderSide(color: p.line),
+                      for (final (i, b) in boxes.indexed) ...[
+                        if (i > 0) const SizedBox(width: Space.s2),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(10, 10, 6, 10),
+                            decoration: BoxDecoration(
+                              color: p.surface2,
+                              borderRadius: BorderRadius.circular(Radii.box),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(b.$1, style: font(19, weight: 700, spacing: -0.6, color: p.ink, tabular: true)),
+                                ),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(b.$2, maxLines: 1, style: AppText.caption(p.inkMuted)),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Text('#$tag', style: font(14, color: p.inkMuted)),
                         ),
+                      ],
                     ],
                   ),
                 ],
+                if (camera.isNotEmpty) ...[
+                  const SizedBox(height: Space.s4),
+                  Row(
+                    children: [
+                      Icon(LucideIcons.camera, size: 20, color: p.inkMuted),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(camera, style: font(15, color: p.inkMuted))),
+                    ],
+                  ),
+                ],
+                if (photo.tags.isNotEmpty) ...[
+                  const SizedBox(height: Space.s3),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [for (final tag in photo.tags) ExifChip('#$tag')],
+                  ),
+                ],
                 if (photo.location != null) ...[
-                  const SizedBox(height: 14),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                    onPressed: () => context.push(
-                      '/map?lat=${photo.location!.latitude}&lng=${photo.location!.longitude}&photos=1',
+                  const SizedBox(height: Space.s4),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: p.surface2,
+                      borderRadius: BorderRadius.circular(Radii.box),
                     ),
-                    icon: const Icon(LucideIcons.mapPin, size: 18),
-                    label: Text(
-                      photo.location!.name ??
-                          '${photo.location!.latitude.toStringAsFixed(3)}, ${photo.location!.longitude.toStringAsFixed(3)}',
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: p.accentTint,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(LucideIcons.mapPin, size: 20, color: p.accentText),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            photo.location!.name ??
+                                '${photo.location!.latitude.toStringAsFixed(3)}, ${photo.location!.longitude.toStringAsFixed(3)}',
+                            style: font(16, weight: 600, color: p.ink),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push(
+                            '/map?lat=${photo.location!.latitude}&lng=${photo.location!.longitude}&photos=1',
+                          ),
+                          child: Text(t('photo.see_on_map')),
+                        ),
+                      ],
                     ),
                   ),
                 ],
                 if (isOwner && photo.suggestedLocation != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: Space.s4),
                   Notice(
                     t('photo.suggested_location'),
                     action: TextButton(
@@ -264,34 +429,6 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
-                Text(
-                  [
-                    if (photo.publishedAt != null)
-                      DateFormat.yMMMMd(locale)
-                          .format(photo.publishedAt!.toLocal()),
-                    if (photo.width != null && photo.height != null)
-                      '${photo.width} × ${photo.height} px',
-                  ].join('    '),
-                  style: font(13, color: p.inkMuted, tabular: true),
-                ),
-                if (isOwner) ...[
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => _edit(photo),
-                        child: Text(t('photo.edit')),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: _delete,
-                        child: Text(t('common.delete')),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 40),
               ],
             ),
           ),
