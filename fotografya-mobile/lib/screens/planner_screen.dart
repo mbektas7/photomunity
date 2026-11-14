@@ -43,11 +43,13 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
 
   Future<void> _locate() async {
     var perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied)
+    if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
+    }
     if (perm == LocationPermission.denied ||
-        perm == LocationPermission.deniedForever)
+        perm == LocationPermission.deniedForever) {
       return;
+    }
     final pos = await Geolocator.getCurrentPosition();
     if (!mounted) return;
     setState(() {
@@ -127,10 +129,12 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2035),
                   );
-                  if (d != null) setState(() {
+                  if (d != null) {
+                    setState(() {
                     _date = d;
                     _selected = null;
                   });
+                  }
                 },
               ),
               FilledButton.icon(

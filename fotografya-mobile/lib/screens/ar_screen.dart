@@ -75,11 +75,13 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
             });
     // Planlanan gece bugün değilse çekirdeğin doruk anını göster
     final today = DateTime.now();
-    if (!DateUtils.isSameDay(widget.date, today) && _plan.coreTransit != null)
+    if (!DateUtils.isSameDay(widget.date, today) && _plan.coreTransit != null) {
       _time = _plan.coreTransit!.t;
+    }
     _clock = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (DateUtils.isSameDay(widget.date, DateTime.now()))
+      if (DateUtils.isSameDay(widget.date, DateTime.now())) {
         setState(() => _time = DateTime.now());
+      }
     });
   }
 
@@ -388,7 +390,7 @@ class _SkyOverlay extends CustomPainter {
           ..color = Colors.white70
           ..strokeWidth = major ? 2 : 1,
       );
-      if (az % 45 == 0)
+      if (az % 45 == 0) {
         _label(
           canvas,
           q + const Offset(0, 26),
@@ -397,6 +399,7 @@ class _SkyOverlay extends CustomPainter {
           bold: major,
           size: major ? 15 : 12,
         );
+      }
     }
 
     // Gece boyunca çekirdeğin ve Ay'ın yolu (saat etiketleriyle)

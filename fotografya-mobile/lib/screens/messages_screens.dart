@@ -12,7 +12,6 @@ import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
 import '../widgets/community_widgets.dart' show pickMyPhoto;
-import 'notifications_screen.dart' show relativeTime;
 
 /// Akış ekranının üst çubuğundaki mesaj simgesi ve okunmamış rozeti.
 class MessagesButton extends ConsumerWidget {
@@ -221,8 +220,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final res = await ref
           .read(apiProvider)
           .get<Map<String, dynamic>?>('/conversations/with/$u');
-      if (res != null && mounted)
+      if (res != null && mounted) {
         context.pushReplacement('/messages/${res['id']}');
+      }
     } catch (_) {}
   }
 
@@ -273,11 +273,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _shareLocation() async {
     var perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied)
+    if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
+    }
     if (perm == LocationPermission.denied ||
-        perm == LocationPermission.deniedForever)
+        perm == LocationPermission.deniedForever) {
       return;
+    }
     final pos = await Geolocator.getCurrentPosition();
     await _send({
       'location': {
@@ -332,8 +334,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _markRead(String cid, List<ChatMessage> items, String? meId) {
     if (items.isEmpty ||
         items.last.senderId == meId ||
-        _lastReadFor == items.last.id)
+        _lastReadFor == items.last.id) {
       return;
+    }
     _lastReadFor = items.last.id;
     ref
         .read(apiProvider)
@@ -359,14 +362,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final conv = ref.watch(conversationProvider(cid));
     final msgs = ref.watch(messagesProvider(cid));
     final me = ref.watch(authProvider).asData?.value;
-    if (conv.hasError)
+    if (conv.hasError) {
       return Scaffold(
         appBar: AppBar(),
         body: ErrorView(error: conv.error!),
       );
+    }
     final c = conv.asData?.value;
-    if (c == null)
+    if (c == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _markRead(cid, msgs.items, me?.id),
     );
@@ -621,8 +626,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String _day(DateTime d, String locale) {
     final now = DateTime.now();
     if (DateUtils.isSameDay(d, now)) return locale == 'tr' ? 'Bugün' : 'Today';
-    if (DateUtils.isSameDay(d, now.subtract(const Duration(days: 1))))
+    if (DateUtils.isSameDay(d, now.subtract(const Duration(days: 1)))) {
       return locale == 'tr' ? 'Dün' : 'Yesterday';
+    }
     return DateFormat.yMMMMd(locale).format(d);
   }
 }

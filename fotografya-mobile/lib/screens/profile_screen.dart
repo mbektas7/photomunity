@@ -32,8 +32,9 @@ class MyProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(authProvider).asData?.value;
-    if (me == null)
+    if (me == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return ProfileScreen(username: me.username, isTab: true);
   }
 }

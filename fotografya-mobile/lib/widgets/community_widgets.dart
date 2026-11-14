@@ -61,14 +61,16 @@ String remainingText(DateTime at, String locale) {
   final d = at.difference(DateTime.now());
   if (d.isNegative) return '';
   final tr = locale == 'tr';
-  if (d.inDays > 0)
+  if (d.inDays > 0) {
     return tr
         ? '${d.inDays} gün ${d.inHours % 24} saat'
         : '${d.inDays}d ${d.inHours % 24}h';
-  if (d.inHours > 0)
+  }
+  if (d.inHours > 0) {
     return tr
         ? '${d.inHours} saat ${d.inMinutes % 60} dk'
         : '${d.inHours}h ${d.inMinutes % 60}m';
+  }
   return tr ? '${d.inMinutes} dakika' : '${d.inMinutes} min';
 }
 

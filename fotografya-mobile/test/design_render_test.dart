@@ -46,7 +46,7 @@ Future<void> _loadFont(String family, String path) async {
 }
 
 String _flutterRoot() =>
-    Platform.environment["FLUTTER_ROOT"] ??
+    Platform.environment['FLUTTER_ROOT'] ??
     File(Platform.resolvedExecutable).parent.parent.parent.parent.parent.parent.path;
 
 Future<String> _pubPackage(String name) async {

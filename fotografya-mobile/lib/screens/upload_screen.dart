@@ -42,8 +42,9 @@ Future<List<String>> precheck(XFile file) async {
     );
     final desc = await ui.ImageDescriptor.encoded(buffer);
     if ((desc.width > desc.height ? desc.width : desc.height) <
-        AppConfig.minLongEdge)
+        AppConfig.minLongEdge) {
       codes.add('resolution_too_low');
+    }
     desc.dispose();
     buffer.dispose();
   } catch (_) {
@@ -99,11 +100,13 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     setState(() => _locating = true);
     try {
       var perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied)
+      if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
+      }
       if (perm == LocationPermission.denied ||
-          perm == LocationPermission.deniedForever)
+          perm == LocationPermission.deniedForever) {
         return;
+      }
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,

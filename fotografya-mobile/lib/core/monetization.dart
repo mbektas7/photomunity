@@ -83,8 +83,9 @@ class PurchasesService {
       return true;
     } on PlatformException catch (e) {
       if (PurchasesErrorHelper.getErrorCode(e) ==
-          PurchasesErrorCode.purchaseCancelledError)
+          PurchasesErrorCode.purchaseCancelledError) {
         return false;
+      }
       rethrow;
     }
   }

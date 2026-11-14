@@ -19,10 +19,11 @@ class FotografyaApp extends ConsumerWidget {
     ref.watch(purchasesProvider); // RevenueCat kullanıcısını oturumla eşler
     ref.listen(authProvider, (_, next) {
       final me = next.asData?.value;
-      if (me != null && !me.isPro)
+      if (me != null && !me.isPro) {
         ref
             .read(adsProvider)
             .start(); // izin formu + AdMob, yalnızca reklam görecekler için
+      }
     });
     ref.listen(authProvider, (prev, next) {
       final wasIn = prev?.asData?.value != null;

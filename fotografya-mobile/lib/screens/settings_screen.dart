@@ -183,11 +183,13 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
 
   Future<void> _locate() async {
     var perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied)
+    if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
+    }
     if (perm == LocationPermission.denied ||
-        perm == LocationPermission.deniedForever)
+        perm == LocationPermission.deniedForever) {
       return;
+    }
     final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
     );
@@ -205,8 +207,9 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
     String? opt(TextEditingController c) =>
         c.text.trim().isEmpty ? null : c.text.trim();
     var website = opt(_website);
-    if (website != null && !website.startsWith(RegExp('https?://')))
+    if (website != null && !website.startsWith(RegExp('https?://'))) {
       website = 'https://$website';
+    }
     try {
       final res = await ref.read(apiProvider).patch<Map<String, dynamic>>(
         '/me',
@@ -751,8 +754,9 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
     if (file == null) return;
     final type = _types[file.name.split('.').last.toLowerCase()];
     if (type == null) {
-      if (mounted)
+      if (mounted) {
         toast(context, L10n.of(context)('quality.unsupported_format'));
+      }
       return;
     }
     setState(() => _busy = kind);

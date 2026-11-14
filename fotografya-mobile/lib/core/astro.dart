@@ -281,11 +281,12 @@ NightPlan planNight(DateTime date, double lat, double lng) {
       open = null;
     }
   }
-  if (open != null)
+  if (open != null) {
     windows.add((
       start: DateTime.fromMillisecondsSinceEpoch(open),
       end: DateTime.fromMillisecondsSinceEpoch(samples.last.t),
     ));
+  }
 
   return NightPlan(
     samples: samples,

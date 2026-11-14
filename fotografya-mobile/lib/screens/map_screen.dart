@@ -66,8 +66,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         full ? 180.0 : wrap(b.east),
         math.min(90.0, b.north),
       ].map((n) => n.toStringAsFixed(4)).join(',');
-      if (mounted)
+      if (mounted) {
         setState(() => _view = (bbox: bbox, zoom: camera.zoom.round()));
+      }
     });
   }
 

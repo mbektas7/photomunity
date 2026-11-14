@@ -160,15 +160,12 @@ class _SocialButtonsState extends ConsumerState<SocialButtons> {
   bool get _appleEnabled => Platform.isIOS;
 
   Future<void> _run(Future<bool> Function() signIn) async {
+    final failed = L10n.of(context)('auth.social_failed');
     setState(() => _busy = true);
     try {
       await signIn(); // yönlendirme oturum durumuna göre router'da yapılır
     } on ApiException catch (e) {
-      widget.onError(
-        e.message.isNotEmpty
-            ? e.message
-            : L10n.of(context)('auth.social_failed'),
-      );
+      widget.onError(e.message.isNotEmpty ? e.message : failed);
     } catch (_) {
       // Kullanıcı pencereyi kapattı; sessizce geç
     } finally {

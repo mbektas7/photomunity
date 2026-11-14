@@ -198,7 +198,7 @@ class PagesState {
   );
 }
 
-/// İmleç tabanlı sonsuz liste. Argüman: 'feed', 'explore' veya 'users/<kullanıcı>/photos'.
+/// İmleç tabanlı sonsuz liste. Argüman: `feed`, `explore` veya `users/<kullanıcı>/photos`.
 final photoPagesProvider =
     NotifierProvider.family<PhotoPages, PagesState, String>(PhotoPages.new);
 
@@ -640,8 +640,9 @@ class MessagesController extends Notifier<MessagesState> {
         done: next == null,
       );
     } catch (_) {
-      if (ref.mounted)
+      if (ref.mounted) {
         state = MessagesState(items: state.items, cursor: state.cursor);
+      }
     }
   }
 
