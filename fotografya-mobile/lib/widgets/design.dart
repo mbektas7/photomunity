@@ -708,7 +708,7 @@ class PhotoCardView extends StatelessWidget {
 
 /// "2 sa önce", "dün" gibi göreli zaman.
 String relativeTime(DateTime at, String locale) {
-  final d = DateTime.now().difference(at);
+  final d = DateTime.now().difference(at.toLocal());
   final tr = locale == 'tr';
   if (d.inMinutes < 1) return tr ? 'şimdi' : 'just now';
   if (d.inHours < 1) return tr ? '${d.inMinutes} dk önce' : '${d.inMinutes}m ago';

@@ -9,18 +9,10 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import 'feed_screen.dart';
+import '../widgets/design.dart';
 
-String relativeTime(DateTime t, String locale) {
-  final d = DateTime.now().difference(t.toLocal());
-  final tr = locale == 'tr';
-  if (d.inMinutes < 1) return tr ? 'şimdi' : 'now';
-  if (d.inHours < 1)
-    return tr ? '${d.inMinutes} dk önce' : '${d.inMinutes}m ago';
-  if (d.inDays < 1) return tr ? '${d.inHours} sa önce' : '${d.inHours}h ago';
-  if (d.inDays < 7) return tr ? '${d.inDays} gün önce' : '${d.inDays}d ago';
-  final w = d.inDays ~/ 7;
-  return tr ? '$w hafta önce' : '${w}w ago';
-}
+// Göreli zaman tek yerde: widgets/design.dart
+export '../widgets/design.dart' show relativeTime;
 
 /// Akış ekranının üst çubuğundaki zil ve okunmamış rozeti.
 class NotificationBell extends ConsumerWidget {

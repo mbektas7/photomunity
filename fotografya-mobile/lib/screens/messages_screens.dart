@@ -10,6 +10,7 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
+import '../widgets/design.dart';
 import '../widgets/community_widgets.dart' show pickMyPhoto;
 import 'notifications_screen.dart' show relativeTime;
 
@@ -349,7 +350,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return switch (profile) {
         AsyncData(:final value) => _scaffold(context, null, value, const []),
         AsyncError(:final error) => Scaffold(
-          appBar: AppBar(),
+          appBar: AppBar(
+        backgroundColor: p.surface,
+        toolbarHeight: 66,),
           body: ErrorView(error: error),
         ),
         _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -397,7 +400,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onTap: () => context.push('/u/${other.username}'),
           child: Row(
             children: [
-              Avatar(name: other.displayName, url: other.avatarUrl, size: 36),
+              Avatar(name: other.displayName, url: other.avatarUrl, size: 40),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -407,9 +410,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       other.displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: font(15.5, weight: 600, color: p.ink),
+                      style: font(17, weight: 700, color: p.ink),
                     ),
-                    Text('@${other.username}', style: font(12, color: p.inkMuted)),
+                    Text('@${other.username}', style: font(13.5, color: p.inkMuted)),
                   ],
                 ),
               ),
@@ -475,7 +478,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Text(
                                 _day(m.createdAt, locale),
-                                style: font(12, weight: 500, color: p.inkMuted),
+                                style: font(13, weight: 600, color: p.inkMuted),
                               ),
                             ),
                           _Bubble(m: m, mine: m.senderId == me?.id),
@@ -486,12 +489,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           if (requestToMe)
             Container(
-              color: p.surface,
-              padding: EdgeInsets.fromLTRB(
-                16,
-                14,
-                16,
-                14 + MediaQuery.paddingOf(context).bottom,
+              margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + MediaQuery.paddingOf(context).bottom),
+              padding: const EdgeInsets.all(Space.s4),
+              decoration: BoxDecoration(
+                color: p.surface,
+                borderRadius: BorderRadius.circular(Radii.card),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -516,7 +518,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(backgroundColor: p.surface2, foregroundColor: p.ink),
                           onPressed: () => _act('decline', other),
                           child: Text(t('messages.decline')),
                         ),
@@ -530,7 +533,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(4, 6, 10, 8),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -545,19 +548,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        IconButton(
-                          tooltip: t('messages.attach_photo'),
+                        RoundIconButton(
+                          icon: LucideIcons.imagePlus,
+                          label: t('messages.attach_photo'),
+                          color: p.surface,
                           onPressed: _sending ? null : _sharePhoto,
-                          icon: Icon(
-                            LucideIcons.imagePlus,
-                            color: p.inkMuted,
-                          ),
                         ),
-                        IconButton(
-                          tooltip: t('messages.attach_location'),
+                        const SizedBox(width: 6),
+                        RoundIconButton(
+                          icon: LucideIcons.locateFixed,
+                          label: t('messages.attach_location'),
+                          color: p.surface,
                           onPressed: _sending ? null : _shareLocation,
-                          icon: Icon(LucideIcons.locateFixed, color: p.inkMuted),
                         ),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: _text,
@@ -569,17 +573,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               hintText: t('messages.placeholder'),
                               counterText: '',
                               isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(22),
-                                borderSide: BorderSide(color: p.line),
+                                borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(22),
-                                borderSide: BorderSide(color: p.line),
+                                borderSide: BorderSide.none,
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(22),
-                                borderSide: BorderSide(color: p.ink),
+                                borderSide: BorderSide(color: p.accent, width: 1.6),
                               ),
                             ),
                           ),
@@ -593,10 +598,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 ? null
                                 : () => _send({'body': v.text.trim()}),
                             style: IconButton.styleFrom(
-                              backgroundColor: p.ink,
-                              foregroundColor: p.surface,
+                              backgroundColor: p.accent,
+                              foregroundColor: p.accentInk,
+                              disabledBackgroundColor: p.accent.withValues(alpha: 0.4),
+                              disabledForegroundColor: p.accentInk,
+                              minimumSize: const Size(46, 46),
                             ),
-                            icon: const Icon(LucideIcons.send, size: 20),
+                            icon: const Icon(LucideIcons.send, size: 22),
                           ),
                         ),
                       ],
@@ -629,8 +637,8 @@ class _Bubble extends StatelessWidget {
     final p = context.palette;
     final t = L10n.of(context);
     final time = DateFormat.Hm(t.locale.languageCode).format(m.createdAt);
-    final bg = mine ? p.ink : p.surface;
-    final fg = mine ? p.surface : p.ink;
+    final bg = mine ? p.accent : p.surface;
+    final fg = mine ? p.accentInk : p.ink;
     final img = m.photo?.feed;
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -649,24 +657,30 @@ class _Bubble extends StatelessWidget {
                 GestureDetector(
                   onTap: () => context.push('/p/${m.photo!.id}'),
                   child: Container(
-                    color: p.surface,
-                    padding: const EdgeInsets.all(5),
+                    padding: const EdgeInsets.all(Space.s3),
                     margin: const EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(Radii.card),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxHeight: 300),
-                          child: AspectRatio(
-                            aspectRatio: img.ratio,
-                            child: NetPhoto(url: img.url),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(Radii.photo),
+                            child: AspectRatio(
+                              aspectRatio: img.ratio,
+                              child: NetPhoto(url: img.url),
+                            ),
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(2, 5, 2, 1),
+                          padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
                           child: Text(
                             m.photo!.title ?? m.photo!.user.displayName,
-                            style: font(12, color: p.inkMuted),
+                            style: font(15, weight: 600, color: p.ink),
                           ),
                         ),
                       ],
@@ -681,21 +695,21 @@ class _Bubble extends StatelessWidget {
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 4),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 9,
+                      horizontal: 18,
+                      vertical: 12,
                     ),
                     decoration: BoxDecoration(
                       color: bg,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.mapPin, size: 18, color: fg),
-                        const SizedBox(width: 6),
+                        Icon(LucideIcons.mapPin, size: 20, color: fg),
+                        const SizedBox(width: 8),
                         Text(
                           m.location!.name ?? t('messages.shared_location'),
-                          style: font(15, color: fg),
+                          style: font(16, weight: 600, color: fg),
                         ),
                       ],
                     ),
@@ -705,25 +719,20 @@ class _Bubble extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 9,
+                    vertical: 10,
                   ),
                   decoration: BoxDecoration(
                     color: bg,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
-                      bottomLeft: Radius.circular(mine ? 18 : 6),
-                      bottomRight: Radius.circular(mine ? 6 : 18),
-                    ),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     m.body!,
-                    style: font(15, height: 1.35, color: fg),
+                    style: font(15.5, height: 1.4, color: fg),
                   ),
                 ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 3, 4, 0),
-                child: Text(time, style: font(11, color: p.inkMuted)),
+                child: Text(time, style: font(12, color: p.inkMuted, tabular: true)),
               ),
             ],
           ),
