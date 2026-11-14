@@ -87,7 +87,7 @@
     "pro_1": "Hiç reklam yok",
     "pro_2": "Profilde Pro rozeti",
     "pro_3": "Saatte 200 fotoğraf yükleme",
-    "pro_cta": "Pro'yu incele",
+    "pro_cta": "Pro'ya geç",
     "faq_title": "Sık sorulanlar",
     "faq": {
       "free_q": "Fotografya ücretsiz mi?",
@@ -110,7 +110,15 @@
     "foot_guide": "Rehber",
     "foot_pro": "Pro",
     "planner_season": "Bu gece çekirdek karanlıkta ufkun üstüne çıkmıyor; yukarıdaki, önümüzdeki ilk uygun gece.",
-    "planner_never": "Bu enlemde çekirdek önümüzdeki aylarda karanlık gökyüzünde yeterince yükselmiyor."
+    "planner_never": "Bu enlemde çekirdek önümüzdeki aylarda karanlık gökyüzünde yeterince yükselmiyor.",
+    "platforms": "iPhone, Android ve web'de",
+    "days_badge": "{count} gün",
+    "free_period": "her zaman",
+    "free_cta": "Ücretsiz başla",
+    "pro_price_amount": "1,99 $",
+    "pro_period": "aylık",
+    "guide_link": "Ayar rehberi",
+    "planner_moon_lit": "%{pct} aydınlık"
   },
   "feed": {
     "title": "Akış",
@@ -162,7 +170,9 @@
     "followers_count": "{count} takipçi",
     "see_on_map": "Haritada gör",
     "more_from": "{name} diğer kareleri",
-    "go_profile": "Profile git"
+    "go_profile": "Profile git",
+    "view_profile": "Profili gör",
+    "focal_short": "Odak"
   },
   "profile": {
     "follow": "Takip et",

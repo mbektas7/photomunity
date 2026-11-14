@@ -19,8 +19,8 @@ export function MoonGlyph({ phase, fraction, size = 56 }: { phase: number; fract
   const d = `M ${r} 0 A ${r} ${r} 0 0 ${waxing ? 1 : 0} ${r} ${size} A ${Math.abs(k) * r} ${r} 0 0 ${(k > 0) === waxing ? 0 : 1} ${r} 0 Z`;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-      <circle cx={r} cy={r} r={r} fill="color-mix(in srgb, var(--ink) 14%, transparent)" />
-      <path d={d} fill="var(--ink)" />
+      <circle cx={r} cy={r} r={r} fill="var(--line)" />
+      <path d={d} fill="var(--ink-subtle)" />
     </svg>
   );
 }

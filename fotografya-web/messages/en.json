@@ -87,7 +87,7 @@
     "pro_1": "No ads at all",
     "pro_2": "Pro badge on your profile",
     "pro_3": "Upload 200 photos an hour",
-    "pro_cta": "See Pro",
+    "pro_cta": "Go Pro",
     "faq_title": "Frequently asked",
     "faq": {
       "free_q": "Is Fotografya free?",
@@ -110,7 +110,15 @@
     "foot_guide": "Guide",
     "foot_pro": "Pro",
     "planner_season": "The core doesn't rise in darkness tonight; above is the next good night.",
-    "planner_never": "At this latitude the core doesn't rise high enough in a dark sky in the coming months."
+    "planner_never": "At this latitude the core doesn't rise high enough in a dark sky in the coming months.",
+    "platforms": "On iPhone, Android and the web",
+    "days_badge": "{count}d",
+    "free_period": "forever",
+    "free_cta": "Start free",
+    "pro_price_amount": "$1.99",
+    "pro_period": "per month",
+    "guide_link": "Settings guide",
+    "planner_moon_lit": "{pct}% lit"
   },
   "feed": {
     "title": "Feed",
@@ -162,7 +170,9 @@
     "followers_count": "{count, plural, one {# follower} other {# followers}}",
     "see_on_map": "See on map",
     "more_from": "More from {name}",
-    "go_profile": "Go to profile"
+    "go_profile": "Go to profile",
+    "view_profile": "View profile",
+    "focal_short": "Focal"
   },
   "profile": {
     "follow": "Follow",
