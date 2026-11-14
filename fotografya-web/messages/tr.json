@@ -503,7 +503,14 @@
     "until_short": "{date} kadar",
     "countdown_deadline": "Son gönderime",
     "countdown_voting": "Oylamanın kapanmasına",
-    "countdown_results": "Sonuçlara"
+    "countdown_results": "Sonuçlara",
+    "start_voting": "Oylamaya başla",
+    "voting_help": "Her kareye 1–5 yıldız verirsin. Oy vermek için hesap gerekmez, e-postanı doğrulaman yeterli.",
+    "entries_title": "Kareler",
+    "my_votes": "{count} oy verdin",
+    "vote_cta": "Oy ver",
+    "prev_entry": "Önceki kare",
+    "next_entry": "Sonraki kare"
   },
   "contestForm": {
     "about": "Yarışma",

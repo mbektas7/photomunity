@@ -2,26 +2,27 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import type { PhotoCard } from "@/lib/types";
+import type { PhotoCard, Variants } from "@/lib/types";
 
-const GAP = 10;
+export const GAP = 10;
 
-type Row = { height: number; items: { photo: PhotoCard; width: number }[] };
+type Row<T = PhotoCard> = { height: number; items: { photo: T; width: number }[] };
+type HasImages = { images: Variants };
 
-function ratio(p: PhotoCard) {
+function ratio(p: HasImages) {
   const v = p.images.feed ?? p.images.thumb ?? p.images.full;
   return v && v.height ? v.width / v.height : 1.5;
 }
 
 /** Kareleri asla kırpmadan, her birini kendi en-boy oranında satırlara dizer. */
-export function buildRows(photos: PhotoCard[], width: number, target: number): Row[] {
-  const rows: Row[] = [];
-  let current: PhotoCard[] = [];
+export function buildRows<T extends HasImages>(photos: T[], width: number, target: number, gap = GAP): Row<T>[] {
+  const rows: Row<T>[] = [];
+  let current: T[] = [];
   let sum = 0;
   for (const photo of photos) {
     current.push(photo);
     sum += ratio(photo);
-    const height = (width - GAP * (current.length - 1)) / sum;
+    const height = (width - gap * (current.length - 1)) / sum;
     if (height <= target) {
       rows.push({ height, items: current.map((p) => ({ photo: p, width: ratio(p) * height })) });
       current = [];
@@ -29,7 +30,7 @@ export function buildRows(photos: PhotoCard[], width: number, target: number): R
     }
   }
   if (current.length) {
-    const height = Math.min(target, (width - GAP * (current.length - 1)) / sum);
+    const height = Math.min(target, (width - gap * (current.length - 1)) / sum);
     rows.push({ height, items: current.map((p) => ({ photo: p, width: ratio(p) * height })) });
   }
   return rows;

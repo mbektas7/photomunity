@@ -503,7 +503,14 @@
     "until_short": "Until {date}",
     "countdown_deadline": "Until the entry deadline",
     "countdown_voting": "Until voting closes",
-    "countdown_results": "Until results"
+    "countdown_results": "Until results",
+    "start_voting": "Start voting",
+    "voting_help": "Give each photo 1–5 stars. No account needed to vote; just verify your email.",
+    "entries_title": "Photos",
+    "my_votes": "{count, plural, one {# vote} other {# votes}} from you",
+    "vote_cta": "Vote",
+    "prev_entry": "Previous photo",
+    "next_entry": "Next photo"
   },
   "contestForm": {
     "about": "Contest",
