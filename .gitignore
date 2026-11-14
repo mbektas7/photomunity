@@ -1,0 +1,22 @@
+.DS_Store
+# web
+fotografya-web/node_modules/
+fotografya-web/.next/
+fotografya-web/public/vendor/
+*.tsbuildinfo
+# mobile
+fotografya-mobile/.dart_tool/
+fotografya-mobile/build/
+fotografya-mobile/.flutter-plugins
+fotografya-mobile/.flutter-plugins-dependencies
+fotografya-mobile/.idea/
+*.iml
+fotografya-mobile/ios/Pods/
+# api
+__pycache__/
+.venv/
+*.db
+.pytest_cache/
+# secrets
+.env
+.env*.local

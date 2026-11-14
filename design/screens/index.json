@@ -1,0 +1,72 @@
+[
+ {
+  "file": "mobil-01-akis",
+  "title": "Akış",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-02-yarisma-oylama",
+  "title": "Yarışma (halk oylaması)",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-03-fotograf-detayi",
+  "title": "Fotoğraf detayı",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-04-profil",
+  "title": "Profil",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-05-kesfet",
+  "title": "Keşfet",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-06-harita",
+  "title": "Harita",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-07-sohbet",
+  "title": "Sohbet",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-08-yukleme",
+  "title": "Yükleme",
+  "kind": "mobile"
+ },
+ {
+  "file": "mobil-09-gokyuzu-planlayici",
+  "title": "Gökyüzü planlayıcı",
+  "kind": "mobile"
+ },
+ {
+  "file": "web-01-akis",
+  "title": "Akış",
+  "kind": "web"
+ },
+ {
+  "file": "web-02-tanitim",
+  "title": "Tanıtım sayfası",
+  "kind": "web"
+ },
+ {
+  "file": "web-03-fotograf-detayi",
+  "title": "Fotoğraf detayı",
+  "kind": "web"
+ },
+ {
+  "file": "web-04-profil",
+  "title": "Profil",
+  "kind": "web"
+ },
+ {
+  "file": "web-05-yarisma",
+  "title": "Yarışma",
+  "kind": "web"
+ }
+]

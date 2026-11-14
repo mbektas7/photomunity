@@ -1,0 +1,8 @@
+# Yerel geliştirme: Docker Hub'daki minio/minio ve minio/mc imajları artık yayınlanmıyor.
+# Topluluk tarafından sürdürülen MinIO fork'u (pgsty/minio) aynı komutlarla çalışır ve mc'yi de içerir.
+# docker compose bu dosyayı docker-compose.yml'in üzerine otomatik uygular.
+services:
+  minio:
+    image: pgsty/minio:latest
+  minio-init:
+    image: pgsty/minio:latest
