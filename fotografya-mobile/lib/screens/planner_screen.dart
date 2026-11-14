@@ -11,6 +11,7 @@ import '../core/astro.dart';
 import '../core/l10n.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import '../widgets/design.dart';
 
 class PlannerScreen extends ConsumerStatefulWidget {
   const PlannerScreen({super.key});
@@ -89,17 +90,35 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
     final moon = moonPosition(at.millisecondsSinceEpoch, _lat!, _lng!);
 
     return Scaffold(
-      appBar: AppBar(title: Text(t('planner.title'))),
+      appBar: AppBar(
+        title: Text(t('planner.title'), style: font(24, weight: 700, spacing: -0.7, color: p.ink)),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: LargeButton(
+          label: t('planner.open_ar'),
+          icon: LucideIcons.scan,
+          onPressed: () => context.push(
+            '/planner/ar?lat=$_lat&lng=$_lng&date=${_date.millisecondsSinceEpoch}',
+          ),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
         children: [
           Wrap(
             spacing: 8,
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              OutlinedButton.icon(
-                icon: const Icon(LucideIcons.calendar, size: 18),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: p.surface,
+                  foregroundColor: p.ink,
+                  minimumSize: const Size(0, 48),
+                  textStyle: font(16, weight: 600),
+                ),
+                icon: const Icon(LucideIcons.calendar, size: 20),
                 label: Text(DateFormat.yMMMd(locale).format(_date)),
                 onPressed: () async {
                   final d = await showDatePicker(
@@ -114,9 +133,15 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                   });
                 },
               ),
-              OutlinedButton.icon(
-                icon: const Icon(LucideIcons.locateFixed, size: 18),
-                label: Text(t('planner.use_location')),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: p.surface,
+                  foregroundColor: p.ink,
+                  minimumSize: const Size(0, 48),
+                  textStyle: font(16, weight: 600),
+                ),
+                icon: const Icon(LucideIcons.mapPin, size: 20),
+                label: Text(_label.isNotEmpty ? _label : t('planner.use_location')),
                 onPressed: _locate,
               ),
             ],
@@ -128,17 +153,21 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           ),
           const SizedBox(height: 14),
           Container(
-            color: best != null ? p.ink : p.surface,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+            decoration: BoxDecoration(
+              color: best != null ? p.accent : p.surface,
+              borderRadius: BorderRadius.circular(Radii.card),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   t('planner.best_window'),
                   style: font(
-                    13,
+                    15,
+                    weight: 600,
                     color: best != null
-                        ? p.surface.withValues(alpha: 0.7)
+                        ? p.accentInk.withValues(alpha: 0.85)
                         : p.inkMuted,
                   ),
                 ),
@@ -148,9 +177,11 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                       ? '${tm(best.start)} – ${tm(best.end)}'
                       : t('planner.no_window'),
                   style: font(
-                    24,
-                    weight: 600,
-                    color: best != null ? p.surface : p.ink,
+                    best != null ? 40 : 24,
+                    weight: 700,
+                    spacing: best != null ? -1.4 : -0.4,
+                    color: best != null ? p.accentInk : p.ink,
+                    tabular: true,
                   ),
                 ),
                 if (plan.coreTransit != null)
@@ -163,7 +194,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                     style: font(
                       13,
                       color: best != null
-                          ? p.surface.withValues(alpha: 0.7)
+                          ? p.accentInk.withValues(alpha: 0.85)
                           : p.inkMuted,
                     ),
                   ),
@@ -182,21 +213,22 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 style: font(13, height: 1.4, color: p.inkMuted),
               ),
             ),
-          const SizedBox(height: 1),
+          const SizedBox(height: Space.s2),
           Row(
             children: [
               Expanded(
                 child: Container(
-                  color: p.surface,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(Space.s4),
+                  decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.card)),
                   child: Row(
                     children: [
                       CustomPaint(
-                        size: const Size(40, 40),
+                        size: const Size(44, 44),
                         painter: _MoonPainter(
                           plan.phase,
                           plan.illumination,
-                          p.ink,
+                          p.inkSubtle,
+                          p.line,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -221,11 +253,11 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 1),
+              const SizedBox(width: Space.s2),
               Expanded(
                 child: Container(
-                  color: p.surface,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(Space.s4),
+                  decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.card)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -248,10 +280,31 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           ),
           const SizedBox(height: 14),
           Container(
-            color: p.surface,
-            padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+            padding: const EdgeInsets.fromLTRB(12, 16, 12, 10),
+            decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.card)),
             child: Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                  child: Wrap(
+                    spacing: 16,
+                    children: [
+                      for (final (name, color) in [
+                        (t('planner.core'), p.accent),
+                        (t('planner.moon'), p.inkMuted),
+                        (t('planner.sun'), p.inkSubtle),
+                      ])
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(width: 18, height: 3, decoration: ShapeDecoration(color: color, shape: const StadiumBorder())),
+                            const SizedBox(width: 6),
+                            Text(name, style: font(14, color: p.inkMuted)),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
                 GestureDetector(
                   onPanDown: (d) => _pick(d.localPosition.dx, context, plan),
                   onPanUpdate: (d) => _pick(d.localPosition.dx, context, plan),
@@ -272,8 +325,8 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           ),
           const SizedBox(height: 14),
           Container(
-            color: p.surface,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(Space.s4),
+            decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.card)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -315,17 +368,10 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: () => context.push(
-              '/planner/ar?lat=$_lat&lng=$_lng&date=${_date.millisecondsSinceEpoch}',
-            ),
-            icon: const Icon(LucideIcons.scan),
-            label: Text(t('planner.open_ar')),
-          ),
           const SizedBox(height: 14),
           Wrap(
-            spacing: 1,
-            runSpacing: 1,
+            spacing: Space.s2,
+            runSpacing: Space.s2,
             children: [
               for (final (k, v) in [
                 ('sunset', plan.sunset),
@@ -338,10 +384,10 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 ('dawn', plan.dawnAstro),
               ])
                 SizedBox(
-                  width: (MediaQuery.sizeOf(context).width - 33) / 2,
+                  width: (MediaQuery.sizeOf(context).width - 24 - Space.s2) / 2,
                   child: Container(
-                    color: p.surface,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.box)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -379,15 +425,15 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
 }
 
 class _MoonPainter extends CustomPainter {
-  _MoonPainter(this.phase, this.fraction, this.color);
+  _MoonPainter(this.phase, this.fraction, this.color, this.base);
   final double phase, fraction;
-  final Color color;
+  final Color color, base;
 
   @override
   void paint(Canvas canvas, Size size) {
     final r = size.width / 2;
     final c = Offset(r, r);
-    canvas.drawCircle(c, r, Paint()..color = color.withValues(alpha: 0.14));
+    canvas.drawCircle(c, r, Paint()..color = base);
     final waxing = phase < 0.5;
     final k = 1 - 2 * fraction;
     final path = Path()..moveTo(r, 0);
@@ -483,7 +529,7 @@ class _ChartPainter extends CustomPainter {
       );
     }
 
-    curve((v) => v.sun.alt, const Color(0xFFE8A33D), 2);
+    curve((v) => v.sun.alt, p.inkSubtle, 2);
     curve((v) => v.moon.alt, p.inkMuted, 2);
     curve((v) => v.core.alt, p.accent, 3);
     final ax = x(at.millisecondsSinceEpoch);
