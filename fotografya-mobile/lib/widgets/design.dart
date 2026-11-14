@@ -875,3 +875,57 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
     );
   }
 }
+
+// ---------------------------------------------------------------- Masonry
+
+/// İki sütunlu fotoğraf duvarı: her kare kendi oranında (kırpma yok), radius-photo.
+class SliverPhotoColumns extends StatelessWidget {
+  const SliverPhotoColumns({super.key, required this.photos, this.gap = Space.s3});
+  final List<PhotoCard> photos;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final cols = [<PhotoCard>[], <PhotoCard>[]];
+    final h = [0.0, 0.0];
+    for (final ph in photos) {
+      final r = (ph.feed ?? ph.thumb)?.ratio ?? 1.5;
+      final c = h[0] <= h[1] ? 0 : 1;
+      cols[c].add(ph);
+      h[c] += 1 / r;
+    }
+    Widget tile(PhotoCard ph) {
+      final img = ph.feed ?? ph.thumb;
+      return Padding(
+        padding: EdgeInsets.only(bottom: gap),
+        child: Semantics(
+          button: true,
+          label: ph.title ?? ph.user.displayName,
+          excludeSemantics: true,
+          child: GestureDetector(
+            onTap: () => context.push('/p/${ph.id}'),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(Radii.photo),
+              child: AspectRatio(
+                aspectRatio: img?.ratio ?? 1.5,
+                child: img == null ? ColoredBox(color: p.surface2) : NetPhoto(url: img.url),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverToBoxAdapter(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Column(children: [for (final ph in cols[0]) tile(ph)])),
+          SizedBox(width: gap),
+          Expanded(child: Column(children: [for (final ph in cols[1]) tile(ph)])),
+        ],
+      ),
+    );
+  }
+}

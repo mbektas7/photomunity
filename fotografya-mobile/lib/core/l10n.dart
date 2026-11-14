@@ -18,6 +18,7 @@ class L10n {
 
   static const _strings = <String, Map<String, String>>{
     'tr': {
+      'profile.message_short': 'Mesaj',
       'contest.prev_entry': 'Önceki kare',
       'contest.next_entry': 'Sonraki kare',
       'contest.vote_hint': 'Puanını istediğin zaman değiştirebilirsin.',
@@ -541,6 +542,7 @@ class L10n {
       'specialties.travel': 'Seyahat',
     },
     'en': {
+      'profile.message_short': 'Message',
       'contest.prev_entry': 'Previous photo',
       'contest.next_entry': 'Next photo',
       'contest.vote_hint': 'You can change your rating any time.',
