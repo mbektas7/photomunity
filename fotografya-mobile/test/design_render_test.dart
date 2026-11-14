@@ -60,6 +60,12 @@ void main() {
     if (_out.isEmpty || _login.isEmpty) return; // yalnızca açıkça istenince
 
     final images = <String, Uint8List>{};
+    // Harita döşeme önbelleği için path_provider (test ortamında eklenti yok)
+    final tmp = Directory.systemTemp.createTempSync('render');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (call) async => tmp.path,
+    );
     HttpOverrides.global = null; // yerel API'ye gerçek istek
 
     late Tokens tokens;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,7 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
+import '../widgets/design.dart';
 
 const _specialties = [
   'astro',
@@ -77,29 +79,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (c.thumbUrl != null) {
       return GestureDetector(
         onTap: () => _zoomInto(c),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black38)],
-          ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              NetPhoto(url: c.thumbUrl!),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  color: Colors.black87,
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: Text(
-                    '${c.count}',
-                    style: font(11, weight: 600, color: Colors.white),
-                  ),
-                ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: p.surface, width: 3),
+                boxShadow: p.shadowFloat,
               ),
-            ],
-          ),
+              clipBehavior: Clip.antiAlias,
+              child: NetPhoto(url: c.thumbUrl!),
+            ),
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: ShapeDecoration(color: p.accent, shape: const StadiumBorder()),
+                child: Text('${c.count}', style: font(11.5, weight: 700, color: p.accentInk, tabular: true)),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -110,11 +112,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: p.ink,
+          color: p.accent,
           shape: BoxShape.circle,
-          border: Border.all(color: p.ink.withValues(alpha: 0.2), width: 4),
+          border: Border.all(color: p.accent.withValues(alpha: 0.25), width: 5),
         ),
-        child: Text('${c.count}', style: font(13, weight: 600, color: p.surface)),
+        child: Text('${c.count}', style: font(15, weight: 700, color: p.accentInk, tabular: true)),
       ),
     );
   }
@@ -141,14 +143,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _selected = ph),
               child: Container(
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   border: Border.all(
-                    color: identical(_selected, ph) ? p.accent : Colors.white,
+                    color: identical(_selected, ph) ? p.accent : p.surface,
                     width: 3,
                   ),
-                  boxShadow: const [
-                    BoxShadow(blurRadius: 12, color: Colors.black38),
-                  ],
+                  boxShadow: p.shadowFloat,
                 ),
                 child: ph.thumbUrl == null
                     ? const SizedBox()
@@ -182,12 +184,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: identical(_selected, u) ? p.accent : Colors.white,
+                  color: identical(_selected, u) ? p.accent : p.surface,
                   width: 3,
                 ),
-                boxShadow: const [
-                  BoxShadow(blurRadius: 12, color: Colors.black38),
-                ],
+                boxShadow: p.shadowFloat,
               ),
               child: Avatar(
                 name: u.user.displayName,
@@ -223,7 +223,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               .total;
 
     return Scaffold(
-      appBar: AppBar(title: Text(t('map.title'))),
       body: Stack(
         children: [
           FlutterMap(
@@ -258,86 +257,71 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           Positioned(
             left: 12,
             right: 12,
-            top: 12,
+            top: MediaQuery.paddingOf(context).top + 8,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Material(
-                  color: p.surface,
-                  shape: const StadiumBorder(),
-                  elevation: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: SegmentedButton<bool>(
-                      segments: [
-                        ButtonSegment(
-                          value: false,
-                          label: Text(t('map.photographers')),
+                Row(
+                  children: [
+                    if (Navigator.of(context).canPop()) ...[
+                      DecoratedBox(
+                        decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: p.shadowFloat),
+                        child: RoundIconButton(
+                          icon: LucideIcons.chevronLeft,
+                          label: t('ui.back'),
+                          color: p.surface,
+                          onPressed: () => Navigator.of(context).maybePop(),
                         ),
-                        ButtonSegment(
-                          value: true,
-                          label: Text(t('map.photos')),
-                        ),
-                      ],
-                      selected: {_photos},
-                      showSelectedIcon: false,
-                      onSelectionChanged: (s) => setState(() {
-                        _photos = s.first;
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    _Segmented(
+                      value: _photos,
+                      labels: (t('map.photographers'), t('map.photos')),
+                      onChanged: (v) => setState(() {
+                        _photos = v;
                         _selected = null;
                       }),
                     ),
-                  ),
+                  ],
                 ),
-                if (!_photos) ...[
-                  const SizedBox(height: 8),
-                  Material(
-                    color: p.surface,
-                    shape: const StadiumBorder(),
-                    elevation: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: DropdownButton<String>(
-                        value: _specialty,
-                        underline: const SizedBox.shrink(),
-                        style: font(14, color: p.ink),
-                        items: [
-                          DropdownMenuItem(
-                            value: '',
-                            child: Text(t('map.all_specialties')),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (!_photos)
+                      DecoratedBox(
+                        decoration: ShapeDecoration(color: p.surface, shape: const StadiumBorder(), shadows: p.shadowFloat),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: DropdownButton<String>(
+                            value: _specialty,
+                            underline: const SizedBox.shrink(),
+                            borderRadius: BorderRadius.circular(Radii.box),
+                            icon: const Icon(LucideIcons.chevronDown, size: 18),
+                            style: font(14.5, weight: 600, color: p.ink),
+                            items: [
+                              DropdownMenuItem(value: '', child: Text(t('map.all_specialties'))),
+                              for (final s in _specialties)
+                                DropdownMenuItem(value: s, child: Text(t('specialties.$s'))),
+                            ],
+                            onChanged: (v) => setState(() => _specialty = v ?? ''),
                           ),
-                          for (final s in _specialties)
-                            DropdownMenuItem(
-                              value: s,
-                              child: Text(t('specialties.$s')),
-                            ),
-                        ],
-                        onChanged: (v) => setState(() => _specialty = v ?? ''),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-                if (total != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: p.surface.withValues(alpha: 0.92),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Text(
-                      t(
-                        _photos
-                            ? 'map.count_photos'
-                            : 'map.count_photographers',
-                        {'count': total},
+                    if (total != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: ShapeDecoration(color: p.surface, shape: const StadiumBorder(), shadows: p.shadowFloat),
+                        child: Text(
+                          t(_photos ? 'map.count_photos' : 'map.count_photographers', {'count': total}),
+                          style: font(13, weight: 600, color: p.inkMuted, tabular: true),
+                        ),
                       ),
-                      style: font(12, color: p.inkMuted),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -357,11 +341,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final t = L10n.of(context);
     final p = context.palette;
     final s = _selected;
-    return Material(
-      color: p.surface,
-      elevation: 8,
+    return Container(
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+        boxShadow: p.shadowFloat,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(Space.s4),
         child: switch (s) {
           MapPhotographer u => Column(
             mainAxisSize: MainAxisSize.min,
@@ -372,20 +359,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   Avatar(
                     name: u.user.displayName,
                     url: u.user.avatarUrl,
-                    size: 50,
+                    size: 52,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           u.user.displayName,
-                          style: font(16, weight: 600, color: p.ink),
+                          style: font(19, weight: 700, spacing: -0.4, color: p.ink),
                         ),
                         Text(
-                          u.city ?? t('map.approximate'),
-                          style: font(13.5, color: p.inkMuted),
+                          [u.city, t('map.approximate')].whereType<String>().join(', '),
+                          style: font(14.5, color: p.inkMuted),
                         ),
                       ],
                     ),
@@ -398,21 +385,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    for (final x in u.specialties.take(5))
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: ShapeDecoration(
-                          color: p.ink.withValues(alpha: 0.06),
-                          shape: const StadiumBorder(),
-                        ),
-                        child: Text(
-                          t('specialties.$x'),
-                          style: font(12.5, color: p.ink),
-                        ),
-                      ),
+                    for (final x in u.specialties.take(5)) ExifChip(t('specialties.$x')),
                   ],
                 ),
               ],
@@ -420,7 +393,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: p.surface2, foregroundColor: p.ink, minimumSize: const Size(0, 48)),
                       onPressed: () => context.push('/u/${u.user.username}'),
                       child: Text(t('map.profile')),
                     ),
@@ -428,10 +402,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   if (meId != u.user.id) ...[
                     const SizedBox(width: 8),
                     Expanded(
-                      child: FilledButton(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
                         onPressed: () =>
                             context.push('/messages/new/${u.user.username}'),
-                        child: Text(t('map.message')),
+                        icon: const Icon(LucideIcons.messageCircle, size: 20),
+                        label: Text(t('map.message')),
                       ),
                     ),
                   ],
@@ -446,10 +422,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             child: Row(
               children: [
                 if (ph.thumbUrl != null)
-                  SizedBox(
-                    width: 84,
-                    height: 84,
-                    child: NetPhoto(url: ph.thumbUrl!),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(Radii.photo),
+                    child: SizedBox(
+                      width: 84,
+                      height: 84,
+                      child: NetPhoto(url: ph.thumbUrl!),
+                    ),
                   ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -467,7 +446,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       const SizedBox(height: 6),
                       Text(
                         t('map.open_photo'),
-                        style: font(14, weight: 600, color: p.accent),
+                        style: font(14, weight: 600, color: p.accentText),
                       ),
                     ],
                   ),
@@ -478,6 +457,43 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           _ => const SizedBox.shrink(),
         },
       ),
+    );
+  }
+}
+
+
+/// Hap biçimli iki seçenekli anahtar (Fotoğrafçılar / Fotoğraflar); seçili accent-tint.
+class _Segmented extends StatelessWidget {
+  const _Segmented({required this.value, required this.labels, required this.onChanged});
+  final bool value;
+  final (String, String) labels;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    Widget seg(bool v, String label) {
+      final on = value == v;
+      return Semantics(
+        selected: on,
+        button: true,
+        child: GestureDetector(
+          onTap: () => onChanged(v),
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(color: on ? p.accentTint : Colors.transparent, shape: const StadiumBorder()),
+            child: Text(label, style: font(15.5, weight: 600, color: on ? p.accentText : p.inkMuted)),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: ShapeDecoration(color: p.surface, shape: const StadiumBorder(), shadows: p.shadowFloat),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [seg(false, labels.$1), seg(true, labels.$2)]),
     );
   }
 }
