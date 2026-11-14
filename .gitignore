@@ -20,3 +20,7 @@ __pycache__/
 # secrets
 .env
 .env*.local
+
+# yerel doğrulama ekran görüntüleri
+ekran-goruntuleri/
+.claude/
