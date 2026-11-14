@@ -350,9 +350,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return switch (profile) {
         AsyncData(:final value) => _scaffold(context, null, value, const []),
         AsyncError(:final error) => Scaffold(
-          appBar: AppBar(
-        backgroundColor: p.surface,
-        toolbarHeight: 66,),
+          appBar: AppBar(),
           body: ErrorView(error: error),
         ),
         _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -395,6 +393,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: context.palette.surface,
+        toolbarHeight: 66,
         titleSpacing: 0,
         title: InkWell(
           onTap: () => context.push('/u/${other.username}'),
