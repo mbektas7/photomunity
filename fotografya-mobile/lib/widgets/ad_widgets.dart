@@ -58,7 +58,10 @@ class _InlineAdState extends ConsumerState<InlineAd> {
         final t = L10n.of(context);
         final p = context.palette;
         return Container(
-          color: p.surface,
+          decoration: BoxDecoration(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(Radii.card),
+          ),
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
           child: Column(
             children: [

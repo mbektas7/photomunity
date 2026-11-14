@@ -128,7 +128,10 @@ class _ProScreenState extends ConsumerState<ProScreen> {
           const SizedBox(height: 22),
           if (status?.isPro ?? false)
             Container(
-              color: p.surface,
+              decoration: BoxDecoration(
+                color: p.surface,
+                borderRadius: BorderRadius.circular(Radii.card),
+              ),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

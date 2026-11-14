@@ -103,7 +103,7 @@ class _Tile extends StatelessWidget {
                   )
                 : CircleAvatar(
                     radius: 21,
-                    backgroundColor: p.ink,
+                    backgroundColor: p.accent,
                     child: Icon(LucideIcons.image, size: 19, color: p.surface),
                   ),
             const SizedBox(width: 14),

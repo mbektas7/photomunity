@@ -310,7 +310,7 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
           padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
           decoration: BoxDecoration(
             border: Border.all(color: p.line),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(Radii.box),
           ),
           child: Row(
             children: [
@@ -695,7 +695,7 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             border: Border.all(color: p.danger.withValues(alpha: 0.35)),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(Radii.box),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -815,7 +815,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
                 child: InkWell(
                   onTap: _busy == null ? () => _upload('cover') : null,
                   child: Container(
-                    color: p.ink.withValues(alpha: 0.06),
+                    color: p.surface2,
                     alignment: Alignment.center,
                     child: me.coverUrl != null
                         ? SizedBox.expand(child: NetPhoto(url: me.coverUrl!))
@@ -854,7 +854,7 @@ class _ProfileImagesState extends ConsumerState<_ProfileImages> {
                         bottom: 2,
                         child: CircleAvatar(
                           radius: 15,
-                          backgroundColor: p.ink,
+                          backgroundColor: p.accent,
                           child: Icon(
                             LucideIcons.camera,
                             size: 16,

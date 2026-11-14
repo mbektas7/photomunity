@@ -365,6 +365,19 @@ ThemeData buildTheme(Brightness brightness) {
       ),
       trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
     ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (st) => st.contains(WidgetState.selected) ? p.accentTint : p.surface,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (st) => st.contains(WidgetState.selected) ? p.accentText : p.inkMuted,
+        ),
+        side: const WidgetStatePropertyAll(BorderSide.none),
+        textStyle: WidgetStatePropertyAll(font(15, weight: 600)),
+        minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+      ),
+    ),
     tabBarTheme: TabBarThemeData(
       labelColor: p.ink,
       unselectedLabelColor: p.inkMuted,
@@ -372,7 +385,6 @@ ThemeData buildTheme(Brightness brightness) {
       unselectedLabelStyle: font(16, weight: 500),
       indicatorColor: p.ink,
       dividerColor: Colors.transparent,
-      tabAlignment: TabAlignment.start,
       indicatorSize: TabBarIndicatorSize.label,
     ),
     navigationBarTheme: NavigationBarThemeData(

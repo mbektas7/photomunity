@@ -37,7 +37,9 @@ class GuideHubScreen extends ConsumerWidget {
       String route, {
       bool accent = false,
     }) => Material(
-      color: accent ? p.ink : p.surface,
+      color: accent ? p.accent : p.surface,
+      borderRadius: BorderRadius.circular(Radii.card),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => context.push(route),
         child: Padding(
@@ -45,18 +47,18 @@ class GuideHubScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: accent ? p.surface : p.ink),
+              Icon(icon, color: accent ? p.accentInk : p.ink),
               const SizedBox(height: 12),
               Text(
                 title,
-                style: font(15.5, weight: 600, color: accent ? p.surface : p.ink),
+                style: font(15.5, weight: 700, color: accent ? p.accentInk : p.ink),
               ),
               const SizedBox(height: 2),
               Text(
                 body,
                 style: font(
                   13,
-                  color: accent ? p.surface.withValues(alpha: 0.7) : p.inkMuted,
+                  color: accent ? p.accentInk.withValues(alpha: 0.85) : p.inkMuted,
                 ),
               ),
             ],
@@ -78,7 +80,7 @@ class GuideHubScreen extends ConsumerWidget {
             '/planner',
             accent: true,
           ),
-          const SizedBox(height: 1),
+          const SizedBox(height: Space.s2),
           Row(
             children: [
               Expanded(
@@ -89,7 +91,7 @@ class GuideHubScreen extends ConsumerWidget {
                   '/tools?c=npf',
                 ),
               ),
-              const SizedBox(width: 1),
+              const SizedBox(width: Space.s2),
               Expanded(
                 child: tool(
                   LucideIcons.aperture,
@@ -100,7 +102,7 @@ class GuideHubScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 1),
+          const SizedBox(height: Space.s2),
           tool(
             LucideIcons.aperture,
             t('guide.nd_title'),
@@ -124,6 +126,8 @@ class GuideHubScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Material(
                         color: p.surface,
+                        borderRadius: BorderRadius.circular(Radii.box),
+                        clipBehavior: Clip.antiAlias,
                         child: ListTile(
                           onTap: () => context.push('/guide/${g['slug']}'),
                           title: Text(
@@ -640,7 +644,10 @@ class _CalculatorCardState extends State<CalculatorCard> {
     };
 
     return Container(
-      color: p.surface,
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+      ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

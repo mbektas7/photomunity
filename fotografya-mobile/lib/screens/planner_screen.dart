@@ -480,7 +480,7 @@ class _ChartPainter extends CustomPainter {
       if ((smp.sun.alt >= -18 || smp == s.last) && open != null) {
         canvas.drawRect(
           Rect.fromLTWH(x(open), top, x(smp.t) - x(open), h),
-          Paint()..color = p.ink.withValues(alpha: 0.08),
+          Paint()..color = p.surface2,
         );
         open = null;
       }
