@@ -529,6 +529,7 @@ class Contest extends ContestCard {
     : description = j['description'] as String,
       rules = _opt(j['rules']),
       anonymous = j['anonymous'] as bool? ?? true,
+      minVotes = j['min_votes'] as int? ?? 5,
       prizes = ((j['prizes'] as List?) ?? const [])
           .map(
             (p) =>
@@ -546,6 +547,7 @@ class Contest extends ContestCard {
   final String description;
   final String? rules;
   final bool anonymous;
+  final int minVotes;
   final List<({int rank, String title})> prizes;
   final String? myRole;
   final bool isJudge;

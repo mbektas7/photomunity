@@ -233,7 +233,7 @@ class _NewCommunityScreenState extends ConsumerState<NewCommunityScreen> {
         },
       );
       ref.invalidate(communitiesProvider);
-      if (mounted) context.pushReplacement('/c/${res['slug']}');
+      if (mounted) context.pushReplacement('/c/${res['slug']}/settings?created=1');
     } catch (e) {
       if (mounted) toast(context, errorText(context, e));
     } finally {
@@ -438,9 +438,9 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             actions: [
               if (c.isAdmin)
                 IconButton(
-                  tooltip: t('community.manage_web'),
+                  tooltip: t('csettings.title'),
                   icon: const Icon(LucideIcons.settings),
-                  onPressed: () => openWeb(context, '/c/${c.slug}/settings'),
+                  onPressed: () => context.push('/c/${c.slug}/settings'),
                 ),
             ],
           ),
@@ -665,10 +665,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         if (c.isAdmin)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: OutlinedButton.icon(
-              onPressed: () => openWeb(context, '/c/${c.slug}/contests/new'),
-              icon: const Icon(LucideIcons.externalLink, size: 18),
-              label: Text(t('community.new_contest_web')),
+            child: FilledButton.icon(
+              onPressed: () => context.push('/c/${c.slug}/contests/new'),
+              icon: const Icon(LucideIcons.plus, size: 18),
+              label: Text(t('cform.new_title')),
             ),
           ),
         ...switch (list) {

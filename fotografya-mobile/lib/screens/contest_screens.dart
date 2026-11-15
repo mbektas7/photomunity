@@ -12,7 +12,6 @@ import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
 import '../widgets/design.dart';
-import 'community_screens.dart' show openWeb;
 
 class ContestScreen extends ConsumerStatefulWidget {
   const ContestScreen({super.key, required this.id});
@@ -108,9 +107,9 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: RoundIconButton(
                 icon: LucideIcons.slidersHorizontal,
-                label: t('contest.manage_web'),
+                label: t('manage.title'),
                 color: p.surface2,
-                onPressed: () => openWeb(context, '/contests/${widget.id}/manage'),
+                onPressed: () => context.push('/contests/${widget.id}/manage'),
               ),
             ),
           if (c != null)

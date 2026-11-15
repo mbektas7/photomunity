@@ -13,6 +13,7 @@ import 'screens/feed_screen.dart';
 import 'screens/guide_screens.dart';
 import 'screens/planner_screen.dart';
 import 'screens/pro_screen.dart';
+import 'screens/manage_screens.dart';
 import 'screens/map_screen.dart';
 import 'screens/messages_screens.dart';
 import 'screens/notifications_screen.dart';
@@ -230,6 +231,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/contests/:id',
         parentNavigatorKey: _rootKey,
         builder: (_, s) => ContestScreen(id: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/contests/:id/manage',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => ContestManageScreen(
+          id: s.pathParameters['id']!,
+          created: s.uri.queryParameters['created'] == '1',
+        ),
+      ),
+      GoRoute(
+        path: '/c/:slug/contests/new',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => NewContestScreen(slug: s.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/c/:slug/settings',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => CommunitySettingsScreen(
+          slug: s.pathParameters['slug']!,
+          created: s.uri.queryParameters['created'] == '1',
+        ),
       ),
       GoRoute(
         path: '/contests/:id/jury',
