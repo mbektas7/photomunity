@@ -31,6 +31,22 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Bağlantılar go_router'a iletilir (doğrulama, şifre sıfırlama, davet, paylaşım) -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
+            <!-- App Links: https://fotografya.app/… (sunucuda /.well-known/assetlinks.json gerekir) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="fotografya.app"/>
+            </intent-filter>
+            <!-- Özel şema: fotografya://app/invite/community?token=… -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="fotografya"/>
+            </intent-filter>
         </activity>
         <!-- AdMob uygulama kimliği. Şu an Google'ın herkese açık TEST kimliği; yayından önce gerçek kimlikle değiştirin. -->
         <meta-data

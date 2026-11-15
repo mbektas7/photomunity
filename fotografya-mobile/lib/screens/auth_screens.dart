@@ -565,3 +565,205 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 }
+
+// ---------------------------------------------------------------- E-posta bağlantıları
+
+/// E-postadaki doğrulama bağlantısı: /verify-email?token=…
+class VerifyEmailScreen extends ConsumerStatefulWidget {
+  const VerifyEmailScreen({super.key, required this.token});
+  final String token;
+
+  @override
+  ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+}
+
+class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
+  String? _error;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _run();
+  }
+
+  Future<void> _run() async {
+    try {
+      await ref.read(apiProvider).postPublic('/auth/verify-email', {'token': widget.token});
+      if (ref.read(authProvider).asData?.value != null) {
+        await ref.read(authProvider.notifier).refreshMe();
+      }
+      if (mounted) setState(() => _done = true);
+    } catch (e) {
+      if (mounted) setState(() => _error = errorText(context, e));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final signedIn = ref.watch(authProvider).asData?.value != null;
+    return _AuthScaffold(
+      title: t('auth.verify_title'),
+      children: [
+        if (_error != null) ...[
+          Notice(_error!, tone: NoticeTone.error),
+          const SizedBox(height: 18),
+          FilledButton(
+            onPressed: () => context.go(signedIn ? '/feed' : '/welcome'),
+            child: Text(t('auth.continue')),
+          ),
+        ] else if (_done) ...[
+          Notice(t('auth.verified'), tone: NoticeTone.success),
+          const SizedBox(height: 18),
+          FilledButton(
+            onPressed: () => context.go(signedIn ? '/feed' : '/login'),
+            child: Text(signedIn ? t('auth.continue') : t('auth.login_submit')),
+          ),
+        ] else
+          Row(
+            children: [
+              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4)),
+              const SizedBox(width: 12),
+              Text(t('auth.verifying'), style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+/// E-postadaki şifre sıfırlama bağlantısı: /reset-password?token=…
+class ResetPasswordScreen extends ConsumerStatefulWidget {
+  const ResetPasswordScreen({super.key, required this.token});
+  final String token;
+
+  @override
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+}
+
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
+  final _password = TextEditingController();
+  bool _busy = false;
+  bool _done = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final t = L10n.of(context);
+    if (_password.text.length < 8) {
+      setState(() => _error = t('auth.short_password'));
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(apiProvider).postPublic('/auth/reset-password', {
+        'token': widget.token,
+        'new_password': _password.text,
+      });
+      if (mounted) setState(() => _done = true);
+    } catch (e) {
+      if (mounted) setState(() => _error = errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    return _AuthScaffold(
+      title: t('auth.reset_title'),
+      children: _done
+          ? [
+              Notice(t('auth.reset_done'), tone: NoticeTone.success),
+              const SizedBox(height: 18),
+              FilledButton(onPressed: () => context.go('/login'), child: Text(t('auth.login_submit'))),
+            ]
+          : [
+              TextField(
+                controller: _password,
+                obscureText: true,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: InputDecoration(labelText: t('auth.new_password'), errorText: _error),
+                onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 18),
+              FilledButton(
+                onPressed: _busy ? null : _submit,
+                child: BusyLabel(busy: _busy, label: t('auth.reset_submit')),
+              ),
+            ],
+    );
+  }
+}
+
+/// Davet bağlantısı: /invite/community?token=… ya da /invite/judge?token=…
+/// Giriş yapılmamışsa yönlendirici önce girişe gönderir, sonra buraya geri getirir.
+class InviteScreen extends ConsumerStatefulWidget {
+  const InviteScreen({super.key, required this.kind, required this.token});
+  final String kind; // community | judge
+  final String token;
+
+  @override
+  ConsumerState<InviteScreen> createState() => _InviteScreenState();
+}
+
+class _InviteScreenState extends ConsumerState<InviteScreen> {
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _accept();
+  }
+
+  Future<void> _accept() async {
+    final api = ref.read(apiProvider);
+    try {
+      final String route;
+      if (widget.kind == 'judge') {
+        final c = await api.post<Map<String, dynamic>>('/contest-judge-invites/accept', {'token': widget.token});
+        ref.invalidate(contestProvider);
+        route = '/contests/${c['id']}';
+      } else {
+        final c = await api.post<Map<String, dynamic>>('/community-invites/accept', {'token': widget.token});
+        ref.invalidate(communityProvider);
+        route = '/c/${c['slug']}';
+      }
+      if (mounted) context.pushReplacement(route);
+    } catch (e) {
+      if (mounted) setState(() => _error = errorText(context, e));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    return _AuthScaffold(
+      title: t(widget.kind == 'judge' ? 'invite.judge_title' : 'invite.community_title'),
+      children: [
+        if (_error != null) ...[
+          Notice(_error!, tone: NoticeTone.error),
+          const SizedBox(height: 18),
+          FilledButton(onPressed: () => context.go('/feed'), child: Text(t('auth.continue'))),
+        ] else
+          Row(
+            children: [
+              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4)),
+              const SizedBox(width: 12),
+              Text(t('invite.accepting'), style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+      ],
+    );
+  }
+}

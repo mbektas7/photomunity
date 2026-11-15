@@ -31,6 +31,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   const publicPaths = {'/welcome', '/login', '/register', '/forgot-password'};
+  // E-posta bağlantıları oturumdan bağımsız açılır
+  const openPaths = {'/verify-email', '/reset-password'};
+  // Giriş gerektiren bir bağlantıyla gelindiyse girişten sonra oraya dönülür
+  String? afterLogin;
 
   return GoRouter(
     navigatorKey: _rootKey,
@@ -41,13 +45,32 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (auth.isLoading && !auth.hasValue) return '/splash';
       final signedIn = auth.asData?.value != null;
       final path = state.matchedLocation;
-      if (path == '/splash') return signedIn ? '/feed' : '/welcome';
+      // Web bağlantıları dil önekiyle gelebilir (/tr/p/…, /en/contests/…)
+      final localized = RegExp(r'^/(tr|en)(/.*)?$').firstMatch(state.uri.path);
+      if (localized != null) {
+        final rest = localized.group(2) ?? '/feed';
+        return state.uri.hasQuery ? '$rest?${state.uri.query}' : rest;
+      }
+      if (openPaths.contains(path)) return null;
+      if (path == '/splash') {
+        if (!signedIn) return '/welcome';
+        final next = afterLogin;
+        afterLogin = null;
+        return next ?? '/feed';
+      }
       if (path == '/settings' && !signedIn) return '/welcome';
-      if (!signedIn && !publicPaths.contains(path)) return '/welcome';
+      if (!signedIn && !publicPaths.contains(path)) {
+        if (path.startsWith('/invite/') || path.startsWith('/contests/') || path.startsWith('/c/') ||
+            path.startsWith('/p/') || path.startsWith('/u/')) {
+          afterLogin = state.uri.toString();
+        }
+        return '/welcome';
+      }
       if (signedIn && publicPaths.contains(path)) {
-        return ref.read(authProvider.notifier).welcomePending
-            ? '/settings?welcome=1'
-            : '/feed';
+        if (ref.read(authProvider.notifier).welcomePending) return '/settings?welcome=1';
+        final next = afterLogin;
+        afterLogin = null;
+        return next ?? '/feed';
       }
       return null;
     },
@@ -56,6 +79,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomeScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
+      GoRoute(
+        path: '/verify-email',
+        builder: (_, s) => VerifyEmailScreen(token: s.uri.queryParameters['token'] ?? ''),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (_, s) => ResetPasswordScreen(token: s.uri.queryParameters['token'] ?? ''),
+      ),
+      GoRoute(
+        path: '/invite/:kind',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => InviteScreen(
+          kind: s.pathParameters['kind']!,
+          token: s.uri.queryParameters['token'] ?? '',
+        ),
+      ),
       GoRoute(
         path: '/forgot-password',
         builder: (_, _) => const ForgotPasswordScreen(),
