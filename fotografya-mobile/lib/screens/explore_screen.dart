@@ -20,6 +20,7 @@ class ExploreScreen extends ConsumerWidget {
     final t = L10n.of(context);
     final p = context.palette;
     final pages = ref.watch(photoPagesProvider('explore'));
+    final me = ref.watch(authProvider).asData?.value;
     final ctrl = ref.read(photoPagesProvider('explore').notifier);
     final judging = ref.watch(contestsProvider('judging')).asData?.value ?? const <ContestCard>[];
     final open = ref.watch(contestsProvider('open')).asData?.value ?? const <ContestCard>[];
@@ -50,24 +51,46 @@ class ExploreScreen extends ConsumerWidget {
                             style: font(34, weight: 700, height: 1, spacing: -1.2, color: p.ink),
                           ),
                         ),
-                        RoundIconButton(
-                          icon: LucideIcons.bookOpen,
-                          label: t('guide.title'),
-                          color: p.surface,
-                          onPressed: () => context.push('/guide'),
-                        ),
-                        const SizedBox(width: Space.s2),
-                        RoundIconButton(
-                          icon: LucideIcons.map,
-                          label: t('explore.map'),
-                          color: p.surface,
-                          onPressed: () => context.push('/map'),
-                        ),
+
                       ],
                     ),
                   ),
                 ),
               ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(Space.s5, 0, Space.s5, 10),
+                sliver: SliverToBoxAdapter(
+                  child: Text(t('explore.tools'), style: font(21, weight: 700, spacing: -0.3, color: p.ink)),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 118,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    children: [
+                      for (final (i, (icon, label, route)) in [
+                        (LucideIcons.moon, t('planner.title'), '/planner'),
+                        (LucideIcons.scan, t('explore.tool_ar'), arRoute(me?.latitude, me?.longitude)),
+                        (LucideIcons.map, t('map.title'), '/map'),
+                        (LucideIcons.calculator, t('tools.title'), '/tools'),
+                        (LucideIcons.bookOpen, t('guide.title'), '/guide'),
+                        (LucideIcons.users, t('nav.communities'), '/communities?s=0'),
+                      ].indexed) ...[
+                        if (i > 0) const SizedBox(width: Space.s2),
+                        ToolTile(
+                          icon: icon,
+                          label: label,
+                          featured: i == 0,
+                          onTap: () => route.startsWith('/communities') ? context.go(route) : context.push(route),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: Space.s6)),
               if (live.isNotEmpty) ...[
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(Space.s5, 0, 8, 6),

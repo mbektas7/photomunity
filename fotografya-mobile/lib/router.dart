@@ -80,7 +80,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/communities',
-                builder: (_, _) => const CommunitiesScreen(),
+                builder: (_, s) => CommunitiesScreen(
+                  segment: int.tryParse(s.uri.queryParameters['s'] ?? ''),
+                ),
               ),
             ],
           ),

@@ -18,6 +18,8 @@ class L10n {
 
   static const _strings = <String, Map<String, String>>{
     'tr': {
+      'explore.tools': 'Araçlar',
+      'explore.tool_ar': 'AR gökyüzü',
       'profile.message_short': 'Mesaj',
       'contest.prev_entry': 'Önceki kare',
       'contest.next_entry': 'Sonraki kare',
@@ -542,6 +544,8 @@ class L10n {
       'specialties.travel': 'Seyahat',
     },
     'en': {
+      'explore.tools': 'Tools',
+      'explore.tool_ar': 'AR sky',
       'profile.message_short': 'Message',
       'contest.prev_entry': 'Previous photo',
       'contest.next_entry': 'Next photo',

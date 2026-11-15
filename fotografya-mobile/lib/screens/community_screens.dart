@@ -24,14 +24,23 @@ void openWeb(BuildContext context, String path) {
 
 /// Alt sekmedeki "Topluluklar": topluluklar ve yarışmalar.
 class CommunitiesScreen extends ConsumerStatefulWidget {
-  const CommunitiesScreen({super.key});
+  const CommunitiesScreen({super.key, this.segment});
+
+  /// 0 topluluklar, 1 yarışmalar; verilmezse yarışmalar (alt menüdeki Yarışmalar).
+  final int? segment;
 
   @override
   ConsumerState<CommunitiesScreen> createState() => _CommunitiesScreenState();
 }
 
 class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
-  int _segment = 1; // 0 topluluklar, 1 yarışmalar (alt menüde Yarışmalar)
+  late int _segment = widget.segment ?? 1; // 0 topluluklar, 1 yarışmalar
+
+  @override
+  void didUpdateWidget(covariant CommunitiesScreen old) {
+    super.didUpdateWidget(old);
+    if (widget.segment != null && widget.segment != old.segment) _segment = widget.segment!;
+  }
   bool _mine = false;
   String _q = '';
   String _contestStatus = 'open';

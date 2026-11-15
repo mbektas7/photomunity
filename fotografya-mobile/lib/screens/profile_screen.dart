@@ -371,6 +371,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
             ),
+            if (widget.isTab)
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(12, Space.s3, 12, 0),
+                sliver: SliverToBoxAdapter(child: ModuleMenu()),
+              ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(Space.s5, Space.s4, Space.s5, Space.s3),
               sliver: SliverToBoxAdapter(

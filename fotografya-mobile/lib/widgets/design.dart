@@ -925,3 +925,141 @@ class SliverPhotoColumns extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------- Modüller
+
+/// Bir modüle kısayol kutusu (Keşfet → Araçlar). Öne çıkan kutu accent dolgulu.
+class ToolTile extends StatelessWidget {
+  const ToolTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.featured = false,
+    this.width = 112,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool featured;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final fg = featured ? p.accentInk : p.ink;
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: featured ? p.accent : p.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.card),
+          onTap: onTap,
+          child: SizedBox(
+            width: width,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: featured ? p.accentInk.withValues(alpha: 0.18) : p.surface2,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, size: 21, color: fg),
+                  ),
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: font(14.5, weight: 700, height: 1.2, color: fg),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Uygulamanın tüm bölümleri; Profil sekmesindeki menü.
+class ModuleMenu extends ConsumerWidget {
+  const ModuleMenu({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.palette;
+    final t = L10n.of(context);
+    final unreadMsg = ref.watch(messageUnreadProvider).asData?.value;
+    final unreadNotif = ref.watch(unreadCountProvider).asData?.value ?? 0;
+    final me = ref.watch(authProvider).asData?.value;
+    final msgCount = unreadMsg == null ? 0 : unreadMsg.inbox + unreadMsg.requests;
+    final items = <(IconData, String, String, int)>[
+      (LucideIcons.messageCircle, t('messages.title'), '/messages', msgCount),
+      (LucideIcons.bell, t('notifications.title'), '/notifications', unreadNotif),
+      (LucideIcons.users, t('nav.communities'), '/communities?s=0', 0),
+      (LucideIcons.moon, t('planner.title'), '/planner', 0),
+      (LucideIcons.scan, t('planner.open_ar'), arRoute(me?.latitude, me?.longitude), 0),
+      (LucideIcons.map, t('map.title'), '/map', 0),
+      (LucideIcons.bookOpen, t('guide.title'), '/guide', 0),
+      (LucideIcons.calculator, t('tools.title'), '/tools', 0),
+      (LucideIcons.sparkles, 'Fotografya Pro', '/pro', 0),
+      (LucideIcons.settings, t('settings.heading'), '/settings', 0),
+    ];
+    return SurfaceCard(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: [
+          for (final (i, (icon, label, route, badge)) in items.indexed) ...[
+            if (i > 0) Divider(color: p.line, indent: 66, height: 1),
+            Semantics(
+              button: true,
+              label: badge > 0 ? '$label, $badge' : label,
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: () => route.startsWith('/communities') ? context.go(route) : context.push(route),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: 11),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(11)),
+                        child: Icon(icon, size: 19, color: p.ink),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(child: Text(label, style: font(16, weight: 600, color: p.ink))),
+                      if (badge > 0)
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: ShapeDecoration(color: p.accent, shape: const StadiumBorder()),
+                          child: Text('$badge', style: font(12, weight: 700, color: p.accentInk, tabular: true)),
+                        ),
+                      Icon(LucideIcons.chevronRight, size: 20, color: p.inkSubtle),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// AR gökyüzü rotası: kullanıcının konumu varsa onunla, yoksa varsayılan konumla.
+String arRoute(double? lat, double? lng) => lat != null && lng != null
+    ? '/planner/ar?lat=$lat&lng=$lng&date=${DateTime.now().millisecondsSinceEpoch}'
+    : '/planner/ar';
