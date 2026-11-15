@@ -201,6 +201,8 @@ class PhotoCard {
     required this.likeCount,
     required this.likedByMe,
     this.publishedAt,
+    this.exif,
+    this.place,
   });
   final String id;
   final UserCard user;
@@ -209,6 +211,12 @@ class PhotoCard {
   final int likeCount;
   final bool likedByMe;
   final DateTime? publishedAt;
+
+  /// Akış kartında özet (diyafram, enstantane, ISO, odak); detayda tam EXIF.
+  final Exif? exif;
+
+  /// Sahibin eklediği konumun adı.
+  final String? place;
 
   ImageVariant? get thumb => images['thumb'] ?? images['feed'];
   ImageVariant? get feed => images['feed'] ?? images['full'];
@@ -233,6 +241,10 @@ class PhotoCard {
     publishedAt: j['published_at'] == null
         ? null
         : DateTime.parse(j['published_at'] as String),
+    exif: j['exif'] == null
+        ? null
+        : Exif.fromJson(j['exif'] as Map<String, dynamic>),
+    place: _opt(j['place']),
   );
 }
 
@@ -294,9 +306,6 @@ class PhotoDetail extends PhotoCard {
       tags = ((j['tags'] as List?) ?? const []).cast<String>(),
       width = _opt(j['width']),
       height = _opt(j['height']),
-      exif = j['exif'] == null
-          ? null
-          : Exif.fromJson(j['exif'] as Map<String, dynamic>),
       location = j['location'] == null
           ? null
           : GeoPoint.fromJson(j['location'] as Map<String, dynamic>),
@@ -317,13 +326,16 @@ class PhotoDetail extends PhotoCard {
         publishedAt: j['published_at'] == null
             ? null
             : DateTime.parse(j['published_at'] as String),
+        exif: j['exif'] == null
+            ? null
+            : Exif.fromJson(j['exif'] as Map<String, dynamic>),
+        place: _opt(j['place']),
       );
 
   final String? description;
   final List<String> tags;
   final int? width;
   final int? height;
-  final Exif? exif;
   final GeoPoint? location;
   final GeoPoint? suggestedLocation;
   final String status; // pending | processing | published | rejected

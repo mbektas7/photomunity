@@ -54,7 +54,13 @@ export type PhotoCard = {
   like_count: number;
   liked_by_me: boolean;
   published_at: string | null;
+  /** Kart çipleri için çekim bilgisi özeti. */
+  exif?: ExifSummary | null;
+  /** Sahibin eklediği konumun adı (koordinat yok). */
+  place?: string | null;
 };
+
+export type ExifSummary = Pick<Exif, "aperture" | "shutter_display" | "iso" | "focal_length_mm">;
 
 export type Exif = {
   camera_make: string | null;

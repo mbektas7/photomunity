@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import type { Exif } from "@/lib/types";
+import type { Exif, ExifSummary } from "@/lib/types";
 
 /** Fotoğrafın çekim bilgisini gösteren küçük hap; uygulamanın imzası. Değer yoksa hiç çizilmez. */
 export function ExifChip({ children, className }: { children?: React.ReactNode; className?: string }) {
@@ -26,7 +26,7 @@ export const formatFocal = (mm: number | null | undefined) => (mm ? `${Math.roun
  * Kartın altındaki çipler: diyafram, enstantane, ISO; yer kalırsa odak.
  * Boş değerler atlanır, tire yazılmaz.
  */
-export function exifChips(exif: Exif | null | undefined, max = 3, locale = "tr"): string[] {
+export function exifChips(exif: ExifSummary | Exif | null | undefined, max = 3, locale = "tr"): string[] {
   if (!exif) return [];
   return [
     formatAperture(exif.aperture),
@@ -38,7 +38,7 @@ export function exifChips(exif: Exif | null | undefined, max = 3, locale = "tr")
     .slice(0, max);
 }
 
-export function ExifChips({ exif, max = 3, locale, className }: { exif: Exif | null | undefined; max?: number; locale?: string; className?: string }) {
+export function ExifChips({ exif, max = 3, locale, className }: { exif: ExifSummary | Exif | null | undefined; max?: number; locale?: string; className?: string }) {
   const chips = exifChips(exif, max, locale);
   if (!chips.length) return null;
   return (

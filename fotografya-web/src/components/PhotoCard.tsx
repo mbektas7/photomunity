@@ -3,22 +3,15 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { relativeTime } from "@/lib/relative-time";
-import type { Exif, Location, PhotoCard as PhotoCardData } from "@/lib/types";
+import type { PhotoCard as PhotoCardData } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { ExifChips } from "./ExifChip";
 import { FollowButton } from "./FollowButton";
 import { LikeButton } from "./LikeButton";
 import { ShareButton } from "./ShareButton";
 
-/**
- * Akış kartı alanları. API'nin akış yanıtında (PhotoCard) exif, konum ve yazarın takip durumu yok;
- * bu alanlar gelirse kart onları gösterir, gelmezse hiç çizmez (uydurulmaz).
- */
-type CardPhoto = PhotoCardData & {
-  exif?: Exif | null;
-  location?: Location | null;
-  user: PhotoCardData["user"] & { is_following?: boolean };
-};
+/** Yazarın takip durumu akış yanıtında yok; gelirse Takip et yalnızca takip edilmeyende görünür. */
+type CardPhoto = PhotoCardData & { user: PhotoCardData["user"] & { is_following?: boolean } };
 
 /**
  * Akıştaki tek fotoğraf: yazar, kırpılmamış kare, beğeni ve çekim bilgisi.
@@ -29,7 +22,7 @@ export function PhotoCard({ photo, meId }: { photo: CardPhoto; meId?: string }) 
   const t = useTranslations("photo");
   const img = photo.images.feed ?? photo.images.full;
   const when = photo.published_at ? relativeTime(photo.published_at, locale) : null;
-  const meta = [photo.location?.name, when].filter(Boolean).join(", ");
+  const meta = [photo.place, when].filter(Boolean).join(", ");
   const showFollow = photo.user.is_following === false && photo.user.id !== meId;
 
   return (

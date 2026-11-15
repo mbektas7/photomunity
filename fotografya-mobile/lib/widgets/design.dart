@@ -598,18 +598,14 @@ class LikePill extends ConsumerWidget {
 // ---------------------------------------------------------------- PhotoCard
 
 /// Akış kartı: yazar, kırpılmamış kare, beğeni, paylaş ve en fazla üç ExifChip.
-/// API'nin akış yanıtında exif, konum ve takip durumu yok; gelirse gösterilir, gelmezse çizilmez.
+/// Çekim bilgisi ve yer adı API'den gelirse gösterilir, boşsa çizilmez. Takip durumu akışta yok.
 class PhotoCardView extends StatelessWidget {
   const PhotoCardView({
     super.key,
     required this.photo,
-    this.exif,
-    this.place,
     this.trailing,
   });
   final PhotoCard photo;
-  final Exif? exif;
-  final String? place;
 
   /// Başlık satırının sağı (ör. yalnızca takip edilmeyen yazarda Takip et).
   final Widget? trailing;
@@ -623,8 +619,8 @@ class PhotoCardView extends StatelessWidget {
     final when = photo.publishedAt == null
         ? null
         : relativeTime(photo.publishedAt!, locale);
-    final meta = [place, when].whereType<String>().join(', ');
-    final chips = exifChips(exif, locale);
+    final meta = [photo.place, when].whereType<String>().join(', ');
+    final chips = exifChips(photo.exif, locale);
     return SurfaceCard(
       padding: const EdgeInsets.all(Space.s3),
       child: Column(
