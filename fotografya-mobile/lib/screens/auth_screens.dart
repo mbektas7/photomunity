@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/api_client.dart';
@@ -12,6 +14,7 @@ import '../core/l10n.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
+import '../widgets/design.dart';
 import '../widgets/justified_wall.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -20,11 +23,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Center(
-      child: Text(
-        'Fotografya',
-        style: Theme.of(context).appBarTheme.titleTextStyle
-            ?.copyWith(fontSize: 28),
-      ),
+      child: Text('Fotografya', style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 28)),
     ),
   );
 }
@@ -49,39 +48,27 @@ class WelcomeScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Fotografya',
-                      style: Theme.of(context).appBarTheme.titleTextStyle,
-                    ),
+                    Text('Fotografya', style: AppText.title(p.ink)),
                     const SizedBox(height: 40),
-                    Text(
-                      t('welcome.title'),
-                      style: font(
-                        44,
-                        weight: 700,
-                        height: 0.96,
-                        spacing: -1.9,
-                        color: p.ink,
-                      ),
-                    ),
+                    Text(t('welcome.title'), style: font(44, weight: 700, height: 0.96, spacing: -1.9, color: p.ink)),
                     const SizedBox(height: 18),
-                    Text(
-                      t('welcome.lead'),
-                      style: font(17, height: 1.5, color: p.inkMuted),
-                    ),
+                    Text(t('welcome.lead'), style: font(17, height: 1.5, color: p.inkMuted)),
                     const SizedBox(height: 26),
-                    Row(
-                      children: [
-                        FilledButton(
-                          onPressed: () => context.push('/register'),
-                          child: Text(t('welcome.register')),
+                    LargeButton(label: t('welcome.register'), onPressed: () => context.push('/register')),
+                    const SizedBox(height: Space.s3),
+                    SizedBox(
+                      height: 56,
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: p.surface,
+                          foregroundColor: p.ink,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.box)),
+                          textStyle: font(17, weight: 700),
                         ),
-                        const SizedBox(width: 10),
-                        OutlinedButton(
-                          onPressed: () => context.push('/login'),
-                          child: Text(t('welcome.login')),
-                        ),
-                      ],
+                        onPressed: () => context.push('/login'),
+                        child: Text(t('welcome.login')),
+                      ),
                     ),
                   ],
                 ),
@@ -90,11 +77,7 @@ class WelcomeScreen extends ConsumerWidget {
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            sliver: SliverJustifiedWall(
-              photos: wall.items,
-              target: 170,
-              completeRowsOnly: true,
-            ),
+            sliver: SliverJustifiedWall(photos: wall.items, target: 170, completeRowsOnly: true),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
@@ -103,43 +86,257 @@ class WelcomeScreen extends ConsumerWidget {
   }
 }
 
-/// Giriş ve kayıt ekranlarının ortak iskeleti.
+/// Giriş ve kayıt ekranlarının ortak iskeleti: marka satırı, isteğe bağlı
+/// canlı fotoğraf şeridi, başlık, form ve alt bağlantı.
 class _AuthScaffold extends StatelessWidget {
-  const _AuthScaffold({required this.title, this.lead, required this.children});
+  const _AuthScaffold({required this.title, this.lead, required this.children, this.ribbon = false, this.footer});
   final String title;
   final String? lead;
   final List<Widget> children;
+  final bool ribbon;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final canPop = context.canPop();
     return Scaffold(
-      appBar: AppBar(),
+      backgroundColor: p.bg,
       body: SafeArea(
-        top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+          padding: const EdgeInsets.only(top: Space.s2, bottom: Space.s8),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            Text(
-              title,
-              style: font(
-                34,
-                weight: 700,
-                height: 1.05,
-                spacing: -1.2,
-                color: p.ink,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.s5),
+              child: SizedBox(
+                height: 44,
+                child: Row(
+                  children: [
+                    if (canPop) ...[
+                      RoundIconButton(
+                        icon: LucideIcons.arrowLeft,
+                        label: MaterialLocalizations.of(context).backButtonTooltip,
+                        onPressed: () => context.pop(),
+                      ),
+                      const SizedBox(width: Space.s3),
+                    ],
+                    Text('Fotografya', style: AppText.title(p.ink)),
+                  ],
+                ),
               ),
             ),
-            if (lead != null) ...[
-              const SizedBox(height: 8),
-              Text(lead!, style: font(16, height: 1.45, color: p.inkMuted)),
-            ],
-            const SizedBox(height: 28),
-            ...children,
+            const SizedBox(height: Space.s6),
+            if (ribbon) ...[const _PhotoRibbon(), const SizedBox(height: Space.s6)],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.s5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(title, style: AppText.display(p.ink)),
+                  if (lead != null) ...[
+                    const SizedBox(height: Space.s2),
+                    Text(lead!, style: font(16, height: 1.45, color: p.inkMuted)),
+                  ],
+                  const SizedBox(height: Space.s6),
+                  ...children,
+                  if (footer != null) ...[const SizedBox(height: Space.s5), footer!],
+                ],
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Herkese açık son kareler: kendi en-boy oranında (kırpılmadan), altında
+/// çekim bilgisi. Yavaşça kayar; "hareketi azalt" açıksa durur.
+class _PhotoRibbon extends ConsumerStatefulWidget {
+  const _PhotoRibbon();
+
+  @override
+  ConsumerState<_PhotoRibbon> createState() => _PhotoRibbonState();
+}
+
+class _PhotoRibbonState extends ConsumerState<_PhotoRibbon> {
+  static const _h = 148.0;
+  final _scroll = ScrollController();
+  Timer? _retry;
+
+  @override
+  void initState() {
+    super.initState();
+    _retry = Timer(const Duration(seconds: 1), _drift);
+  }
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _drift() async {
+    if (!mounted || !_scroll.hasClients) return;
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    final max = _scroll.position.maxScrollExtent;
+    if (max <= 0) {
+      _retry = Timer(const Duration(seconds: 1), _drift);
+      return;
+    }
+    final target = _scroll.offset >= max - 1 ? 0.0 : max;
+    final ms = ((target - _scroll.offset).abs() * 40).round();
+    await _scroll.animateTo(
+      target,
+      duration: Duration(milliseconds: ms < 600 ? 600 : ms),
+      curve: Curves.linear,
+    );
+    // Kullanıcı kaydırırsa animasyon kesilir; biraz bekleyip sürdür.
+    if (mounted) _retry = Timer(const Duration(seconds: 2), _drift);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final locale = L10n.of(context).locale.languageCode;
+    final photos = ref
+        .watch(photoPagesProvider('explore'))
+        .items
+        .where((x) => x.thumb != null && x.thumb!.height > 0)
+        .take(16)
+        .toList();
+    const pad = EdgeInsets.symmetric(horizontal: Space.s5);
+    const gap = SizedBox(width: Space.s3);
+    return SizedBox(
+      height: _h + 26,
+      child: photos.isEmpty
+          ? ListView(
+              scrollDirection: Axis.horizontal,
+              padding: pad,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                for (final w in const [210.0, 112.0, 196.0, 148.0]) ...[
+                  Container(
+                    width: w,
+                    height: _h,
+                    margin: const EdgeInsets.only(bottom: 26),
+                    decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(Radii.photo)),
+                  ),
+                  gap,
+                ],
+              ],
+            )
+          : ListView.separated(
+              controller: _scroll,
+              scrollDirection: Axis.horizontal,
+              padding: pad,
+              itemCount: photos.length,
+              separatorBuilder: (_, _) => gap,
+              itemBuilder: (context, i) {
+                final ph = photos[i];
+                final v = ph.thumb!;
+                final w = _h * v.width / v.height;
+                final exif = exifChips(ph.exif, locale);
+                return SizedBox(
+                  width: w,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Radii.photo),
+                        child: SizedBox(
+                          width: w,
+                          height: _h,
+                          child: NetPhoto(url: v.url, semanticLabel: ph.title ?? ph.user.displayName),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        exif.isNotEmpty ? exif.join(' · ') : '@${ph.user.username}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: font(12.5, weight: 600, color: p.inkMuted, tabular: true),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+/// Şifre alanı: kilit simgesi ve göster/gizle düğmesi.
+class _PasswordField extends StatefulWidget {
+  const _PasswordField({
+    required this.controller,
+    required this.label,
+    this.helper,
+    this.isNew = false,
+    this.onSubmitted,
+    this.validator,
+  });
+  final TextEditingController controller;
+  final String label;
+  final String? helper;
+  final bool isNew;
+  final VoidCallback? onSubmitted;
+  final String? Function(String?)? validator;
+
+  @override
+  State<_PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<_PasswordField> {
+  bool _visible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    return TextFormField(
+      controller: widget.controller,
+      obscureText: !_visible,
+      autocorrect: false,
+      enableSuggestions: false,
+      autofillHints: [widget.isNew ? AutofillHints.newPassword : AutofillHints.password],
+      decoration: InputDecoration(
+        labelText: widget.label,
+        helperText: widget.helper,
+        prefixIcon: const Icon(LucideIcons.lockKeyhole, size: 20),
+        suffixIcon: IconButton(
+          tooltip: t(_visible ? 'auth.hide_password' : 'auth.show_password'),
+          icon: Icon(_visible ? LucideIcons.eyeOff : LucideIcons.eye, size: 20),
+          onPressed: () => setState(() => _visible = !_visible),
+        ),
+      ),
+      onFieldSubmitted: (_) => widget.onSubmitted?.call(),
+      validator: widget.validator,
+    );
+  }
+}
+
+/// "Hesabın yok mu? Hesap oluştur" türü alt bağlantı.
+class _SwitchLink extends StatelessWidget {
+  const _SwitchLink({required this.prompt, required this.action, required this.to});
+  final String prompt;
+  final String action;
+  final String to;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(prompt, style: AppText.body(p.inkMuted)),
+        TextButton(
+          onPressed: () => context.pushReplacement(to),
+          child: Text(action, style: AppText.bodyStrong(p.accentText)),
+        ),
+      ],
     );
   }
 }
@@ -177,9 +374,7 @@ class _SocialButtonsState extends ConsumerState<SocialButtons> {
     final g = GoogleSignIn.instance;
     if (!_googleReady) {
       await g.initialize(
-        clientId: AppConfig.googleIosClientId.isEmpty
-            ? null
-            : AppConfig.googleIosClientId,
+        clientId: AppConfig.googleIosClientId.isEmpty ? null : AppConfig.googleIosClientId,
         serverClientId: AppConfig.googleServerClientId,
       );
       _googleReady = true;
@@ -187,30 +382,16 @@ class _SocialButtonsState extends ConsumerState<SocialButtons> {
     final account = await g.authenticate();
     final idToken = account.authentication.idToken;
     if (idToken == null) throw ApiException(0, 'social', '');
-    return ref
-        .read(authProvider.notifier)
-        .oauth('google', idToken, displayName: account.displayName);
+    return ref.read(authProvider.notifier).oauth('google', idToken, displayName: account.displayName);
   }
 
   Future<bool> _apple() async {
     final c = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
+      scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
     );
     if (c.identityToken == null) throw ApiException(0, 'social', '');
-    final name = [
-      c.givenName,
-      c.familyName,
-    ].whereType<String>().join(' ').trim();
-    return ref
-        .read(authProvider.notifier)
-        .oauth(
-          'apple',
-          c.identityToken!,
-          displayName: name.isEmpty ? null : name,
-        );
+    final name = [c.givenName, c.familyName].whereType<String>().join(' ').trim();
+    return ref.read(authProvider.notifier).oauth('apple', c.identityToken!, displayName: name.isEmpty ? null : name);
   }
 
   @override
@@ -218,39 +399,55 @@ class _SocialButtonsState extends ConsumerState<SocialButtons> {
     final t = L10n.of(context);
     final p = context.palette;
     if (!_googleEnabled && !_appleEnabled) return const SizedBox.shrink();
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.box));
+    Widget label(Widget icon, String text) => Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        icon,
+        const SizedBox(width: 10),
+        Flexible(child: Text(text, overflow: TextOverflow.ellipsis)),
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_appleEnabled)
-          FilledButton.icon(
-            onPressed: _busy ? null : () => _run(_apple),
-            icon: const Icon(Icons.apple, size: 22),
-            label: Text(t('auth.continue_apple')),
+          SizedBox(
+            height: 56,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: p.ink,
+                foregroundColor: p.bg,
+                shape: shape,
+                textStyle: font(16, weight: 600),
+              ),
+              onPressed: _busy ? null : () => _run(_apple),
+              child: label(const Icon(Icons.apple, size: 24), t('auth.continue_apple')),
+            ),
           ),
-        if (_appleEnabled && _googleEnabled) const SizedBox(height: 10),
+        if (_appleEnabled && _googleEnabled) const SizedBox(height: Space.s3),
         if (_googleEnabled)
-          OutlinedButton(
-            onPressed: _busy ? null : () => _run(_google),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('G', style: font(18, weight: 700, color: p.ink)),
-                const SizedBox(width: 10),
-                Text(t('auth.continue_google')),
-              ],
+          SizedBox(
+            height: 56,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: p.surface,
+                foregroundColor: p.ink,
+                shape: shape,
+                textStyle: font(16, weight: 600),
+              ),
+              onPressed: _busy ? null : () => _run(_google),
+              child: label(Text('G', style: font(19, weight: 700, color: p.ink)), t('auth.continue_google')),
             ),
           ),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: Space.s5),
           child: Row(
             children: [
               Expanded(child: Divider(color: p.line)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  t('auth.or_email'),
-                  style: font(13, color: p.inkMuted),
-                ),
+                child: Text(t('auth.or_email'), style: font(13, color: p.inkMuted)),
               ),
               Expanded(child: Divider(color: p.line)),
             ],
@@ -292,9 +489,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      await ref
-          .read(authProvider.notifier)
-          .login(_email.text.trim(), _password.text);
+      await ref.read(authProvider.notifier).login(_email.text.trim(), _password.text);
     } catch (e) {
       if (mounted) setState(() => _error = errorText(context, e));
     } finally {
@@ -307,6 +502,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final t = L10n.of(context);
     return _AuthScaffold(
       title: t('auth.login_title'),
+      lead: t('auth.login_lead'),
+      ribbon: true,
+      footer: _SwitchLink(prompt: t('auth.no_account'), action: t('welcome.register'), to: '/register'),
       children: [
         SocialButtons(onError: (m) => setState(() => _error = m)),
         Form(
@@ -317,39 +515,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 TextFormField(
                   controller: _email,
-                  decoration: InputDecoration(labelText: t('auth.email')),
+                  decoration: InputDecoration(
+                    labelText: t('auth.email'),
+                    prefixIcon: const Icon(LucideIcons.mail, size: 20),
+                  ),
                   keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
                   autofillHints: const [AutofillHints.email],
                   textInputAction: TextInputAction.next,
-                  validator: (v) => _emailRe.hasMatch(v?.trim() ?? '')
-                      ? null
-                      : t('auth.invalid_email'),
+                  validator: (v) => _emailRe.hasMatch(v?.trim() ?? '') ? null : t('auth.invalid_email'),
                 ),
-                const SizedBox(height: 14),
-                TextFormField(
+                const SizedBox(height: Space.s3),
+                _PasswordField(
                   controller: _password,
-                  decoration: InputDecoration(labelText: t('auth.password')),
-                  obscureText: true,
-                  autofillHints: const [AutofillHints.password],
-                  onFieldSubmitted: (_) => _submit(),
-                  validator: (v) =>
-                      (v ?? '').isEmpty ? t('auth.required') : null,
+                  label: t('auth.password'),
+                  onSubmitted: _submit,
+                  validator: (v) => (v ?? '').isEmpty ? t('auth.required') : null,
                 ),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => context.push('/forgot-password'),
-                    child: Text(t('auth.forgot')),
-                  ),
+                  child: TextButton(onPressed: () => context.push('/forgot-password'), child: Text(t('auth.forgot'))),
                 ),
-                if (_error != null) ...[
-                  Notice(_error!, tone: NoticeTone.error),
-                  const SizedBox(height: 14),
-                ],
-                FilledButton(
-                  onPressed: _busy ? null : _submit,
-                  child: BusyLabel(busy: _busy, label: t('auth.login_submit')),
-                ),
+                if (_error != null) ...[Notice(_error!, tone: NoticeTone.error), const SizedBox(height: Space.s3)],
+                LargeButton(label: t('auth.login_submit'), busy: _busy, onPressed: _submit),
               ],
             ),
           ),
@@ -406,21 +594,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final t = L10n.of(context);
-    String? fieldError(String code) =>
-        _error?.code == code ? _error!.message : null;
-    final general =
-        _error != null &&
-            !{'email_taken', 'username_taken'}.contains(_error!.code)
+    String? fieldError(String code) => _error?.code == code ? _error!.message : null;
+    final general = _error != null && !{'email_taken', 'username_taken'}.contains(_error!.code)
         ? errorText(context, _error!)
         : null;
 
     return _AuthScaffold(
       title: t('auth.register_title'),
       lead: t('auth.register_lead'),
+      footer: _SwitchLink(prompt: t('auth.have_account'), action: t('welcome.login'), to: '/login'),
       children: [
-        SocialButtons(
-          onError: (m) => setState(() => _error = ApiException(0, 'social', m)),
-        ),
+        SocialButtons(onError: (m) => setState(() => _error = ApiException(0, 'social', m))),
         Form(
           key: _form,
           child: AutofillGroup(
@@ -431,72 +615,55 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _name,
                   decoration: InputDecoration(
                     labelText: t('auth.display_name'),
+                    prefixIcon: const Icon(LucideIcons.user, size: 20),
                   ),
                   autofillHints: const [AutofillHints.name],
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      (v ?? '').trim().isEmpty ? t('auth.required') : null,
+                  validator: (v) => (v ?? '').trim().isEmpty ? t('auth.required') : null,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: Space.s3),
                 TextFormField(
                   controller: _username,
                   decoration: InputDecoration(
                     labelText: t('auth.username'),
                     helperText: t('auth.username_hint'),
+                    prefixIcon: const Icon(LucideIcons.atSign, size: 20),
                     errorText: fieldError('username_taken'),
                   ),
                   autofillHints: const [AutofillHints.newUsername],
                   autocorrect: false,
                   textInputAction: TextInputAction.next,
-                  validator: (v) => _usernameRe.hasMatch(v?.trim() ?? '')
-                      ? null
-                      : t('auth.invalid_username'),
+                  validator: (v) => _usernameRe.hasMatch(v?.trim() ?? '') ? null : t('auth.invalid_username'),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: Space.s3),
                 TextFormField(
                   controller: _email,
                   decoration: InputDecoration(
                     labelText: t('auth.email'),
                     errorText: fieldError('email_taken'),
+                    prefixIcon: const Icon(LucideIcons.mail, size: 20),
                   ),
                   keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
                   autofillHints: const [AutofillHints.email],
                   textInputAction: TextInputAction.next,
-                  validator: (v) => _emailRe.hasMatch(v?.trim() ?? '')
-                      ? null
-                      : t('auth.invalid_email'),
+                  validator: (v) => _emailRe.hasMatch(v?.trim() ?? '') ? null : t('auth.invalid_email'),
                 ),
-                const SizedBox(height: 14),
-                TextFormField(
+                const SizedBox(height: Space.s3),
+                _PasswordField(
                   controller: _password,
-                  decoration: InputDecoration(
-                    labelText: t('auth.password'),
-                    helperText: t('auth.password_hint'),
-                  ),
-                  obscureText: true,
-                  autofillHints: const [AutofillHints.newPassword],
-                  onFieldSubmitted: (_) => _submit(),
-                  validator: (v) =>
-                      (v ?? '').length >= 8 ? null : t('auth.short_password'),
+                  label: t('auth.password'),
+                  helper: t('auth.password_hint'),
+                  isNew: true,
+                  onSubmitted: _submit,
+                  validator: (v) => (v ?? '').length >= 8 ? null : t('auth.short_password'),
                 ),
                 const SizedBox(height: 20),
-                if (general != null) ...[
-                  Notice(general, tone: NoticeTone.error),
-                  const SizedBox(height: 14),
-                ],
-                FilledButton(
-                  onPressed: _busy ? null : _submit,
-                  child: BusyLabel(
-                    busy: _busy,
-                    label: t('auth.register_submit'),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  t('auth.terms'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                if (general != null) ...[Notice(general, tone: NoticeTone.error), const SizedBox(height: Space.s3)],
+                LargeButton(label: t('auth.register_submit'), busy: _busy, onPressed: _submit),
+                const SizedBox(height: Space.s3),
+                Text(t('auth.terms'), style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -510,8 +677,7 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() =>
-      _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -529,9 +695,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!_emailRe.hasMatch(_email.text.trim())) return;
     setState(() => _busy = true);
     try {
-      await ref.read(apiProvider).postPublic('/auth/forgot-password', {
-        'email': _email.text.trim(),
-      });
+      await ref.read(apiProvider).postPublic('/auth/forgot-password', {'email': _email.text.trim()});
       if (mounted) setState(() => _sent = true);
     } catch (e) {
       if (mounted) toast(context, errorText(context, e));
@@ -609,10 +773,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
         if (_error != null) ...[
           Notice(_error!, tone: NoticeTone.error),
           const SizedBox(height: 18),
-          FilledButton(
-            onPressed: () => context.go(signedIn ? '/feed' : '/welcome'),
-            child: Text(t('auth.continue')),
-          ),
+          FilledButton(onPressed: () => context.go(signedIn ? '/feed' : '/welcome'), child: Text(t('auth.continue'))),
         ] else if (_done) ...[
           Notice(t('auth.verified'), tone: NoticeTone.success),
           const SizedBox(height: 18),

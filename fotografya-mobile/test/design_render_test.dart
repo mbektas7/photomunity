@@ -68,13 +68,14 @@ void main() {
     );
     HttpOverrides.global = null; // yerel API'ye gerçek istek
 
-    late Tokens tokens;
+    Tokens? tokens;
     await tester.runAsync(() async {
       await _loadFont('BricolageGrotesque', 'assets/fonts/BricolageGrotesque-Variable.ttf');
       final lucide = await _pubPackage('lucide_icons_flutter');
       await _loadFont('packages/lucide_icons_flutter/Lucide', '$lucide/assets/lucide.ttf');
       await _loadFont('MaterialIcons', '${_flutterRoot()}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
 
+      if (_login == 'anon') return; // oturumsuz ekranlar
       final sep = _login.indexOf(':');
       final c = HttpClient();
       final req = await c.postUrl(Uri.parse('${AppConfig.apiUrl}/auth/login'));
