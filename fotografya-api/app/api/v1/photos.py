@@ -12,9 +12,9 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError, request_locale
 from app.core.messages import translate
-from app.models import Follow, Like, Photo, PhotoStatus, User
+from app.models import Follow, Like, Photo, PhotoExif, PhotoStatus, User
 from app.schemas import (
-    ALLOWED_CONTENT_TYPES, ExifOut, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
+    ALLOWED_CONTENT_TYPES, ExifOut, ExifSummary, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
     PhotoUpdate, UploadUrlIn, UploadUrlOut, UserCard,
 )
 from app.services import storage
@@ -43,9 +43,14 @@ async def _like_stats(db: AsyncSession, photo_ids: list[uuid.UUID], viewer: User
 
 
 async def _cards(db: AsyncSession, photos: list[Photo], viewer: User | None) -> list[PhotoCard]:
-    counts, liked = await _like_stats(db, [p.id for p in photos], viewer)
+    ids = [p.id for p in photos]
+    counts, liked = await _like_stats(db, ids, viewer)
+    # EXIF tek sorguda; çağıranların Photo.exif'i önceden yüklemesine gerek yok
+    exifs = {e.photo_id: e for e in await db.scalars(select(PhotoExif).where(PhotoExif.photo_id.in_(ids)))} if ids else {}
     return [PhotoCard(id=p.id, user=UserCard.model_validate(p.user), title=p.title, images=_images(p),
-                      like_count=counts.get(p.id, 0), liked_by_me=p.id in liked, published_at=p.published_at)
+                      like_count=counts.get(p.id, 0), liked_by_me=p.id in liked, published_at=p.published_at,
+                      exif=ExifSummary.model_validate(exifs[p.id]) if p.id in exifs else None,
+                      place=p.location_name if p.latitude is not None and p.longitude is not None else None)
             for p in photos]
 
 
@@ -144,7 +149,7 @@ async def _detail(db: AsyncSession, photo: Photo, viewer: User | None, locale: s
     if is_owner and photo.status == PhotoStatus.rejected:
         rejection = [{"code": c, "message": translate(c, locale)} for c in photo.rejection_codes]
     return PhotoDetail(
-        **card.model_dump(), description=photo.description, tags=photo.tags or [],
+        **card.model_dump(exclude={"exif"}), description=photo.description, tags=photo.tags or [],
         width=photo.width, height=photo.height, exif=ExifOut.model_validate(exif) if exif else None,
         location=location, status=photo.status, rejection=rejection, suggested_location=suggested,
     )

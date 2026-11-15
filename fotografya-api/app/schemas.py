@@ -235,6 +235,14 @@ class ExifOut(ORM):
     flash_fired: bool | None
 
 
+class ExifSummary(ORM):
+    """Kart altındaki çekim bilgisi çipleri için ExifOut'un alt kümesi."""
+    aperture: float | None
+    shutter_display: str | None
+    iso: int | None
+    focal_length_mm: float | None
+
+
 class PhotoCard(BaseModel):
     id: uuid.UUID
     user: UserCard
@@ -243,6 +251,9 @@ class PhotoCard(BaseModel):
     like_count: int
     liked_by_me: bool
     published_at: datetime | None
+    # Akış kartı: çekim bilgisi çipleri ve yer adı (yalnızca sahibin eklediği konum adı; koordinat yok)
+    exif: ExifSummary | None = None
+    place: str | None = None
 
 
 class PhotoDetail(PhotoCard):

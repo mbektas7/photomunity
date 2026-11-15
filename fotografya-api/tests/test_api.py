@@ -117,6 +117,15 @@ async def test_photo_upload_pipeline(client, fake_storage):
     feed = (await client.get("/feed", headers=b)).json()
     assert feed["items"][0]["like_count"] == 1 and feed["items"][0]["liked_by_me"] is True
 
+    # Akış kartı: çekim bilgisi özeti; konum sahibi eklemeden yer adı yok, koordinat hiç yok
+    card = feed["items"][0]
+    assert card["exif"]["shutter_display"] == '15"' and "camera_model" not in card["exif"]
+    assert card["place"] is None
+    await client.patch(f"/photos/{photo_id}", headers=a,
+                       json={"location": {"latitude": 40.9, "longitude": 40.98, "name": "Pokut Yaylası"}})
+    card = (await client.get("/feed", headers=b)).json()["items"][0]
+    assert card["place"] == "Pokut Yaylası" and "latitude" not in card
+
     explore = (await client.get("/explore")).json()
     assert len(explore["items"]) == 1
 
