@@ -30,14 +30,13 @@ class SurfaceCard extends StatelessWidget {
   final Color? color;
   final double radius;
 
+  // Material: içindeki ListTile/InkWell dokunma efektleri kartın üstünde görünür.
   @override
-  Widget build(BuildContext context) => Container(
-    padding: padding,
-    decoration: BoxDecoration(
-      color: color ?? context.palette.surface,
-      borderRadius: BorderRadius.circular(radius),
-    ),
-    child: child,
+  Widget build(BuildContext context) => Material(
+    color: color ?? context.palette.surface,
+    borderRadius: BorderRadius.circular(radius),
+    clipBehavior: Clip.antiAlias,
+    child: Padding(padding: padding, child: child),
   );
 }
 
