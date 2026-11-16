@@ -1,8 +1,8 @@
-# Photomunity Mobil — Faz 1
+# Photomunity Mobil
 
 Flutter (iOS + Android), Riverpod 3, go_router, Dio. Web ile aynı backend, aynı tasarım dili.
 
-> **Önemli:** Bu kod Flutter SDK'sı olmayan bir ortamda yazıldı. Sözdizimi `dart format` ile, veri modelleri ise backend'in gerçek JSON yanıtlarıyla `dart analyze` ve çalıştırılarak doğrulandı. Flutter widget katmanı henüz derlenmedi; ilk adım olarak `flutter analyze` çalıştırın. Çıkacak hatalar büyük olasılıkla paket sürümlerindeki küçük API farkları olacaktır.
+Yayın adımları için kök klasördeki `DEPLOY.md` dosyasına bakın.
 
 ## Kurulum
 
@@ -106,7 +106,7 @@ Alt sekmede **Topluluklar**: topluluk arama, katılma, topluluk açma; topluluk 
 
 Yarışma ekranı döneme göre değişir: katılım (kendi fotoğrafından seçerek katılma ve geri çekme), halk oylaması (yıldız verme, kendi karesinde "Senin karen"), jüri dönemi (jüri üyesi için puanlama ekranı), sonuç (kürsü ve sıralama). Jüri ekranı tam ekran ve anonimdir: kaydırarak gezilir, puan verince sıradaki puanlanmamış kareye geçer.
 
-**Bilinçli sınır:** Yarışma kurma, jüri atama ve ağırlıklar, yayınlama, katılım geçersiz sayma ve topluluk ayarları uzun formlar gerektirdiği için mobilde "Webde yönet" düğmesiyle web paneline açılır. Web adresi `--dart-define=WEB_URL=https://photomunity.app` ile verilir.
+**Yönetim ekranları:** Yarışma kurma, yarışma yönetimi (yayınlama, jüri ve ağırlıklar, katılım geçersiz sayma, ara sonuç) ve topluluk ayarları (görseller, bilgiler, yöneticiler, davet) uygulama içindedir (`lib/screens/manage_screens.dart`). Web adresi (`--dart-define=WEB_URL=https://photomunity.app`) paylaşım bağlantıları ve yasal sayfalar için kullanılır.
 
 ## Faz 3: Harita ve mesajlar
 
@@ -135,9 +135,10 @@ Android `AndroidManifest.xml`: `<uses-permission android:name="android.permissio
 
 **Reklamlar (AdMob):** Akışta her 8 gönderide bir ve rehberin altında 300×250 reklam. Fotoğraf detayı, mesajlar, AR ve yarışma oylaması reklamsızdır; Pro kullanıcılar hiç reklam görmez. Reklamlar başlamadan önce Google'ın izin formu (UMP) gösterilir; izin yoksa AdMob başlatılmaz. Varsayılan reklam birimleri Google'ın **test** birimleridir; yayından önce `--dart-define=ADMOB_BANNER_ANDROID=... --dart-define=ADMOB_BANNER_IOS=...` verin.
 
-- iOS `Info.plist`: `GADApplicationIdentifier` (AdMob uygulama kimliği), AdMob belgesindeki `SKAdNetworkItems` listesi ve kişiselleştirilmiş reklam için `NSUserTrackingUsageDescription`. AdMob panelinde *Gizlilik ve mesajlaşma* altında GDPR ve iOS ATT mesajlarını açın.
-- Android `AndroidManifest.xml` `<application>` içine:
-  `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-XXXX~YYYY"/>`
+- **AdMob uygulama kimliği** koda yazılmaz; verilmezse Google'ın test kimliği kullanılır.
+  - iOS: `ios/Flutter/Secrets.xcconfig.example` dosyasını `Secrets.xcconfig` olarak kopyalayıp `ADMOB_APP_ID` değerini yazın (git'e girmez).
+  - Android: derleme sırasında `ADMOB_APP_ID` ortam değişkeni (ör. `ADMOB_APP_ID=ca-app-pub-...~... flutter build appbundle ...`).
+- iOS `Info.plist`: AdMob belgesindeki `SKAdNetworkItems` listesini ekleyin (henüz yok). `NSUserTrackingUsageDescription` mevcut. AdMob panelinde *Gizlilik ve mesajlaşma* altında GDPR ve iOS ATT mesajlarını açın.
 
 **Pro (RevenueCat):**
 
@@ -148,4 +149,26 @@ Android `AndroidManifest.xml`: `<uses-permission android:name="android.permissio
 
 Satın alma sonrası uygulama backend'i hemen eşitler (`/billing/sync`), böylece Pro webhook'u beklemeden açılır. Fiyatlar mağazadan, kullanıcının para biriminde gelir.
 
-**Mağaza kuralları:** Ekranda "Satın almaları geri yükle" düğmesi ve otomatik yenileme açıklaması var. Yayından önce Pro ekranına kullanıcı sözleşmesi ve gizlilik politikası bağlantılarını ekleyin; Apple bunları abonelik ekranında zorunlu tutar. iOS uygulamasında web ödemesine yönlendirme yapılmaz.
+**Mağaza kuralları:** Ekranda "Satın almaları geri yükle" düğmesi, otomatik yenileme açıklaması ve kullanım koşulları / gizlilik politikası bağlantıları (web'deki `/terms` ve `/privacy`) var. iOS uygulamasında web ödemesine yönlendirme yapılmaz.
+
+## Yayın derlemesi
+
+**Android imzası:** `android/key.properties.example` dosyasını `key.properties` olarak kopyalayın ve yükleme anahtarınızın bilgilerini girin (git'e girmez). Dosya yoksa sürüm derlemesi debug anahtarıyla imzalanır; Play Store kabul etmez.
+
+**Firebase (push):** Firebase konsolundan `ios/Runner/GoogleService-Info.plist` ve `android/app/google-services.json` dosyalarını indirip yerleştirin.
+
+```bash
+flutter build ipa --release \
+  --dart-define=API_URL=https://api.photomunity.app/api/v1 \
+  --dart-define=WEB_URL=https://photomunity.app \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=... \
+  --dart-define=RC_IOS_KEY=appl_... --dart-define=ADMOB_BANNER_IOS=ca-app-pub-.../...
+
+ADMOB_APP_ID=ca-app-pub-...~... flutter build appbundle --release \
+  --dart-define=API_URL=https://api.photomunity.app/api/v1 \
+  --dart-define=WEB_URL=https://photomunity.app \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=... \
+  --dart-define=RC_ANDROID_KEY=goog_... --dart-define=ADMOB_BANNER_ANDROID=ca-app-pub-.../...
+```
+
+Her yeni mağaza yüklemesinde `pubspec.yaml` içindeki `version` (ör. `0.1.0+1` → `0.1.0+2`) artırılmalıdır.

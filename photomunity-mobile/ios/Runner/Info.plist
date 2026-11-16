@@ -76,7 +76,7 @@
 	<string>Sana daha ilgili reklamlar gösterebilmek için.</string>
 	<!-- AdMob uygulama kimliği: Google'ın herkese açık TEST kimliği; yayından önce gerçek kimlikle değiştirin. -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>$(ADMOB_APP_ID)</string>
 	<!-- Google ile giriş: iOS client id'nin ters çevrilmiş hali (yyyy yerine gerçek id gelmeli) -->
 	<key>CFBundleURLTypes</key>
 	<array>

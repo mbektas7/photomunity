@@ -1,6 +1,9 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEV_JWT_SECRET = "change-me-in-production"
 
 
 class Settings(BaseSettings):
@@ -16,7 +19,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # JWT
-    jwt_secret: str = "change-me-in-production"
+    jwt_secret: str = _DEV_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 15
     refresh_token_days: int = 30
@@ -25,7 +28,7 @@ class Settings(BaseSettings):
     google_client_ids: list[str] = []
     apple_client_ids: list[str] = []  # iOS bundle id + web Services ID
 
-    # S3 uyumlu depolama (Cloudflare R2 / MinIO / AWS S3)
+    # S3 uyumlu depolama (AWS S3 / MinIO). Yükleme presigned POST ile yapılır; Cloudflare R2 bunu desteklemez.
     s3_endpoint_url: str | None = None
     s3_region: str = "auto"
     s3_access_key: str = ""
@@ -80,6 +83,24 @@ class Settings(BaseSettings):
     revenuecat_secret_key: str = ""     # anında senkron için REST API (sk_...)
     revenuecat_entitlement: str = "pro"
     pro_upload_limit_per_hour: int = 200
+
+    @model_validator(mode="after")
+    def _production_guard(self) -> "Settings":
+        """Üretimde geliştirme varsayılanlarıyla açılmayı engeller."""
+        if self.environment != "production":
+            return self
+        problems = []
+        if self.jwt_secret == _DEV_JWT_SECRET or len(self.jwt_secret) < 32:
+            problems.append("JWT_SECRET en az 32 karakterlik rastgele bir değer olmalı (openssl rand -hex 32)")
+        if any("localhost" in o for o in self.cors_origins) or "localhost" in self.frontend_url:
+            problems.append("FRONTEND_URL ve CORS_ORIGINS gerçek alan adını göstermeli")
+        if not self.s3_access_key or not self.s3_secret_key or self.s3_access_key == "minioadmin":
+            problems.append("S3_ACCESS_KEY / S3_SECRET_KEY üretim depolamasının anahtarları olmalı")
+        if not self.cdn_base_url or "localhost" in self.cdn_base_url:
+            problems.append("CDN_BASE_URL fotoğrafların yayınlandığı adres olmalı")
+        if problems:
+            raise ValueError("Üretim ayarları eksik: " + "; ".join(problems))
+        return self
 
 
 @lru_cache

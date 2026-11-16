@@ -12,6 +12,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/common.dart';
+import '../widgets/design.dart';
 
 final _packagesProvider =
     FutureProvider.autoDispose<({Package? monthly, Package? annual})>((ref) {
@@ -285,6 +286,8 @@ class _ProScreenState extends ConsumerState<ProScreen> {
               ),
               style: font(12, height: 1.45, color: p.inkMuted),
             ),
+            const SizedBox(height: 4),
+            const LegalLinks(),
           ],
           const SizedBox(height: 28),
           for (final k in ['no_ads', 'badge', 'uploads', 'support']) perk(k),

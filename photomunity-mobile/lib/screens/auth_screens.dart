@@ -664,6 +664,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 LargeButton(label: t('auth.register_submit'), busy: _busy, onPressed: _submit),
                 const SizedBox(height: Space.s3),
                 Text(t('auth.terms'), style: Theme.of(context).textTheme.bodySmall),
+                const LegalLinks(),
               ],
             ),
           ),

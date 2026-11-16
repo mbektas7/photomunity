@@ -1,2 +1,6 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+
+// AdMob uygulama kimliği: varsayılan Google test kimliği. Gerçek değer git dışı Secrets.xcconfig dosyasında.
+ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511
+#include? "Secrets.xcconfig"

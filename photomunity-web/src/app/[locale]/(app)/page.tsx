@@ -283,7 +283,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
 
       <footer className="mx-auto mt-14 max-w-[1440px] px-5 py-8 text-sm text-ink-muted sm:px-10">
         <nav aria-label={t("footer_nav")} className="flex flex-wrap gap-x-6 gap-y-2">
-          {([["/explore", "foot_explore"], ["/communities", "foot_communities"], ["/contests", "foot_contests"], ["/map", "foot_map"], ["/guide", "foot_guide"], ["/pro", "foot_pro"]] as const).map(([href, k]) => (
+          {([["/explore", "foot_explore"], ["/communities", "foot_communities"], ["/contests", "foot_contests"], ["/map", "foot_map"], ["/guide", "foot_guide"], ["/pro", "foot_pro"], ["/privacy", "foot_privacy"], ["/terms", "foot_terms"]] as const).map(([href, k]) => (
             <Link key={href} href={href} className="inline-flex min-h-11 items-center hover:text-ink">{t(k)}</Link>
           ))}
           <Link href="/" locale={locale === "tr" ? "en" : "tr"} className="inline-flex min-h-11 items-center hover:text-ink">{locale === "tr" ? "English" : "Türkçe"}</Link>

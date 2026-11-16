@@ -118,7 +118,9 @@
     "pro_price_amount": "1,99 $",
     "pro_period": "aylık",
     "guide_link": "Ayar rehberi",
-    "planner_moon_lit": "%{pct} aydınlık"
+    "planner_moon_lit": "%{pct} aydınlık",
+    "foot_privacy": "Gizlilik",
+    "foot_terms": "Koşullar"
   },
   "feed": {
     "title": "Akış",
@@ -325,7 +327,7 @@
     "forgot": "Şifremi unuttum",
     "login_submit": "Giriş yap",
     "register_submit": "Hesap oluştur",
-    "terms": "Hesap oluşturarak kullanım koşullarını ve gizlilik politikasını kabul etmiş olursun.",
+    "terms": "Hesap oluşturarak <terms>kullanım koşullarını</terms> ve <privacy>gizlilik politikasını</privacy> kabul etmiş olursun.",
     "no_account": "Hesabın yok mu?",
     "register_link": "Kayıt ol",
     "have_account": "Zaten hesabın var mı?",

@@ -127,7 +127,12 @@ export function RegisterForm() {
         <Button type="submit" busy={busy} className="mt-1 h-12 text-base">
           {t("register_submit")}
         </Button>
-        <p className="text-sm text-ink-muted">{t("terms")}</p>
+        <p className="text-sm text-ink-muted">
+          {t.rich("terms", {
+            terms: (c) => <Link href="/terms" className="font-semibold text-ink underline underline-offset-2">{c}</Link>,
+            privacy: (c) => <Link href="/privacy" className="font-semibold text-ink underline underline-offset-2">{c}</Link>,
+          })}
+        </p>
       </form>
       <p className="mt-8 text-[15px] text-ink-muted">
         {t("have_account")}{" "}

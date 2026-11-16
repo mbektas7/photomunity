@@ -118,7 +118,9 @@
     "pro_price_amount": "$1.99",
     "pro_period": "per month",
     "guide_link": "Settings guide",
-    "planner_moon_lit": "{pct}% lit"
+    "planner_moon_lit": "{pct}% lit",
+    "foot_privacy": "Privacy",
+    "foot_terms": "Terms"
   },
   "feed": {
     "title": "Feed",
@@ -325,7 +327,7 @@
     "forgot": "Forgot password",
     "login_submit": "Log in",
     "register_submit": "Create account",
-    "terms": "By creating an account you accept the terms of use and privacy policy.",
+    "terms": "By creating an account you accept the <terms>terms of use</terms> and <privacy>privacy policy</privacy>.",
     "no_account": "No account yet?",
     "register_link": "Sign up",
     "have_account": "Already have an account?",

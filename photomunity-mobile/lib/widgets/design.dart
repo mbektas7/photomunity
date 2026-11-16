@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
 import '../core/l10n.dart';
@@ -1062,3 +1063,39 @@ class ModuleMenu extends ConsumerWidget {
 String arRoute(double? lat, double? lng) => lat != null && lng != null
     ? '/planner/ar?lat=$lat&lng=$lng&date=${DateTime.now().millisecondsSinceEpoch}'
     : '/planner/ar';
+
+// ---------------------------------------------------------------- Yasal bağlantılar
+
+/// Kullanım koşulları ve gizlilik politikası (web sayfaları, uygulama içi tarayıcıda).
+/// Mağazalar abonelik ve kayıt ekranlarında bu bağlantıları zorunlu tutar.
+class LegalLinks extends StatelessWidget {
+  const LegalLinks({super.key, this.alignment = WrapAlignment.start});
+  final WrapAlignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    void open(String path) => launchUrl(
+      Uri.parse('${AppConfig.webUrl}/${t.locale.languageCode}$path'),
+      mode: LaunchMode.inAppBrowserView,
+    );
+    Widget link(String key, String path) => TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        minimumSize: const Size(44, 44),
+      ),
+      onPressed: () => open(path),
+      child: Text(t(key), style: font(13, weight: 600, color: p.accentText)),
+    );
+    return Wrap(
+      alignment: alignment,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        link('legal.terms', '/terms'),
+        Text('·', style: font(13, color: p.inkMuted)),
+        link('legal.privacy', '/privacy'),
+      ],
+    );
+  }
+}
