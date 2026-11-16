@@ -1,4 +1,4 @@
-Bu klasörde Fotografya'nın üç projesi var (fotografya-api, fotografya-web, fotografya-mobile) ve yeni onaylanmış tasarımın teslim paketi `design/` klasöründe.
+Bu klasörde Photomunity'nin üç projesi var (photomunity-api, photomunity-web, photomunity-mobile) ve yeni onaylanmış tasarımın teslim paketi `design/` klasöründe.
 
 Görevin yeni "Canlı topluluk" tasarımını web ve mobil uygulamalara uygulamak. Bu bir görünüm yenilemesi: API, veri modeli ve iş mantığı değişmeyecek.
 

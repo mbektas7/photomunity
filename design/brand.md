@@ -1,4 +1,4 @@
-# Fotografya
+# Photomunity
 
 Fotoğrafçıların buluştuğu canlı topluluk. Bu sistem web (Next.js + Tailwind) ve mobil (Flutter) uygulamalarının tek görsel kaynağıdır.
 

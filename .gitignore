@@ -1,17 +1,17 @@
 .DS_Store
 # web
-fotografya-web/node_modules/
-fotografya-web/.next/
-fotografya-web/public/vendor/
+photomunity-web/node_modules/
+photomunity-web/.next/
+photomunity-web/public/vendor/
 *.tsbuildinfo
 # mobile
-fotografya-mobile/.dart_tool/
-fotografya-mobile/build/
-fotografya-mobile/.flutter-plugins
-fotografya-mobile/.flutter-plugins-dependencies
-fotografya-mobile/.idea/
+photomunity-mobile/.dart_tool/
+photomunity-mobile/build/
+photomunity-mobile/.flutter-plugins
+photomunity-mobile/.flutter-plugins-dependencies
+photomunity-mobile/.idea/
 *.iml
-fotografya-mobile/ios/Pods/
+photomunity-mobile/ios/Pods/
 # api
 __pycache__/
 .venv/
@@ -24,3 +24,4 @@ __pycache__/
 # yerel doğrulama ekran görüntüleri
 ekran-goruntuleri/
 .claude/
+photomunity-api/scripts/seed_out.json

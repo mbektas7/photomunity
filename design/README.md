@@ -1,6 +1,6 @@
-# Fotografya — "Canlı topluluk" tasarımı: uygulama rehberi
+# Photomunity — "Canlı topluluk" tasarımı: uygulama rehberi
 
-Bu klasör, onaylanan yeni tasarımın web (`fotografya-web`) ve mobil (`fotografya-mobile`) uygulamalarına nasıl uygulanacağını anlatır. Tasarım claude.ai'deki bir tasarım tuvalinde ve tasarım sisteminde hazırlandı; buradaki dosyalar onların çevrimdışı kopyasıdır.
+Bu klasör, onaylanan yeni tasarımın web (`photomunity-web`) ve mobil (`photomunity-mobile`) uygulamalarına nasıl uygulanacağını anlatır. Tasarım claude.ai'deki bir tasarım tuvalinde ve tasarım sisteminde hazırlandı; buradaki dosyalar onların çevrimdışı kopyasıdır.
 
 ## Klasör
 
@@ -23,7 +23,7 @@ Bu klasör, onaylanan yeni tasarımın web (`fotografya-web`) ve mobil (`fotogra
 
 ## Ekran → kod eşlemesi
 
-### Mobil (Flutter, `fotografya-mobile/lib/`)
+### Mobil (Flutter, `photomunity-mobile/lib/`)
 
 | Referans | Ekran / dosya |
 | --- | --- |
@@ -37,7 +37,7 @@ Bu klasör, onaylanan yeni tasarımın web (`fotografya-web`) ve mobil (`fotogra
 | `mobil-08-yukleme` | Yükleme — `screens/upload_screen.dart` |
 | `mobil-09-gokyuzu-planlayici` | Gökyüzü planlayıcı — `screens/planner_screen.dart` |
 
-### Web (Next.js, `fotografya-web/src/`)
+### Web (Next.js, `photomunity-web/src/`)
 
 | Referans | Sayfa |
 | --- | --- |
