@@ -16,7 +16,7 @@ import { formatShutter, npfSeconds } from "@/lib/calculators";
 import { serverGet } from "@/lib/server-api";
 import type { CommunityCard, ContestCard, Page, PhotoCard, PhotoDetail } from "@/lib/types";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://photomunity.app";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://photomunity.com";
 const STATS_MIN = Number(process.env.NEXT_PUBLIC_STATS_MIN ?? 20); // erken dönemde küçük sayıları göstermemek için
 const APP_STORE = process.env.NEXT_PUBLIC_APP_STORE_URL;
 const PLAY_STORE = process.env.NEXT_PUBLIC_PLAY_STORE_URL;

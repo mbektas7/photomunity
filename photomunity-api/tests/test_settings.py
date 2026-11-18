@@ -5,11 +5,11 @@ from app.core.config import Settings
 GOOD = dict(
     environment="production",
     jwt_secret="x" * 64,
-    frontend_url="https://photomunity.app",
-    cors_origins=["https://photomunity.app"],
+    frontend_url="https://photomunity.com",
+    cors_origins=["https://photomunity.com"],
     s3_access_key="AKIA",
     s3_secret_key="secret",
-    cdn_base_url="https://cdn.photomunity.app",
+    cdn_base_url="https://cdn.photomunity.com",
 )
 
 

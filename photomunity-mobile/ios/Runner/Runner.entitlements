@@ -2,11 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Universal Links: https://photomunity.app/… bağlantıları uygulamayı açar.
+	<!-- Universal Links: https://photomunity.com/… bağlantıları uygulamayı açar.
 	     Sunucuda /.well-known/apple-app-site-association gerekir (photomunity-web). -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:photomunity.app</string>
+		<string>applinks:photomunity.com</string>
 	</array>
 </dict>
 </plist>

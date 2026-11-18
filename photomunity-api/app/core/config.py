@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # E-posta (Resend). Anahtar yoksa e-postalar log'a yazılır.
     resend_api_key: str = ""
-    email_from: str = "Photomunity <no-reply@photomunity.app>"
+    email_from: str = "Photomunity <no-reply@photomunity.com>"
 
     # Kalite eşikleri
     min_long_edge_px: int = 2000

@@ -33,12 +33,12 @@
             </intent-filter>
             <!-- Bağlantılar go_router'a iletilir (doğrulama, şifre sıfırlama, davet, paylaşım) -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
-            <!-- App Links: https://photomunity.app/… (sunucuda /.well-known/assetlinks.json gerekir) -->
+            <!-- App Links: https://photomunity.com/… (sunucuda /.well-known/assetlinks.json gerekir) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="photomunity.app"/>
+                <data android:scheme="https" android:host="photomunity.com"/>
             </intent-filter>
             <!-- Özel şema: photomunity://app/invite/community?token=… -->
             <intent-filter>

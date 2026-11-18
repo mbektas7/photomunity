@@ -1,5 +1,5 @@
 /**
- * iOS Universal Links: https://photomunity.app/… bağlantılarını uygulama açar.
+ * iOS Universal Links: https://photomunity.com/… bağlantılarını uygulama açar.
  * APPLE_TEAM_ID App Store Connect'teki ekip kimliğidir (mobil projede DEVELOPMENT_TEAM).
  */
 const TEAM_ID = process.env.APPLE_TEAM_ID || "JN5ZA7ZBSC";

@@ -24,7 +24,7 @@ Fotoğraf dosyası Next.js'ten de geçmez: tarayıcı presigned POST ile doğrud
 
 ```bash
 # MinIO örneği
-mc admin config set local api cors_allow_origin="http://localhost:3000,https://photomunity.app"
+mc admin config set local api cors_allow_origin="http://localhost:3000,https://photomunity.com"
 ```
 
 ## Sayfalar

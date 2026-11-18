@@ -210,7 +210,7 @@ class L10n {
       'pro.restore': 'Satın almaları geri yükle',
       'pro.unavailable':
           'Abonelik seçenekleri şu anda yüklenemedi. Daha sonra tekrar dene.',
-      'pro.manage_web': 'Bu abonelik web üzerinden alındı; photomunity.app/pro sayfasından yönetebilirsin.',
+      'pro.manage_web': 'Bu abonelik web üzerinden alındı; photomunity.com/pro sayfasından yönetebilirsin.',
       'pro.fine_print_ios': 'Ödeme Apple Kimliği hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce kapatılmazsa otomatik yenilenir. Ayarlar → Apple Kimliği → Abonelikler bölümünden yönetebilir ya da iptal edebilirsin.',
       'pro.fine_print_android': 'Ödeme Google Play hesabından alınır. Abonelik otomatik yenilenir; Play Store → Ödemeler ve abonelikler bölümünden istediğin zaman iptal edebilirsin.',
       'pro.settings_title': 'Photomunity Pro',
@@ -852,7 +852,7 @@ class L10n {
       'pro.restored': 'Purchases restored.',
       'pro.restore': 'Restore purchases',
       'pro.unavailable': 'Subscription options couldn\'t be loaded right now. Try again later.',
-      'pro.manage_web': 'This subscription was bought on the web; manage it at photomunity.app/pro.',
+      'pro.manage_web': 'This subscription was bought on the web; manage it at photomunity.com/pro.',
       'pro.fine_print_ios': 'Payment is charged to your Apple ID. The subscription renews automatically unless turned off at least 24 hours before the period ends. Manage or cancel in Settings → Apple ID → Subscriptions.',
       'pro.fine_print_android': 'Payment is charged to your Google Play account. The subscription renews automatically; cancel anytime in Play Store → Payments & subscriptions.',
       'pro.settings_title': 'Photomunity Pro',

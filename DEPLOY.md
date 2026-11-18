@@ -17,15 +17,15 @@ Adresler:
 
 | Adres | Ne |
 | --- | --- |
-| `https://photomunity.app` | Web |
-| `https://api.photomunity.app` | API (WebSocket dahil) |
-| `https://media.photomunity.app` | Fotoğraflar (yalnızca `photos/` herkese açık) ve doğrudan yükleme |
+| `https://photomunity.com` | Web |
+| `https://api.photomunity.com` | API (WebSocket dahil) |
+| `https://media.photomunity.com` | Fotoğraflar (yalnızca `photos/` herkese açık) ve doğrudan yükleme |
 
 ---
 
 ## 0. Ön koşullar (hesaplar)
 
-- [ ] Alan adı: `photomunity.app`
+- [ ] Alan adı: `photomunity.com`
 - [x] Kod deposu: https://github.com/mbektas7/photomunity
 - [ ] Sunucu (VPS): **Ubuntu 24.04, en az 2 vCPU / 4 GB RAM / 80 GB disk**. Örn. Hetzner CX22 ya da DigitalOcean 4 GB. Fotoğraflar sunucu diskinde durur; disk dolmaya yaklaşınca büyütülür.
 - [ ] Apple Developer Program (yıllık ücretli), Google Play Console (tek seferlik ücretli)
@@ -43,7 +43,7 @@ Adresler:
 | `api` | A | sunucu IP |
 | `media` | A | sunucu IP |
 
-**Kontrol:** `ping api.photomunity.app` sunucu IP'sini gösteriyor (DNS yayılması birkaç dakika–birkaç saat sürebilir).
+**Kontrol:** `ping api.photomunity.com` sunucu IP'sini gösteriyor (DNS yayılması birkaç dakika–birkaç saat sürebilir).
 
 ## 2. Sunucuyu hazırla
 
@@ -111,13 +111,13 @@ docker compose up -d --build
 
 ```bash
 docker compose ps                          # tüm servisler "Up", api "healthy"
-curl https://api.photomunity.app/health    # {"status":"ok"}
+curl https://api.photomunity.com/health    # {"status":"ok"}
 docker compose logs -f api worker          # hata var mı
 ```
 
-- `https://photomunity.app/tr` açılıyor; kayıt → doğrulama e-postası → giriş → fotoğraf yükleme çalışıyor.
-- `https://photomunity.app/tr/privacy` açılıyor, üstte kırmızı uyarı **yok**.
-- `https://photomunity.app/.well-known/apple-app-site-association` JSON döndürüyor.
+- `https://photomunity.com/tr` açılıyor; kayıt → doğrulama e-postası → giriş → fotoğraf yükleme çalışıyor.
+- `https://photomunity.com/tr/privacy` açılıyor, üstte kırmızı uyarı **yok**.
+- `https://photomunity.com/.well-known/apple-app-site-association` JSON döndürüyor.
 
 Demo verisi (`scripts/seed_demo.py`) üretimde **çalıştırılmaz**.
 
@@ -152,7 +152,7 @@ ssh-keyscan SUNUCU_IP
 
 4. GitHub → depo → Settings:
    - **Secrets and variables → Actions → Secrets:** `DEPLOY_HOST` (sunucu IP), `DEPLOY_SSH_KEY` (`~/.ssh/photomunity_deploy` dosyasının içeriği), `DEPLOY_KNOWN_HOSTS` (3. adımın çıktısı)
-   - **Variables:** `DEPLOY_ENABLED` = `true`, `DOMAIN` = `photomunity.app`
+   - **Variables:** `DEPLOY_ENABLED` = `true`, `DOMAIN` = `photomunity.com`
    - **Environments:** `production` ortamı oluşur; istersen yayından önce onay isteyecek şekilde ayarlayabilirsin.
 
 **Kontrol:** GitHub → Actions sekmesinde son çalıştırma yeşil ve "deploy" adımı tamamlanmış.
@@ -160,12 +160,12 @@ ssh-keyscan SUNUCU_IP
 ## 6. Yasal metinler
 
 - [ ] `/privacy` ve `/terms` sayfalarındaki metinler **taslaktır** (`photomunity-web/src/lib/legal.ts`). Yayından önce bir hukukçuya okutun: KVKK aydınlatma metni, yurt dışına aktarım, VERBİS yükümlülüğü, mesafeli satış / abonelik koşulları.
-- [ ] Gizlilik politikası adresi mağaza kayıtlarında kullanılacak: `https://photomunity.app/tr/privacy` (İngilizce: `/en/privacy`).
+- [ ] Gizlilik politikası adresi mağaza kayıtlarında kullanılacak: `https://photomunity.com/tr/privacy` (İngilizce: `/en/privacy`).
 
 ## 7. Sosyal giriş
 
-- [ ] **Google Cloud → OAuth istemcileri:** Web (yetkili köken `https://photomunity.app`), iOS (bundle `app.photomunity.photomunity`), Android (paket `app.photomunity.photomunity` + imza SHA-1). Kimlikleri API'de `GOOGLE_CLIENT_IDS`, web'de `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, mobilde `GOOGLE_SERVER_CLIENT_ID` (web istemcisi) ve `GOOGLE_IOS_CLIENT_ID` olarak verin. iOS istemcisinin ters çevrilmiş kimliğini `ios/Runner/Info.plist` URL şemalarına ekleyin.
-- [ ] **Apple:** Services ID (web için, dönüş adresi `https://photomunity.app`), App ID'de "Sign in with Apple" açık.
+- [ ] **Google Cloud → OAuth istemcileri:** Web (yetkili köken `https://photomunity.com`), iOS (bundle `app.photomunity.photomunity`), Android (paket `app.photomunity.photomunity` + imza SHA-1). Kimlikleri API'de `GOOGLE_CLIENT_IDS`, web'de `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, mobilde `GOOGLE_SERVER_CLIENT_ID` (web istemcisi) ve `GOOGLE_IOS_CLIENT_ID` olarak verin. iOS istemcisinin ters çevrilmiş kimliğini `ios/Runner/Info.plist` URL şemalarına ekleyin.
+- [ ] **Apple:** Services ID (web için, dönüş adresi `https://photomunity.com`), App ID'de "Sign in with Apple" açık.
 
 ## 8. Push (Firebase)
 
@@ -176,9 +176,9 @@ ssh-keyscan SUNUCU_IP
 
 ## 9. Ödemeler
 
-- [ ] **Stripe:** "Photomunity Pro" ürünü, aylık ve yıllık fiyat → `STRIPE_PRICE_*`. Webhook: `https://api.photomunity.app/api/v1/billing/webhooks/stripe` (olaylar: `checkout.session.completed`, `customer.subscription.created/updated/deleted`). Müşteri portalını açın.
+- [ ] **Stripe:** "Photomunity Pro" ürünü, aylık ve yıllık fiyat → `STRIPE_PRICE_*`. Webhook: `https://api.photomunity.com/api/v1/billing/webhooks/stripe` (olaylar: `checkout.session.completed`, `customer.subscription.created/updated/deleted`). Müşteri portalını açın.
 - [ ] **App Store Connect / Play Console:** otomatik yenilenen abonelikler `photomunity_pro_monthly` ve `photomunity_pro_yearly`.
-- [ ] **RevenueCat:** iki mağazayı bağlayın, `pro` yetkisi ve iki paketli *current offering*. Webhook: `https://api.photomunity.app/api/v1/billing/webhooks/revenuecat`, Authorization = `REVENUECAT_WEBHOOK_AUTH`. Genel SDK anahtarları → mobil `RC_IOS_KEY`, `RC_ANDROID_KEY`.
+- [ ] **RevenueCat:** iki mağazayı bağlayın, `pro` yetkisi ve iki paketli *current offering*. Webhook: `https://api.photomunity.com/api/v1/billing/webhooks/revenuecat`, Authorization = `REVENUECAT_WEBHOOK_AUTH`. Genel SDK anahtarları → mobil `RC_IOS_KEY`, `RC_ANDROID_KEY`.
 
 ## 10. Reklamlar (AdMob)
 
@@ -197,8 +197,8 @@ ssh-keyscan SUNUCU_IP
 ```bash
 cd photomunity-mobile
 flutter build ipa --release \
-  --dart-define=API_URL=https://api.photomunity.app/api/v1 \
-  --dart-define=WEB_URL=https://photomunity.app \
+  --dart-define=API_URL=https://api.photomunity.com/api/v1 \
+  --dart-define=WEB_URL=https://photomunity.com \
   --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=... \
   --dart-define=RC_IOS_KEY=appl_... \
   --dart-define=ADMOB_BANNER_IOS=ca-app-pub-.../...
@@ -221,8 +221,8 @@ keytool -genkey -v -keystore ~/photomunity-upload.jks -keyalg RSA -keysize 2048 
 ```bash
 cd photomunity-mobile
 ADMOB_APP_ID=ca-app-pub-...~... flutter build appbundle --release \
-  --dart-define=API_URL=https://api.photomunity.app/api/v1 \
-  --dart-define=WEB_URL=https://photomunity.app \
+  --dart-define=API_URL=https://api.photomunity.com/api/v1 \
+  --dart-define=WEB_URL=https://photomunity.com \
   --dart-define=GOOGLE_SERVER_CLIENT_ID=... \
   --dart-define=RC_ANDROID_KEY=goog_... \
   --dart-define=ADMOB_BANNER_ANDROID=ca-app-pub-.../...
@@ -241,5 +241,5 @@ Not: Bu makinede Android SDK kurulu değil; Android derlemesi henüz hiç denenm
 - [ ] Mesajlaşma gerçek zamanlı; push bildirimi telefona geliyor.
 - [ ] Yarışma oluşturma → yayınlama → katılım → oylama (takvim işçi tarafından ilerletiliyor).
 - [ ] Pro: Stripe test modu, App Store sandbox, Play test kartı; Pro'da reklam yok.
-- [ ] `https://photomunity.app/tr/invite/...` gibi bir bağlantı telefonda uygulamayı açıyor (Universal Links / App Links).
+- [ ] `https://photomunity.com/tr/invite/...` gibi bir bağlantı telefonda uygulamayı açıyor (Universal Links / App Links).
 - [ ] Hesap silme: Ayarlar → hesabı sil; fotoğraflar depolamadan da siliniyor.

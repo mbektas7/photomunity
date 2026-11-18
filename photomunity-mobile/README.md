@@ -106,7 +106,7 @@ Alt sekmede **Topluluklar**: topluluk arama, katılma, topluluk açma; topluluk 
 
 Yarışma ekranı döneme göre değişir: katılım (kendi fotoğrafından seçerek katılma ve geri çekme), halk oylaması (yıldız verme, kendi karesinde "Senin karen"), jüri dönemi (jüri üyesi için puanlama ekranı), sonuç (kürsü ve sıralama). Jüri ekranı tam ekran ve anonimdir: kaydırarak gezilir, puan verince sıradaki puanlanmamış kareye geçer.
 
-**Yönetim ekranları:** Yarışma kurma, yarışma yönetimi (yayınlama, jüri ve ağırlıklar, katılım geçersiz sayma, ara sonuç) ve topluluk ayarları (görseller, bilgiler, yöneticiler, davet) uygulama içindedir (`lib/screens/manage_screens.dart`). Web adresi (`--dart-define=WEB_URL=https://photomunity.app`) paylaşım bağlantıları ve yasal sayfalar için kullanılır.
+**Yönetim ekranları:** Yarışma kurma, yarışma yönetimi (yayınlama, jüri ve ağırlıklar, katılım geçersiz sayma, ara sonuç) ve topluluk ayarları (görseller, bilgiler, yöneticiler, davet) uygulama içindedir (`lib/screens/manage_screens.dart`). Web adresi (`--dart-define=WEB_URL=https://photomunity.com`) paylaşım bağlantıları ve yasal sayfalar için kullanılır.
 
 ## Faz 3: Harita ve mesajlar
 
@@ -159,14 +159,14 @@ Satın alma sonrası uygulama backend'i hemen eşitler (`/billing/sync`), böyle
 
 ```bash
 flutter build ipa --release \
-  --dart-define=API_URL=https://api.photomunity.app/api/v1 \
-  --dart-define=WEB_URL=https://photomunity.app \
+  --dart-define=API_URL=https://api.photomunity.com/api/v1 \
+  --dart-define=WEB_URL=https://photomunity.com \
   --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=... \
   --dart-define=RC_IOS_KEY=appl_... --dart-define=ADMOB_BANNER_IOS=ca-app-pub-.../...
 
 ADMOB_APP_ID=ca-app-pub-...~... flutter build appbundle --release \
-  --dart-define=API_URL=https://api.photomunity.app/api/v1 \
-  --dart-define=WEB_URL=https://photomunity.app \
+  --dart-define=API_URL=https://api.photomunity.com/api/v1 \
+  --dart-define=WEB_URL=https://photomunity.com \
   --dart-define=GOOGLE_SERVER_CLIENT_ID=... \
   --dart-define=RC_ANDROID_KEY=goog_... --dart-define=ADMOB_BANNER_ANDROID=ca-app-pub-.../...
 ```
