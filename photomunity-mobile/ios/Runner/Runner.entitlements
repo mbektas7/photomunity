@@ -8,5 +8,13 @@
 	<array>
 		<string>applinks:photomunity.com</string>
 	</array>
+	<!-- Apple ile giriş -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	<!-- Push bildirimleri (dağıtım imzasında production'a çevrilir) -->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>
