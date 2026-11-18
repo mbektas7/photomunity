@@ -1,7 +1,4 @@
-# Otomatik HTTPS (Let's Encrypt). DOMAIN ve ACME_EMAIL docker-compose.yml'den gelir.
-{
-	email {$ACME_EMAIL}
-}
+# Otomatik HTTPS (Let's Encrypt). DOMAIN docker-compose.yml'den gelir.
 
 (common) {
 	encode zstd gzip

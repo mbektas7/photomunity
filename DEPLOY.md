@@ -89,7 +89,7 @@ cp .env.example .env
 nano .env
 ```
 
-Zorunlu alanlar: `DOMAIN`, `ACME_EMAIL`, `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_LEGAL_ENTITY`, `NEXT_PUBLIC_CONTACT_EMAIL`. Rastgele değerler için:
+Zorunlu alanlar: `DOMAIN`, `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_LEGAL_ENTITY`, `NEXT_PUBLIC_CONTACT_EMAIL`. Rastgele değerler için:
 
 ```bash
 openssl rand -hex 32
