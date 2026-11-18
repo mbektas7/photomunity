@@ -21,7 +21,12 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: { default: "Photomunity", template: "%s | Photomunity" }, description: t("description") };
+  return {
+    // Paylaşım görsellerinin (Open Graph) mutlak adresleri için
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+    title: { default: "Photomunity", template: "%s | Photomunity" },
+    description: t("description"),
+  };
 }
 
 export const viewport: Viewport = {

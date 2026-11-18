@@ -8,11 +8,12 @@ from app.core.config import get_settings
 
 
 @lru_cache
-def _client():
+def _client(public: bool = False):
     s = get_settings()
+    endpoint = (s.s3_public_endpoint_url or s.s3_endpoint_url) if public else s.s3_endpoint_url
     return boto3.client(
         "s3",
-        endpoint_url=s.s3_endpoint_url,
+        endpoint_url=endpoint,
         region_name=s.s3_region,
         aws_access_key_id=s.s3_access_key or "dev",
         aws_secret_access_key=s.s3_secret_key or "dev",
@@ -23,7 +24,7 @@ def _client():
 def presigned_upload(key: str, content_type: str, max_bytes: int) -> dict:
     """İstemcinin doğrudan depolamaya yüklemesi için multipart POST imzası (boyut sınırı sunucu tarafında zorlanır)."""
     s = get_settings()
-    return _client().generate_presigned_post(
+    return _client(public=True).generate_presigned_post(
         Bucket=s.s3_bucket,
         Key=key,
         Fields={"Content-Type": content_type},

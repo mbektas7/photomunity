@@ -31,3 +31,18 @@ def test_production_rejects_dev_defaults(field, value):
 
 def test_development_keeps_defaults():
     Settings(_env_file=None, environment="development")
+
+
+def test_presigned_upload_uses_public_endpoint(monkeypatch):
+    from app.services import storage
+
+    s = Settings(_env_file=None, s3_endpoint_url="http://minio:9000",
+                 s3_public_endpoint_url="https://media.example.com", s3_bucket="b")
+    monkeypatch.setattr(storage, "get_settings", lambda: s)
+    storage._client.cache_clear()
+    try:
+        post = storage.presigned_upload("originals/x.jpg", "image/jpeg", 100)
+        assert post["url"].startswith("https://media.example.com")
+        assert storage._client().meta.endpoint_url == "http://minio:9000"
+    finally:
+        storage._client.cache_clear()

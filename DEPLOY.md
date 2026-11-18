@@ -1,138 +1,161 @@
 # Photomunity — Yayına alma rehberi
 
-Sıra önemlidir: önce alan adı ve altyapı, sonra API, web ve en son mobil uygulamalar.
+Sıra önemlidir: önce alan adı ve sunucu, sonra web/API, en son mobil uygulamalar.
 Her adımın sonunda **Kontrol** satırındaki denemeyi yapın.
 
-Adresler (örnek):
+Kurulum tek bir Linux sunucusunda (VPS) Docker ile yapılır. Tüm yapılandırma `deploy/` klasöründe:
+
+| Dosya | Ne |
+| --- | --- |
+| `deploy/docker-compose.yml` | Caddy (otomatik HTTPS), web, API, işçi, PostgreSQL+PostGIS, Redis, MinIO (fotoğraflar), günlük yedek |
+| `deploy/Caddyfile` | Alan adı yönlendirmeleri ve güvenlik başlıkları |
+| `deploy/.env.example` | Sunucu ayarları (kopyalanıp doldurulur) |
+| `deploy/setup-server.sh` | Temiz Ubuntu sunucusunu hazırlar |
+| `.github/workflows/ci.yml` | Her push'ta testler; `main` testleri geçerse sunucuya otomatik yayın |
+
+Adresler:
 
 | Adres | Ne |
 | --- | --- |
 | `https://photomunity.app` | Web |
-| `https://api.photomunity.app` | API (FastAPI) |
-| `https://cdn.photomunity.app` | Fotoğraflar (yalnızca `photos/` öneki) |
+| `https://api.photomunity.app` | API (WebSocket dahil) |
+| `https://media.photomunity.app` | Fotoğraflar (yalnızca `photos/` herkese açık) ve doğrudan yükleme |
 
 ---
 
 ## 0. Ön koşullar (hesaplar)
 
 - [ ] Alan adı: `photomunity.app`
-- [ ] Kod deposu (GitHub, özel)
+- [x] Kod deposu: https://github.com/mbektas7/photomunity
+- [ ] Sunucu (VPS): **Ubuntu 24.04, en az 2 vCPU / 4 GB RAM / 80 GB disk**. Örn. Hetzner CX22 ya da DigitalOcean 4 GB. Fotoğraflar sunucu diskinde durur; disk dolmaya yaklaşınca büyütülür.
 - [ ] Apple Developer Program (yıllık ücretli), Google Play Console (tek seferlik ücretli)
 - [ ] Firebase, Google Cloud (OAuth), Resend, Stripe, RevenueCat, AdMob, AdSense (isteğe bağlı)
 
-## 1. Altyapı
+## 1. Sunucuyu aç ve DNS'i yönlendir
 
-| Bileşen | Gereksinim | Not |
+- [ ] Sunucuyu oluştururken kendi SSH anahtarını ekle (şifreyle giriş yerine).
+- [ ] Alan adı panelinde sunucunun IP adresine **A kayıtları** (IPv6 varsa AAAA da):
+
+| Ad | Tür | Değer |
 | --- | --- | --- |
-| PostgreSQL 16 | PostGIS eklentisi | Neon, Supabase, Render, RDS |
-| Redis 7 | Kalıcı bağlantı | Upstash, Render, ElastiCache |
-| Nesne depolama | **Presigned POST desteği** | Tarayıcı ve uygulama dosyayı form POST ile doğrudan yükler. AWS S3 destekler; **Cloudflare R2 desteklemez**. |
-| CDN | Bucket'ın `photos/` önekini herkese açar | CloudFront (S3 ile) |
-| API + işçi | Docker, iki ayrı süreç | Fly.io, Render, Railway |
-| Web | Node.js 20+, **tek örnek** | Aşağıdaki nota bakın |
+| `@` | A | sunucu IP |
+| `www` | A | sunucu IP |
+| `api` | A | sunucu IP |
+| `media` | A | sunucu IP |
 
-> **Web neden tek örnek?** Oturum yenileme istekleri sunucu belleğinde birleştiriliyor
-> (`photomunity-web/README.md`). Birden fazla örnek ya da sunucusuz (Vercel) dağıtımda eşzamanlı
-> yenilemeler API'nin token yeniden kullanım korumasını tetikleyip kullanıcıların oturumunu kapatabilir.
-> Başlangıçta web'i tek bir Node süreci olarak (`npm run build && npm start`) çalıştırın; ölçeklemek
-> gerektiğinde birleştirme Redis'e taşınmalı.
+**Kontrol:** `ping api.photomunity.app` sunucu IP'sini gösteriyor (DNS yayılması birkaç dakika–birkaç saat sürebilir).
 
-Depolama ayarları:
-- [ ] Bucket: `photomunity`. Herkese açık okuma **yalnızca** `photos/*` için (orijinaller özel kalır).
-- [ ] Bucket CORS: `POST` ve `PUT`, köken `https://photomunity.app`.
-- [ ] CDN kökeni bucket, yol `photos/*`; adres `CDN_BASE_URL` olacak.
+## 2. Sunucuyu hazırla
 
-**Kontrol:** `psql` ile bağlanın, `CREATE EXTENSION IF NOT EXISTS postgis;` çalışsın.
-
-## 2. E-posta (Resend)
-
-- [ ] `photomunity.app` alan adını ekleyin, verdiği SPF/DKIM DNS kayıtlarını girin, doğrulanmasını bekleyin.
-- [ ] API anahtarı → `RESEND_API_KEY`. Gönderen: `Photomunity <no-reply@photomunity.app>`.
-
-## 3. API ortam değişkenleri
-
-Zorunlu (eksikse API `ENVIRONMENT=production` iken **açılmaz**):
-
-```env
-ENVIRONMENT=production
-FRONTEND_URL=https://photomunity.app
-CORS_ORIGINS=["https://photomunity.app"]
-JWT_SECRET=<openssl rand -hex 32>
-DATABASE_URL=postgresql+asyncpg://KULLANICI:SIFRE@HOST:5432/photomunity
-REDIS_URL=rediss://...
-S3_ENDPOINT_URL=            # AWS S3 için boş bırakın
-S3_REGION=eu-central-1
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
-S3_BUCKET=photomunity
-CDN_BASE_URL=https://cdn.photomunity.app
-RESEND_API_KEY=re_...
-EMAIL_FROM=Photomunity <no-reply@photomunity.app>
-TRUST_PROXY_HEADERS=true    # yalnızca güvenilir ters vekil / yük dengeleyici arkasında
-```
-
-Özelliklere göre (boşsa ilgili özellik kapalı kalır):
-
-```env
-GOOGLE_CLIENT_IDS=["<web>.apps.googleusercontent.com","<ios>...","<android>..."]
-APPLE_CLIENT_IDS=["app.photomunity.photomunity","<web Services ID>"]
-FCM_SERVICE_ACCOUNT_JSON={...}          # Firebase servis hesabı (push)
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_MONTHLY=price_...
-STRIPE_PRICE_YEARLY=price_...
-REVENUECAT_WEBHOOK_AUTH=<rastgele uzun değer>
-REVENUECAT_SECRET_KEY=sk_...
-TURNSTILE_SECRET=                       # isteğe bağlı bot doğrulaması
-MODERATION_PROVIDER=none                # ya da rekognition (AWS anahtarları gerekir)
-```
-
-## 4. API'yi yayınla
-
-`photomunity-api/Dockerfile` ile imaj oluşturun. Aynı imajdan **iki süreç**:
+Kendi bilgisayarından:
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers   # web süreci
-arq app.worker.WorkerSettings                                      # işçi: fotoğraf işleme, yarışma takvimi, abonelik kontrolü
+ssh root@SUNUCU_IP
 ```
 
-Her sürümden önce (yayın komutu olarak):
+Sunucuda:
 
 ```bash
-alembic upgrade head
+curl -fsSL https://raw.githubusercontent.com/mbektas7/photomunity/main/deploy/setup-server.sh -o setup.sh
+bash setup.sh
 ```
 
-- [ ] `api.photomunity.app` → API, HTTPS açık; WebSocket (`/api/v1/ws`) destekleniyor olmalı.
-- [ ] Demo verisi (`scripts/seed_demo.py`) üretimde **çalıştırılmaz**.
+Depo özelse bu adres erişilemez; o durumda dosyanın içeriğini kopyalayıp sunucuda `nano setup.sh` ile yapıştır.
 
-**Kontrol:** `curl https://api.photomunity.app/health` → `{"status":"ok"}`
+Betik şunları yapar: sistem güncellemesi, otomatik güvenlik güncellemeleri, güvenlik duvarı (yalnızca 22/80/443), fail2ban, 2 GB takas, Docker ve `deploy` kullanıcısı.
 
-## 5. Web ortam değişkenleri ve yayın
+## 3. Kodu sunucuya al
 
-```env
-API_URL=https://api.photomunity.app/api/v1
-NEXT_PUBLIC_WS_URL=wss://api.photomunity.app/api/v1/ws
-NEXT_PUBLIC_SITE_URL=https://photomunity.app
-NEXT_PUBLIC_LEGAL_ENTITY=<şirket unvanı / işleten kişi>
-NEXT_PUBLIC_CONTACT_EMAIL=<destek / KVKK başvuru adresi>
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=<web>.apps.googleusercontent.com
-NEXT_PUBLIC_APPLE_CLIENT_ID=<web Services ID>
-NEXT_PUBLIC_APPLE_REDIRECT_URI=https://photomunity.app
-NEXT_PUBLIC_APP_STORE_URL=          # uygulamalar yayınlanınca
-NEXT_PUBLIC_PLAY_STORE_URL=
-APPLE_TEAM_ID=JN5ZA7ZBSC            # Apple hesabınızdaki Team ID ile aynı olmalı
-ANDROID_CERT_SHA256=<Play App Signing SHA-256>
-NEXT_PUBLIC_ADSENSE_CLIENT=         # isteğe bağlı
-```
+Depo özel olduğu için sunucuya **salt okunur bir anahtar** (deploy key) verilir. Sunucuda `deploy` kullanıcısıyla:
 
 ```bash
-npm ci && npm run build && npm start   # PORT ortam değişkeniyle
+su - deploy
+ssh-keygen -t ed25519 -f ~/.ssh/github -N ""
+cat ~/.ssh/github.pub
 ```
+
+- [ ] Çıkan satırı GitHub → depo → Settings → Deploy keys → *Add deploy key* (yazma izni **kapalı**).
+
+```bash
+printf 'Host github.com\n  IdentityFile ~/.ssh/github\n' >> ~/.ssh/config
+git clone git@github.com:mbektas7/photomunity.git /opt/photomunity
+```
+
+## 4. Ayarları doldur
+
+```bash
+cd /opt/photomunity/deploy
+cp .env.example .env
+nano .env
+```
+
+Zorunlu alanlar: `DOMAIN`, `ACME_EMAIL`, `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_LEGAL_ENTITY`, `NEXT_PUBLIC_CONTACT_EMAIL`. Rastgele değerler için:
+
+```bash
+openssl rand -hex 32
+```
+
+API, eksik ya da geliştirme değerleriyle **açılmaz** ve neyin eksik olduğunu kayıtlara yazar. Diğer alanlar (sosyal giriş, push, ödeme) boşsa ilgili özellik kapalı kalır; sonradan doldurup 5. adımdaki komutla güncelleyebilirsin.
+
+> `.env` sunucudaki tek gizli dosyadır. Bir kopyasını parola yöneticinde sakla.
+
+## 5. Başlat
+
+```bash
+docker compose up -d --build
+```
+
+İlk derleme birkaç dakika sürer. Veritabanı şeması API her açıldığında otomatik güncellenir; HTTPS sertifikaları Caddy tarafından otomatik alınır ve yenilenir.
 
 **Kontrol:**
-- `https://photomunity.app/tr` açılıyor, kayıt → doğrulama e-postası geliyor → giriş → fotoğraf yükleme çalışıyor.
-- `https://photomunity.app/tr/privacy` ve `/tr/terms` açılıyor, üstte kırmızı uyarı **yok**.
-- `https://photomunity.app/.well-known/apple-app-site-association` ve `/.well-known/assetlinks.json` JSON döndürüyor.
+
+```bash
+docker compose ps                          # tüm servisler "Up", api "healthy"
+curl https://api.photomunity.app/health    # {"status":"ok"}
+docker compose logs -f api worker          # hata var mı
+```
+
+- `https://photomunity.app/tr` açılıyor; kayıt → doğrulama e-postası → giriş → fotoğraf yükleme çalışıyor.
+- `https://photomunity.app/tr/privacy` açılıyor, üstte kırmızı uyarı **yok**.
+- `https://photomunity.app/.well-known/apple-app-site-association` JSON döndürüyor.
+
+Demo verisi (`scripts/seed_demo.py`) üretimde **çalıştırılmaz**.
+
+### Günlük işler
+
+| İş | Komut (`/opt/photomunity/deploy` içinde) |
+| --- | --- |
+| Elle güncelleme | `git pull && docker compose up -d --build` |
+| Kayıtlar | `docker compose logs -f --tail=100 api` |
+| Yeniden başlatma | `docker compose restart api worker` |
+| Yedekler | `ls backups/` (her gün bir `.dump`, 14 gün tutulur) |
+| Yedekten dönme | `docker compose exec -T db pg_restore -U photomunity -d photomunity --clean < backups/DOSYA.dump` |
+
+**Yedekler sunucunun kendisinde durur.** Sunucu kaybına karşı `backups/` klasörünü ve fotoğrafları (`miniodata` birimi) düzenli olarak başka bir yere kopyala; ya da sağlayıcının otomatik sunucu yedeğini (snapshot) aç.
+
+### Otomatik yayın (GitHub Actions)
+
+`main` dalına her push'ta testler çalışır; geçerse sunucu kendini günceller. Bunu açmak için:
+
+1. Kendi bilgisayarında yayına özel bir anahtar üret:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/photomunity_deploy -N ""
+```
+
+2. Ortak anahtarı sunucuda `deploy` kullanıcısına ekle (`/home/deploy/.ssh/authorized_keys` dosyasına `~/.ssh/photomunity_deploy.pub` içeriği).
+3. Sunucunun parmak izini al:
+
+```bash
+ssh-keyscan SUNUCU_IP
+```
+
+4. GitHub → depo → Settings:
+   - **Secrets and variables → Actions → Secrets:** `DEPLOY_HOST` (sunucu IP), `DEPLOY_SSH_KEY` (`~/.ssh/photomunity_deploy` dosyasının içeriği), `DEPLOY_KNOWN_HOSTS` (3. adımın çıktısı)
+   - **Variables:** `DEPLOY_ENABLED` = `true`, `DOMAIN` = `photomunity.app`
+   - **Environments:** `production` ortamı oluşur; istersen yayından önce onay isteyecek şekilde ayarlayabilirsin.
+
+**Kontrol:** GitHub → Actions sekmesinde son çalıştırma yeşil ve "deploy" adımı tamamlanmış.
 
 ## 6. Yasal metinler
 

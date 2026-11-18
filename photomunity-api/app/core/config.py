@@ -30,6 +30,9 @@ class Settings(BaseSettings):
 
     # S3 uyumlu depolama (AWS S3 / MinIO). Yükleme presigned POST ile yapılır; Cloudflare R2 bunu desteklemez.
     s3_endpoint_url: str | None = None
+    # Tarayıcının/uygulamanın yükleme yaptığı adres. Kendi sunucunda MinIO kullanırken API iç ağdan
+    # (http://minio:9000) bağlanır, imzalı yükleme adresi ise dışarıdan erişilen alan adını gösterir.
+    s3_public_endpoint_url: str | None = None
     s3_region: str = "auto"
     s3_access_key: str = ""
     s3_secret_key: str = ""
