@@ -431,11 +431,28 @@ class CommunityImageUploadIn(BaseModel):
     size_bytes: int = Field(gt=0)
 
 
+class NewsImage(BaseModel):
+    key: str = Field(max_length=300)
+    url: str = Field(max_length=500)
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+
+
+class NewsImageUploadIn(BaseModel):
+    content_type: str
+    size_bytes: int = Field(gt=0)
+
+
+class NewsImageCompleteIn(BaseModel):
+    key: str
+
+
 class PostIn(BaseModel):
     kind: Literal["photo", "news"]
     title: str | None = Field(default=None, max_length=200)
     body: str | None = Field(default=None, max_length=5000)
     photo_id: uuid.UUID | None = None
+    images: list[NewsImage] = Field(default_factory=list, max_length=10)
 
 
 class PrizeIn(BaseModel):

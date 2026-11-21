@@ -138,6 +138,42 @@ async def test_community_join_approval_requests(client, fake_storage, outbox):
     assert (await client.get(f"/communities/{slug}", headers=other)).json()["my_role"] == "member"
 
 
+async def test_news_with_photos_and_detail(client, fake_storage):
+    from tests.conftest import make_jpeg
+    owner, me = await register(client, "haberci")
+    slug = await make_community(client, owner)
+    member, _ = await register(client, "okur")
+    await client.post(f"/communities/{slug}/join", headers=member)
+
+    async def add_image(h, w, hh):
+        data = make_jpeg(w, hh)
+        up = await client.post(f"/communities/{slug}/news-images/upload-url", headers=h,
+                               json={"content_type": "image/jpeg", "size_bytes": len(data)})
+        if up.status_code != 201:
+            return up
+        fake_storage[up.json()["fields"]["key"]] = data
+        return await client.post(f"/communities/{slug}/news-images/complete", headers=h, json={"key": up.json()["fields"]["key"]})
+
+    assert (await add_image(member, 1200, 800)).status_code == 403  # yalnızca yöneticiler
+    a = (await add_image(owner, 3000, 2000)).json()
+    b = (await add_image(owner, 1080, 1350)).json()
+    assert (a["width"], a["height"]) == (2048, 1365) and (b["width"], b["height"]) == (1080, 1350)  # kırpılmadan
+    assert a["url"].endswith(".webp") and not [k for k in fake_storage if k.startswith("uploads/")]
+
+    bad = {"key": "photos/communities/baska/news/x.webp", "url": "https://x", "width": 1, "height": 1}
+    r = await client.post(f"/communities/{slug}/posts", headers=owner, json={"kind": "news", "title": "Hile", "images": [bad]})
+    assert r.status_code == 400
+
+    r = await client.post(f"/communities/{slug}/posts", headers=owner,
+                          json={"kind": "news", "title": "Gece çekimi", "body": "Cumartesi 21:00", "images": [a, b]})
+    pid = r.json()["id"]
+    listed = (await client.get(f"/communities/{slug}/posts")).json()["items"][0]
+    assert listed["id"] == pid and [i["width"] for i in listed["images"]] == [2048, 1080]
+    detail = (await client.get(f"/communities/{slug}/posts/{pid}")).json()
+    assert detail["title"] == "Gece çekimi" and len(detail["images"]) == 2 and detail["author"]["username"] == "haberci"
+    assert (await client.get(f"/communities/{slug}/posts/00000000-0000-0000-0000-000000000000")).status_code == 404
+
+
 async def test_jury_contest_weighted_scoring_and_tiebreak(client, fake_storage, clock, outbox):
     owner, _ = await register(client, "dernek")
     slug = await make_community(client, owner)

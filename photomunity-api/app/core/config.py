@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     # Profil görselleri
     max_profile_image_bytes: int = 15_000_000
     min_avatar_px: int = 200
-    min_cover_width_px: int = 1200
+    min_cover_width_px: int = 1080   # yükleme kuralıyla aynı: 1080 genişlikteki fotoğraflar kapak olabilir
 
     # Push bildirimleri (Firebase Cloud Messaging HTTP v1). Servis hesabı JSON'u dosya yolu veya içerik olarak.
     fcm_service_account_file: str | None = None

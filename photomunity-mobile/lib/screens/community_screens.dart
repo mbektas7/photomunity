@@ -162,63 +162,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   /// Galeriden yeni bir kare seçip yükler ve topluluğa paylaşır.
   void _sharePhoto() => context.push('/upload?community=${widget.slug}');
 
-  Future<void> _writeNews() async {
-    final t = L10n.of(context);
-    final title = TextEditingController();
-    final body = TextEditingController();
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (c) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          0,
-          20,
-          MediaQuery.viewInsetsOf(c).bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: title,
-              maxLength: 200,
-              decoration: InputDecoration(labelText: t('community.news_title')),
-            ),
-            TextField(
-              controller: body,
-              maxLength: 5000,
-              minLines: 3,
-              maxLines: 8,
-              decoration: InputDecoration(labelText: t('community.news_body')),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(t('community.publish')),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (ok == true && title.text.trim().isNotEmpty) {
-      try {
-        await ref.read(apiProvider).post<dynamic>(
-          '/communities/${widget.slug}/posts',
-          {
-            'kind': 'news',
-            'title': title.text.trim(),
-            'body': body.text.trim().isEmpty ? null : body.text.trim(),
-          },
-        );
-        ref.invalidate(communityPostsProvider(widget.slug));
-      } catch (e) {
-        if (mounted) toast(context, errorText(context, e));
-      }
-    }
-    title.dispose();
-    body.dispose();
-  }
+  void _writeNews() => context.push('/c/${widget.slug}/news/new');
 
   @override
   Widget build(BuildContext context) {
@@ -418,39 +362,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         ],
                       ),
                     ),
-                    _ => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.all(18),
-                      color: p.surface,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${post.author.displayName} · ${relativeTime(post.createdAt, locale)}',
-                            style: font(13, color: p.inkMuted),
-                          ),
-                          if (post.title != null) ...[
-                            const SizedBox(height: 10),
-                            Text(
-                              post.title!,
-                              style: font(
-                                19,
-                                weight: 600,
-                                height: 1.25,
-                                color: p.ink,
-                              ),
-                            ),
-                          ],
-                          if (post.body != null) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              post.body!,
-                              style: font(15, height: 1.5, color: p.ink),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                    _ => _NewsCard(slug: c.slug, post: post),
                   },
                 ),
             ],
@@ -676,6 +588,82 @@ class _JoinRequestsState extends ConsumerState<_JoinRequests> {
             ),
           ),
       ],
+    );
+  }
+}
+
+
+/// Akıştaki haber kartı: başlık, ilk fotoğraf (kırpılmadan) ve kısa metin; dokununca detay.
+class _NewsCard extends StatelessWidget {
+  const _NewsCard({required this.slug, required this.post});
+  final String slug;
+  final CommunityPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final first = post.images.isEmpty ? null : post.images.first;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Material(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/c/$slug/posts/${post.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${t('news.label')} · ${post.author.displayName} · ${relativeTime(post.createdAt, t.locale.languageCode)}',
+                  style: font(12.5, color: p.inkMuted),
+                ),
+                if (post.title != null) ...[
+                  const SizedBox(height: 8),
+                  Text(post.title!, style: font(19, weight: 700, height: 1.25, color: p.ink)),
+                ],
+                if (first != null) ...[
+                  const SizedBox(height: 12),
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Radii.photo),
+                        child: AspectRatio(aspectRatio: first.ratio, child: NetPhoto(url: first.url)),
+                      ),
+                      if (post.images.length > 1)
+                        Positioned(
+                          right: 10,
+                          top: 10,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                            decoration: BoxDecoration(color: const Color(0x9914161B), borderRadius: BorderRadius.circular(999)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(LucideIcons.images, size: 14, color: Colors.white),
+                                const SizedBox(width: 5),
+                                Text('${post.images.length}', style: font(12, weight: 700, color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+                if (post.body != null) ...[
+                  const SizedBox(height: 10),
+                  Text(post.body!, maxLines: 3, overflow: TextOverflow.ellipsis, style: font(15, height: 1.5, color: p.ink)),
+                ],
+                const SizedBox(height: 8),
+                Text(t('news.read_more'), style: font(13.5, weight: 700, color: p.accentText)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

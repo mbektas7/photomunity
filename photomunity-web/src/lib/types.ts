@@ -194,7 +194,11 @@ export type CommunityPost = {
   author: UserCard;
   photo: PhotoCard | null;
   contest: ContestCard | null;
+  /** Haber fotoğrafları; kırpılmadan gösterilir */
+  images: NewsImage[];
 };
+
+export type NewsImage = { key: string; url: string; width: number; height: number };
 
 // ---------- Faz 3 ----------
 export type MapCluster = { lat: number; lng: number; count: number; thumb_url: string | null };

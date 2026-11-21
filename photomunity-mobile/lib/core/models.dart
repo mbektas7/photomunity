@@ -591,6 +591,21 @@ class Contest extends ContestCard {
   final String shareUrl;
 }
 
+/// Haberdeki fotoğraf: sunucuda işlenmiş WebP ve boyutları.
+class NewsImage {
+  NewsImage.fromJson(Map<String, dynamic> j)
+    : key = j['key'] as String,
+      url = j['url'] as String,
+      width = j['width'] as int,
+      height = j['height'] as int;
+  final String key;
+  final String url;
+  final int width;
+  final int height;
+  double get ratio => height == 0 ? 1.5 : width / height;
+  Map<String, dynamic> toJson() => {'key': key, 'url': url, 'width': width, 'height': height};
+}
+
 class CommunityPost {
   CommunityPost.fromJson(Map<String, dynamic> j)
     : id = j['id'] as String,
@@ -604,7 +619,13 @@ class CommunityPost {
           : PhotoCard.fromJson(j['photo'] as Map<String, dynamic>),
       contest = j['contest'] == null
           ? null
-          : ContestCard.fromJson(j['contest'] as Map<String, dynamic>);
+          : ContestCard.fromJson(j['contest'] as Map<String, dynamic>),
+      images = ((j['images'] as List?) ?? const [])
+          .map((e) => NewsImage.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  /// Haber fotoğrafları (kırpılmadan gösterilir).
+  final List<NewsImage> images;
 
   final String id;
   final String kind; // photo | news | contest

@@ -456,6 +456,12 @@ final communityProvider = FutureProvider.autoDispose.family<Community, String>((
   );
 });
 
+/// Tek gönderi (haber detayı).
+final communityPostProvider = FutureProvider.autoDispose.family<CommunityPost, (String, String)>((ref, arg) async {
+  final (slug, id) = arg;
+  return CommunityPost.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/communities/$slug/posts/$id'));
+});
+
 final communityPostsProvider = FutureProvider.autoDispose
     .family<List<CommunityPost>, String>((ref, slug) async {
       final res = await ref

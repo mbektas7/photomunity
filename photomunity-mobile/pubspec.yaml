@@ -34,6 +34,8 @@ dependencies:
   purchases_flutter: ^9.0.0
   lucide_icons_flutter: ^4.0.3
   image_cropper: ^14.0.0
+  share_plus: ^12.0.2
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

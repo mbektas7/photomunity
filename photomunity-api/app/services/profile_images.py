@@ -36,3 +36,24 @@ def process_profile_image(data: bytes, kind: str, s: Settings) -> bytes:
     buf = io.BytesIO()
     out.save(buf, "WEBP", quality=86, method=4)
     return buf.getvalue()
+
+
+NEWS_LONG_EDGE = 2048
+
+
+def process_news_image(data: bytes) -> tuple[bytes, int, int]:
+    """Haber fotoğrafı: kırpılmaz, uzun kenar en fazla 2048 px, WebP, EXIF'siz. (webp, genişlik, yükseklik) döner."""
+    try:
+        img = Image.open(io.BytesIO(data))
+        img.load()
+    except Exception:
+        raise ProfileImageError("corrupt_image")
+    if (img.format or "").upper() not in ALLOWED_FORMATS:
+        raise ProfileImageError("unsupported_format")
+    img = ImageOps.exif_transpose(img).convert("RGB")
+    if max(img.size) < 400:
+        raise ProfileImageError("image_too_small")
+    img.thumbnail((NEWS_LONG_EDGE, NEWS_LONG_EDGE), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "WEBP", quality=85, method=4)
+    return buf.getvalue(), img.width, img.height

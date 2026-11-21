@@ -11,6 +11,7 @@ import 'screens/explore_screen.dart';
 import 'screens/ar_screen.dart';
 import 'screens/feed_screen.dart';
 import 'screens/follow_list_screen.dart';
+import 'screens/news_screens.dart';
 import 'screens/guide_screens.dart';
 import 'screens/planner_screen.dart';
 import 'screens/pro_screen.dart';
@@ -259,6 +260,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/communities/new',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const NewCommunityScreen(),
+      ),
+      GoRoute(
+        path: '/c/:slug/news/new',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => NewsComposeScreen(slug: s.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/c/:slug/posts/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => NewsDetailScreen(slug: s.pathParameters['slug']!, id: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/c/:slug',

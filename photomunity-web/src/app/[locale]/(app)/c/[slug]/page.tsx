@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { MapPin, Plus, Settings } from "lucide-react";
+import { Images, MapPin, Plus, Settings, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useState } from "react";
@@ -11,11 +11,11 @@ import { CommunityLogo, ContestRow, MyPhotoPicker } from "@/components/community
 import { PhotoPrint } from "@/components/PhotoPrint";
 import { Button, Notice, TextArea, TextField, buttonClass } from "@/components/ui";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, uploadToStorage } from "@/lib/api";
 import { countryName } from "@/lib/format";
 import { useLoadMore, useMe } from "@/lib/hooks";
 import { relativeTime } from "@/lib/relative-time";
-import type { Community, CommunityPost, ContestCard, Member } from "@/lib/types";
+import type { Community, CommunityPost, ContestCard, Member, NewsImage } from "@/lib/types";
 
 const TABS = ["feed", "contests", "members"] as const;
 
@@ -114,6 +114,18 @@ function CommunityView() {
   );
 }
 
+const MAX_NEWS_IMAGES = 10;
+
+/** Haber fotoğrafı: depoya yükle, sunucuda kırpmadan küçültülsün, habere eklenecek görseli döndür. */
+async function uploadNewsImage(slug: string, file: File): Promise<NewsImage> {
+  const slot = await api<{ upload_url: string; fields: Record<string, string> }>(`communities/${slug}/news-images/upload-url`, {
+    method: "POST",
+    body: { content_type: file.type || "image/jpeg", size_bytes: file.size },
+  });
+  await uploadToStorage(slot.upload_url, slot.fields, file, () => undefined);
+  return api<NewsImage>(`communities/${slug}/news-images/complete`, { method: "POST", body: { key: slot.fields.key } });
+}
+
 function Composer({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
   const t = useTranslations("communities");
   const qc = useQueryClient();
@@ -121,6 +133,9 @@ function Composer({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
   const [news, setNews] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [images, setImages] = useState<NewsImage[]>([]);
+  const [uploading, setUploading] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const done = () => qc.invalidateQueries({ queryKey: ["community-posts", c.slug] });
   const post = useMutation({
     mutationFn: (payload: Record<string, unknown>) => api(`communities/${c.slug}/posts`, { method: "POST", body: payload }),
@@ -129,9 +144,27 @@ function Composer({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
       setNews(false);
       setTitle("");
       setBody("");
+      setImages([]);
       done();
     },
   });
+
+  async function addFiles(files: FileList | null) {
+    if (!files) return;
+    setUploadError(null);
+    const list = Array.from(files).slice(0, MAX_NEWS_IMAGES - images.length - uploading);
+    for (const file of list) {
+      setUploading((n) => n + 1);
+      try {
+        const img = await uploadNewsImage(c.slug, file);
+        setImages((prev) => [...prev, img]);
+      } catch (e) {
+        setUploadError(e instanceof ApiError ? e.message : t("error"));
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }
+  }
 
   return (
     <div className="mb-6 bg-surface px-4 py-4 sm:px-5">
@@ -141,11 +174,40 @@ function Composer({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
           {isAdmin && <Button variant="secondary" onClick={() => setNews(true)}>{t("write_news")}</Button>}
         </div>
       ) : (
-        <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); post.mutate({ kind: "news", title, body: body || null }); }}>
+        <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); post.mutate({ kind: "news", title, body: body || null, images }); }}>
           <TextField label={t("news_title")} name="news_title" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} />
           <TextArea label={t("news_body")} name="news_body" maxLength={5000} value={body} onChange={(e) => setBody(e.target.value)} />
+          <div>
+            <p className="mb-2 flex items-baseline justify-between text-sm font-semibold">
+              {t("news_photos")} <span className="font-normal text-ink-muted">{images.length} / {MAX_NEWS_IMAGES}</span>
+            </p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {images.map((img, i) => (
+                <div key={img.key} className="relative aspect-square overflow-hidden rounded-photo bg-surface-2">
+                  {/* Önizleme küçük karedir; haberin kendisinde fotoğraf kırpılmaz */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                  <button type="button" aria-label={t("news_remove_photo")} onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
+                    className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              {Array.from({ length: uploading }).map((_, i) => (
+                <div key={`u${i}`} className="grid aspect-square place-items-center rounded-photo bg-surface-2 text-xs text-ink-muted">{t("news_uploading")}</div>
+              ))}
+              {images.length + uploading < MAX_NEWS_IMAGES && (
+                <label className="grid aspect-square cursor-pointer place-items-center rounded-photo border-[1.5px] border-dashed border-ring-idle text-center text-xs font-semibold text-ink-muted hover:bg-surface-2">
+                  <span className="flex flex-col items-center gap-1"><Plus className="h-5 w-5" />{t("news_add_photos")}</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple className="sr-only"
+                    onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+                </label>
+              )}
+            </div>
+          </div>
+          {uploadError && <Notice tone="error">{uploadError}</Notice>}
           <div className="flex gap-2">
-            <Button type="submit" busy={post.isPending}>{t("publish")}</Button>
+            <Button type="submit" busy={post.isPending} disabled={uploading > 0}>{t("publish")}</Button>
             <Button type="button" variant="ghost" onClick={() => setNews(false)}>{t("cancel")}</Button>
           </div>
         </form>
@@ -184,14 +246,27 @@ function FeedTab({ c, isAdmin }: { c: Community; isAdmin: boolean }) {
               <ContestRow c={p.contest} showCommunity={false} />
             </div>
           ) : (
-            <article key={p.id} className="rounded-card bg-surface px-5 py-5">
+            <Link key={p.id} href={`/c/${c.slug}/posts/${p.id}`} className="group block rounded-card bg-surface px-5 py-5 hover:bg-surface/80">
               <header className="flex items-center gap-3">
                 <Avatar name={p.author.display_name} url={p.author.avatar_url} size={32} />
-                <span className="text-sm"><span className="font-semibold">{p.author.display_name}</span> <span className="text-ink-muted">· {relativeTime(p.created_at, locale)}</span></span>
+                <span className="text-sm"><span className="font-semibold">{p.author.display_name}</span> <span className="text-ink-muted">· {t("news_label")} · {relativeTime(p.created_at, locale)}</span></span>
               </header>
               {p.title && <h3 className="mt-4 text-[20px] font-semibold leading-snug tracking-[-0.015em]">{p.title}</h3>}
-              {p.body && <p className="mt-2 whitespace-pre-line leading-relaxed">{p.body}</p>}
-            </article>
+              {p.images.length > 0 && (
+                <div className="relative mt-3 overflow-hidden rounded-photo">
+                  {/* Kırpılmadan: kendi oranında */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.images[0].url} alt="" width={p.images[0].width} height={p.images[0].height} className="block h-auto w-full" />
+                  {p.images.length > 1 && (
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+                      <Images className="h-3.5 w-3.5" /> {p.images.length}
+                    </span>
+                  )}
+                </div>
+              )}
+              {p.body && <p className="mt-3 line-clamp-3 whitespace-pre-line leading-relaxed">{p.body}</p>}
+              <span className="mt-3 inline-block text-sm font-semibold text-accent-text group-hover:underline">{t("read_more")}</span>
+            </Link>
           ),
         )}
       </div>

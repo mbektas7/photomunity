@@ -282,7 +282,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (!widget.isTab) _glassButton(LucideIcons.share2, t('ui.share'), () => _share(prof)),
+                    _glassButton(LucideIcons.share, t('share.profile'), () => _share(prof)),
                     if (!widget.isTab && !prof.isMe) ...[
                       const SizedBox(width: 8),
                       PopupMenuButton<String>(
@@ -298,8 +298,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: const IgnorePointer(child: _GlassIcon(icon: LucideIcons.ellipsisVertical)),
                       ),
                     ],
-                    if (widget.isTab)
+                    if (widget.isTab) ...[
+                      const SizedBox(width: 8),
                       _glassButton(LucideIcons.settings, t('settings.heading'), () => context.push('/settings')),
+                    ],
                   ],
                 ),
               ),
@@ -467,22 +469,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       children: [
                         if (prof.isMe) ...[
                           Expanded(
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: p.ink,
-                                foregroundColor: p.bg,
-                                minimumSize: const Size.fromHeight(44),
-                              ),
-                              onPressed: () => context.push('/settings'),
-                              child: Text(t('profile.edit')),
-                            ),
-                          ),
-                          const SizedBox(width: Space.s2),
-                          Expanded(
-                            child: FilledButton(
-                              style: secondary,
-                              onPressed: () => _share(prof),
-                              child: Text(t('ui.share')),
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                              onPressed: () => context.push('/upload'),
+                              icon: const Icon(LucideIcons.plus, size: 18),
+                              label: Text(t('profile.add_photo')),
                             ),
                           ),
                         ] else ...[

@@ -433,7 +433,17 @@
     "invite_hint": "If they have no account, they become an admin after signing up with this address.",
     "send_invite": "Send invite",
     "admin_added": "Admin added; they've been notified.",
-    "invite_sent": "Invitation email sent."
+    "invite_sent": "Invitation email sent.",
+    "news_label": "News",
+    "news_photos": "Photos",
+    "news_add_photos": "Add photos",
+    "news_remove_photo": "Remove photo",
+    "news_uploading": "Uploading…",
+    "read_more": "Read more",
+    "gallery_close": "Close",
+    "gallery_prev": "Previous",
+    "gallery_next": "Next",
+    "back_to_community": "Back to community"
   },
   "contests": {
     "title": "Contests",

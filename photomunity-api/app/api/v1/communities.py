@@ -20,14 +20,14 @@ from app.models import (
 )
 from app.schemas import (
     ALLOWED_CONTENT_TYPES, AdminIn, CommunityCard, CommunityImageCompleteIn, CommunityImageUploadIn, CommunityIn,
-    CommunityOut, CommunityUpdate, InviteIn, JoinRequestOut, MemberOut, MemberPage, PostIn, TokenIn, UploadUrlOut, UserCard,
+    CommunityOut, CommunityUpdate, InviteIn, JoinRequestOut, MemberOut, NewsImage, NewsImageCompleteIn, NewsImageUploadIn, MemberPage, PostIn, TokenIn, UploadUrlOut, UserCard,
 )
 from app.services import storage
 from app.services.contests import community_role, contest_status, is_admin_role
 from app.services.email import send_template
 from app.services.moderation import moderate
 from app.services.notifications import deliver, notify
-from app.services.profile_images import ProfileImageError, process_profile_image
+from app.services.profile_images import ProfileImageError, process_news_image, process_profile_image
 from app.services.ratelimit import rate_limit
 
 router = APIRouter(tags=["communities"])
@@ -398,16 +398,78 @@ async def list_posts(slug: str, before: datetime | None = None, limit: int = Que
     if contest_ids:
         rows = list(await db.scalars(select(Contest).where(Contest.id.in_(contest_ids))))
         contests = {cc.id: cc for cc in await contest_cards(db, rows, viewer)}
-    items = []
-    for p in page:
-        if p.kind == "photo" and p.photo_id not in cards:
-            continue  # fotoğraf silinmiş ya da gizlenmiş
-        items.append({
-            "id": str(p.id), "kind": p.kind, "title": p.title, "body": p.body, "created_at": p.created_at,
-            "author": UserCard.model_validate(p.author),
-            "photo": cards.get(p.photo_id), "contest": contests.get(p.contest_id),
-        })
+    items = [_post_out(p, cards, contests) for p in page if not (p.kind == "photo" and p.photo_id not in cards)]
     return {"items": items, "next_cursor": posts[limit - 1].created_at.isoformat() if len(posts) > limit else None}
+
+
+def _post_out(p: CommunityPost, cards: dict, contests: dict) -> dict:
+    return {
+        "id": str(p.id), "kind": p.kind, "title": p.title, "body": p.body, "created_at": p.created_at,
+        "author": UserCard.model_validate(p.author),
+        "photo": cards.get(p.photo_id), "contest": contests.get(p.contest_id),
+        "images": [NewsImage(**im) for im in (p.images or [])],
+    }
+
+
+@router.get("/communities/{slug}/posts/{post_id}")
+async def get_post(slug: str, post_id: uuid.UUID, viewer: User | None = Depends(get_optional_user),
+                   db: AsyncSession = Depends(get_db)):
+    """Tek gönderi (haber detayı: tüm metin ve galeri)."""
+    from app.api.v1.contests import contest_cards
+
+    c = await _get(db, slug)
+    p = await db.scalar(select(CommunityPost).where(CommunityPost.id == post_id, CommunityPost.community_id == c.id)
+                        .options(selectinload(CommunityPost.author), selectinload(CommunityPost.photo).selectinload(Photo.user)))
+    if not p:
+        raise AppError(404, "not_found")
+    cards, contests = {}, {}
+    if p.photo is not None and p.photo.status == PhotoStatus.published and not p.photo.hidden:
+        cards = {card.id: card for card in await _cards(db, [p.photo], viewer)}
+    elif p.kind == "photo":
+        raise AppError(404, "not_found")
+    if p.contest_id:
+        rows = list(await db.scalars(select(Contest).where(Contest.id == p.contest_id)))
+        contests = {cc.id: cc for cc in await contest_cards(db, rows, viewer)}
+    return _post_out(p, cards, contests)
+
+
+@router.post("/communities/{slug}/news-images/upload-url", response_model=UploadUrlOut, status_code=201)
+async def news_image_upload_url(slug: str, body: NewsImageUploadIn, user: User = Depends(get_current_user),
+                                db: AsyncSession = Depends(get_db)):
+    c = await _get(db, slug)
+    await _require_admin(db, c, user)
+    s = get_settings()
+    ext = ALLOWED_CONTENT_TYPES.get(body.content_type.lower())
+    if not ext:
+        raise AppError(422, "unsupported_format")
+    if body.size_bytes > s.max_file_bytes:
+        raise AppError(422, "file_too_large")
+    key = f"uploads/{user.id}/{uuid.uuid4()}{ext}"
+    signed = await run_in_threadpool(storage.presigned_upload, key, body.content_type.lower(), s.max_file_bytes)
+    return UploadUrlOut(photo_id=uuid.uuid4(), upload_url=signed["url"], fields=signed["fields"], expires_in=s.upload_url_ttl_seconds)
+
+
+@router.post("/communities/{slug}/news-images/complete", response_model=NewsImage)
+async def news_image_complete(slug: str, body: NewsImageCompleteIn, background: BackgroundTasks,
+                              user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Haber fotoğrafını işler (kırpmadan küçültür, WebP) ve habere eklenecek görseli döner."""
+    c = await _get(db, slug)
+    await _require_admin(db, c, user)
+    if not body.key.startswith(f"uploads/{user.id}/") or ".." in body.key:
+        raise AppError(400, "invalid_key")
+    try:
+        data = await run_in_threadpool(storage.get_object, body.key)
+        webp, w, h = await run_in_threadpool(process_news_image, data)
+    except ProfileImageError as e:
+        raise AppError(422, e.code)
+    except Exception:
+        raise AppError(400, "invalid_key")
+    if not (await run_in_threadpool(moderate, webp)).safe:
+        raise AppError(422, "inappropriate_content")
+    key = f"photos/communities/{c.id}/news/{uuid.uuid4().hex}.webp"
+    await run_in_threadpool(storage.put_object, key, webp, "image/webp")
+    background.add_task(run_in_threadpool, storage.delete_objects, [body.key])
+    return NewsImage(key=key, url=storage.public_url(key), width=w, height=h)
 
 
 @router.post("/communities/{slug}/posts", status_code=201, dependencies=[rate_limit("post", 60, 3600, by="user")])
@@ -427,8 +489,16 @@ async def create_post(slug: str, body: PostIn, user: User = Depends(get_current_
         if (not photo or photo.user_id != user.id or photo.hidden
                 or photo.status not in (PhotoStatus.published, PhotoStatus.processing)):
             raise AppError(422, "photo_not_eligible")
+    images = []
+    if body.kind == "news":
+        prefix = f"photos/communities/{c.id}/news/"
+        for im in body.images:
+            # Yalnızca bu topluluk için işlenmiş görseller; adres sunucudan yeniden kurulur
+            if not im.key.startswith(prefix) or ".." in im.key:
+                raise AppError(400, "invalid_key")
+            images.append({"key": im.key, "url": storage.public_url(im.key), "width": im.width, "height": im.height})
     post = CommunityPost(community_id=c.id, author_id=user.id, kind=body.kind, title=body.title, body=body.body,
-                         photo_id=body.photo_id if body.kind == "photo" else None)
+                         photo_id=body.photo_id if body.kind == "photo" else None, images=images)
     db.add(post)
     await db.commit()
     return {"id": str(post.id)}

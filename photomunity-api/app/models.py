@@ -318,6 +318,8 @@ class CommunityPost(Base):
     body: Mapped[str | None] = mapped_column(Text)
     photo_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"))
     contest_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("contests.id", ondelete="CASCADE"))
+    # Haber fotoğrafları: [{"key", "url", "width", "height"}], en fazla 10, kırpılmadan
+    images: Mapped[list] = mapped_column(JSON, default=list, server_default="[]")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), index=True)
 
     author: Mapped[User] = relationship(lazy="raise")

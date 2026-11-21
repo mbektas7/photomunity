@@ -433,7 +433,17 @@
     "invite_hint": "Hesabı yoksa, bu adresle kayıt olunca yönetici olur.",
     "send_invite": "Davet gönder",
     "admin_added": "Yönetici eklendi; bildirim gönderildi.",
-    "invite_sent": "Davet e-postası gönderildi."
+    "invite_sent": "Davet e-postası gönderildi.",
+    "news_label": "Haber",
+    "news_photos": "Fotoğraflar",
+    "news_add_photos": "Fotoğraf ekle",
+    "news_remove_photo": "Fotoğrafı kaldır",
+    "news_uploading": "Yükleniyor…",
+    "read_more": "Devamını oku",
+    "gallery_close": "Kapat",
+    "gallery_prev": "Önceki",
+    "gallery_next": "Sonraki",
+    "back_to_community": "Topluluğa dön"
   },
   "contests": {
     "title": "Yarışmalar",
