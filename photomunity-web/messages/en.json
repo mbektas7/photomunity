@@ -99,7 +99,7 @@
       "contests_q": "Who can enter contests?",
       "contests_a": "Anyone with an account; you don't need to join the community. You enter each contest with a single photo. Voting in a public vote doesn't even need an account, just a verified email.",
       "formats_q": "What can I upload?",
-      "formats_a": "JPEG, PNG, WebP and HEIC, at least 1 MB with a long edge of 2000 px or more. Sharpness and exposure are checked automatically on upload."
+      "formats_a": "JPEG, PNG, WebP and HEIC with a long edge of 1080 px or more. Sharpness and exposure are checked automatically on upload."
     },
     "final_title": "Share your first frame.",
     "footer_nav": "Site map",
@@ -219,7 +219,7 @@
   },
   "upload": {
     "heading": "Upload a photo",
-    "requirements": "JPEG, PNG, WebP or HEIC. At least 1 MB with a long edge of at least 2000 px. Up to 40 MB.",
+    "requirements": "JPEG, PNG, WebP or HEIC. Long edge of at least 1080 px. Up to 40 MB.",
     "choose": "Choose a photo",
     "drop": "or drag it here",
     "no_preview": "HEIC files can't be previewed here; it will appear after upload.",

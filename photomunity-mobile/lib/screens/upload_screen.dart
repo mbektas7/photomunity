@@ -53,7 +53,10 @@ Future<List<String>> precheck(XFile file) async {
 }
 
 class UploadScreen extends ConsumerStatefulWidget {
-  const UploadScreen({super.key});
+  const UploadScreen({super.key, this.communitySlug});
+
+  /// Topluluktan "Fotoğraf paylaş" ile açıldıysa: galeri hemen açılır, yayınlanınca topluluğa da paylaşılır.
+  final String? communitySlug;
 
   @override
   ConsumerState<UploadScreen> createState() => _UploadScreenState();
@@ -71,6 +74,18 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   bool _locating = false;
   double? _progress;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.communitySlug != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _pick();
+        // Galeriden seçmeden kapattıysa topluluğa geri dön
+        if (mounted && _file == null) context.pop();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -164,9 +179,20 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                 _place.text.trim().isEmpty ? null : _place.text.trim(),
               ).toJson(),
       });
+      final slug = widget.communitySlug;
+      if (slug != null) {
+        // Fotoğraf işlenirken de paylaşılabilir; toplulukta yayınlanınca görünür
+        await api.post<dynamic>('/communities/$slug/posts', {'kind': 'photo', 'photo_id': id});
+        ref.invalidate(communityPostsProvider(slug));
+      }
       if (!mounted) return;
       _reset();
-      context.pushReplacement('/p/$id');
+      if (slug != null) {
+        toast(context, L10n.of(context)('community.shared_processing'));
+        context.pop();
+      } else {
+        context.pushReplacement('/p/$id');
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

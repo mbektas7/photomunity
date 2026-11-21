@@ -99,7 +99,7 @@
       "contests_q": "Yarışmalara kimler katılabilir?",
       "contests_a": "Hesabı olan herkes. Topluluğa üye olmak gerekmez. Her yarışmaya tek bir kareyle katılırsın; halk oylamasında oy vermek için hesap bile gerekmez, e-postanı doğrulaman yeterli.",
       "formats_q": "Hangi fotoğrafları yükleyebilirim?",
-      "formats_a": "JPEG, PNG, WebP ve HEIC; en az 1 MB ve uzun kenarı en az 2000 piksel. Netlik ve pozlama yüklemede otomatik kontrol edilir."
+      "formats_a": "JPEG, PNG, WebP ve HEIC; uzun kenarı en az 1080 piksel. Netlik ve pozlama yüklemede otomatik kontrol edilir."
     },
     "final_title": "İlk kareni paylaş.",
     "footer_nav": "Site haritası",
@@ -219,7 +219,7 @@
   },
   "upload": {
     "heading": "Fotoğraf yükle",
-    "requirements": "JPEG, PNG, WebP veya HEIC. En az 1 MB ve uzun kenarı en az 2000 piksel. En fazla 40 MB.",
+    "requirements": "JPEG, PNG, WebP veya HEIC. Uzun kenarı en az 1080 piksel. En fazla 40 MB.",
     "choose": "Fotoğraf seç",
     "drop": "ya da buraya sürükle",
     "no_preview": "HEIC dosyaları için önizleme gösterilemiyor; yükleme sonrası görünecek.",

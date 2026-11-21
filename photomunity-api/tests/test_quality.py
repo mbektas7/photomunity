@@ -20,8 +20,14 @@ def test_blurry_image_rejected():
 
 
 def test_small_resolution_rejected():
-    report, _ = analyze_image(make_jpeg(1200, 800), S)
+    report, _ = analyze_image(make_jpeg(1000, 750), S)
     assert "resolution_too_low" in report.codes
+
+
+def test_instagram_sizes_accepted():
+    # 1080×1350, 1080×1440 ve 1080×608: uzun kenar en az 1080 px
+    for w, h in ((1080, 1350), (1080, 1440), (1080, 608)):
+        assert "resolution_too_low" not in analyze_image(make_jpeg(w, h), S)[0].codes
 
 
 def test_overexposed_and_underexposed():

@@ -423,7 +423,9 @@ async def create_post(slug: str, body: PostIn, user: User = Depends(get_current_
             raise AppError(422, "invalid_state")
     else:
         photo = await db.get(Photo, body.photo_id) if body.photo_id else None
-        if not photo or photo.user_id != user.id or photo.status != PhotoStatus.published or photo.hidden:
+        # Galeriden yeni yüklenen kare işlenirken de paylaşılabilir; akışta yayınlanınca görünür
+        if (not photo or photo.user_id != user.id or photo.hidden
+                or photo.status not in (PhotoStatus.published, PhotoStatus.processing)):
             raise AppError(422, "photo_not_eligible")
     post = CommunityPost(community_id=c.id, author_id=user.id, kind=body.kind, title=body.title, body=body.body,
                          photo_id=body.photo_id if body.kind == "photo" else None)

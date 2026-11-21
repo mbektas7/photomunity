@@ -70,8 +70,9 @@ async def test_photo_upload_pipeline(client, fake_storage):
     b, _ = await register(client, "izleyici")
     await client.post("/users/fotografci/follow", headers=b)
 
-    too_small = await client.post("/photos/upload-url", headers=a, json={"content_type": "image/jpeg", "size_bytes": 1000})
-    assert too_small.status_code == 422 and too_small.json()["error"]["code"] == "file_too_small"
+    # Alt dosya boyutu sınırı yok: küçük (sıkıştırılmış) dosya da yükleme adresi alır
+    small = await client.post("/photos/upload-url", headers=a, json={"content_type": "image/jpeg", "size_bytes": 1000})
+    assert small.status_code == 201
 
     exif = Image.Exif()
     exif[ExifTags.Base.Make] = "Canon"

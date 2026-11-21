@@ -60,7 +60,7 @@ class AppConfig {
   );
 
   // Backend varsayılanlarıyla aynı; kesin kontrol sunucudadır.
-  static const minBytes = 1000000;
+  static const minBytes = 0;
   static const maxBytes = 40000000;
-  static const minLongEdge = 2000;
+  static const minLongEdge = 1080;
 }

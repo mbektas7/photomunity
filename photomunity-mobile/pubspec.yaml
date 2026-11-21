@@ -33,6 +33,7 @@ dependencies:
   google_mobile_ads: ^6.0.0
   purchases_flutter: ^9.0.0
   lucide_icons_flutter: ^4.0.3
+  image_cropper: ^14.0.0
 
 dev_dependencies:
   flutter_test:

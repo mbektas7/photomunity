@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     email_from: str = "Photomunity <no-reply@photomunity.com>"
 
     # Kalite eşikleri
-    min_long_edge_px: int = 2000
-    min_file_bytes: int = 1_000_000
+    min_long_edge_px: int = 1080      # 1080×1350, 1080×1440, 1080×608 (Instagram boyutları) kabul edilir
+    min_file_bytes: int = 0           # alt dosya boyutu sınırı yok; kalite çözünürlük ve netlikle ölçülür
     max_file_bytes: int = 40_000_000
     min_sharpness: float = 60.0          # karo bazlı Laplacian varyansı (90. yüzdelik)
     max_highlight_clip: float = 0.20     # patlamış piksel oranı

@@ -11,9 +11,9 @@ import { useMe } from "@/lib/hooks";
 import type { Location } from "@/lib/types";
 
 // Backend varsayılanlarıyla aynı; sunucu yine de kesin kontrolü yapar.
-const MIN_BYTES = 1_000_000;
+const MIN_BYTES = 0;
 const MAX_BYTES = 40_000_000;
-const MIN_EDGE = 2000;
+const MIN_EDGE = 1080;
 const TYPES: Record<string, string> = {
   "image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WebP", "image/heic": "HEIC", "image/heif": "HEIF",
 };

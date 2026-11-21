@@ -159,20 +159,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     }
   }
 
-  Future<void> _sharePhoto() async {
-    final t = L10n.of(context);
-    final photo = await pickMyPhoto(context, ref, t('community.share_photo'));
-    if (photo == null) return;
-    try {
-      await ref.read(apiProvider).post<dynamic>(
-        '/communities/${widget.slug}/posts',
-        {'kind': 'photo', 'photo_id': photo.id},
-      );
-      ref.invalidate(communityPostsProvider(widget.slug));
-    } catch (e) {
-      if (mounted) toast(context, errorText(context, e));
-    }
-  }
+  /// Galeriden yeni bir kare seçip yükler ve topluluğa paylaşır.
+  void _sharePhoto() => context.push('/upload?community=${widget.slug}');
 
   Future<void> _writeNews() async {
     final t = L10n.of(context);

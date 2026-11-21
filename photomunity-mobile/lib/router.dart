@@ -151,7 +151,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/upload',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const UploadScreen(),
+        builder: (_, s) => UploadScreen(communitySlug: s.uri.queryParameters['community']),
       ),
       GoRoute(
         path: '/explore',
