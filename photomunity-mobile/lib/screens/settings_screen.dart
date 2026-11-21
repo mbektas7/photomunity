@@ -3,7 +3,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../core/api_client.dart';
 import '../core/l10n.dart';
@@ -103,8 +102,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     trailing: const Icon(LucideIcons.chevronRight),
                   ),
                 ),
-                const SizedBox(height: 20),
-                _ProfileImages(me: me),
                 const SizedBox(height: 28),
                 _ProfileSection(me: me),
                 const SizedBox(height: 36),
@@ -729,178 +726,6 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
   }
 }
 
-class _ProfileImages extends ConsumerStatefulWidget {
-  const _ProfileImages({required this.me});
-  final Me me;
-
-  @override
-  ConsumerState<_ProfileImages> createState() => _ProfileImagesState();
-}
-
-class _ProfileImagesState extends ConsumerState<_ProfileImages> {
-  String? _busy; // avatar | cover
-
-  static const _types = {
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'png': 'image/png',
-    'webp': 'image/webp',
-    'heic': 'image/heic',
-    'heif': 'image/heif',
-  };
-
-  Future<void> _upload(String kind) async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (file == null) return;
-    final type = _types[file.name.split('.').last.toLowerCase()];
-    if (type == null) {
-      if (mounted) {
-        toast(context, L10n.of(context)('quality.unsupported_format'));
-      }
-      return;
-    }
-    setState(() => _busy = kind);
-    final api = ref.read(apiProvider);
-    try {
-      final slot = await api.post<Map<String, dynamic>>(
-        '/me/images/upload-url',
-        {'kind': kind, 'content_type': type, 'size_bytes': await file.length()},
-      );
-      final fields = (slot['fields'] as Map).map(
-        (k, v) => MapEntry('$k', '$v'),
-      );
-      await api.uploadToStorage(
-        slot['upload_url'] as String,
-        fields,
-        file.path,
-        file.name,
-        (_) {},
-      );
-      final res = await api.post<Map<String, dynamic>>('/me/images/complete', {
-        'kind': kind,
-        'key': fields['key'],
-      });
-      ref.read(authProvider.notifier).setMe(Me.fromJson(res));
-      ref.invalidate(profileProvider);
-    } catch (e) {
-      if (mounted) toast(context, errorText(context, e));
-    } finally {
-      if (mounted) setState(() => _busy = null);
-    }
-  }
-
-  Future<void> _remove(String kind) async {
-    try {
-      final res = await ref
-          .read(apiProvider)
-          .delete<Map<String, dynamic>>('/me/images/$kind');
-      ref.read(authProvider.notifier).setMe(Me.fromJson(res));
-      ref.invalidate(profileProvider);
-    } catch (e) {
-      if (mounted) toast(context, errorText(context, e));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = L10n.of(context);
-    final p = context.palette;
-    final me = widget.me;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 132 + 44,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                bottom: 44,
-                child: InkWell(
-                  onTap: _busy == null ? () => _upload('cover') : null,
-                  child: Container(
-                    color: p.surface2,
-                    alignment: Alignment.center,
-                    child: me.coverUrl != null
-                        ? SizedBox.expand(child: NetPhoto(url: me.coverUrl!))
-                        : Text(
-                            _busy == 'cover'
-                                ? t('settings.uploading')
-                                : t('settings.add_cover'),
-                            style: font(14, color: p.inkMuted),
-                          ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 4,
-                bottom: 0,
-                child: GestureDetector(
-                  onTap: _busy == null ? () => _upload('avatar') : null,
-                  child: Stack(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: p.bg, width: 4),
-                        ),
-                        child: Opacity(
-                          opacity: _busy == 'avatar' ? 0.5 : 1,
-                          child: Avatar(
-                            name: me.displayName,
-                            url: me.avatarUrl,
-                            size: 84,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 2,
-                        bottom: 2,
-                        child: CircleAvatar(
-                          radius: 15,
-                          backgroundColor: p.accent,
-                          child: Icon(
-                            LucideIcons.camera,
-                            size: 16,
-                            color: p.surface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 4,
-          children: [
-            TextButton(
-              onPressed: _busy == null ? () => _upload('cover') : null,
-              child: Text(t('settings.change_cover')),
-            ),
-            if (me.avatarUrl != null)
-              TextButton(
-                onPressed: () => _remove('avatar'),
-                child: Text(t('settings.remove_avatar')),
-              ),
-            if (me.coverUrl != null)
-              TextButton(
-                onPressed: () => _remove('cover'),
-                child: Text(t('settings.remove_cover')),
-              ),
-          ],
-        ),
-        Text(
-          t('settings.images_hint'),
-          style: font(13, height: 1.4, color: p.inkMuted),
-        ),
-      ],
-    );
-  }
-}
 
 const _pushTypes = [
   'new_follower',

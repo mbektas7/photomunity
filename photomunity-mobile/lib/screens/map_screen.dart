@@ -479,28 +479,40 @@ class _Segmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    Widget seg(bool v, String label) {
+    // Simgeli geçiş: seçili olan koyu hap, diğeri sakin metin; geçişte yumuşak animasyon
+    Widget seg(bool v, String label, IconData icon) {
       final on = value == v;
       return Semantics(
         selected: on,
         button: true,
         child: GestureDetector(
           onTap: () => onChanged(v),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
             height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            alignment: Alignment.center,
-            decoration: ShapeDecoration(color: on ? p.accentTint : Colors.transparent, shape: const StadiumBorder()),
-            child: Text(label, style: font(15.5, weight: 600, color: on ? p.accentText : p.inkMuted)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: ShapeDecoration(color: on ? p.ink : Colors.transparent, shape: const StadiumBorder()),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: on ? p.bg : p.inkMuted, weight: on ? IconStroke.active : IconStroke.normal),
+                const SizedBox(width: 7),
+                Text(label, style: font(14.5, weight: on ? 700 : 600, color: on ? p.bg : p.inkMuted)),
+              ],
+            ),
           ),
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(5),
       decoration: ShapeDecoration(color: p.surface, shape: const StadiumBorder(), shadows: p.shadowFloat),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [seg(false, labels.$1), seg(true, labels.$2)]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [seg(false, labels.$1, LucideIcons.userRound), const SizedBox(width: 4), seg(true, labels.$2, LucideIcons.image)],
+      ),
     );
   }
 }

@@ -675,8 +675,10 @@ class MessagesController extends Notifier<MessagesState> {
           .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
           .toList();
       final next = res['next_cursor'] as String?;
+      // Yükleme sürerken gelen (gönderdiğimiz ya da WebSocket'ten düşen) mesajlar ilk sayfada da olabilir
+      final have = {for (final m in state.items) m.id};
       state = MessagesState(
-        items: [...older, ...state.items],
+        items: [...older.where((m) => !have.contains(m.id)), ...state.items],
         cursor: next,
         done: next == null,
       );

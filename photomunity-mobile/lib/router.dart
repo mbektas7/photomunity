@@ -10,6 +10,7 @@ import 'screens/contest_screens.dart';
 import 'screens/explore_screen.dart';
 import 'screens/ar_screen.dart';
 import 'screens/feed_screen.dart';
+import 'screens/follow_list_screen.dart';
 import 'screens/guide_screens.dart';
 import 'screens/planner_screen.dart';
 import 'screens/pro_screen.dart';
@@ -170,6 +171,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialQuery: s.uri.queryParameters['q'] ?? '',
             communities: s.uri.queryParameters['k'] == 'c',
           ),
+        ),
+      ),
+      GoRoute(
+        path: '/u/:username/follows',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => FollowListScreen(
+          username: s.pathParameters['username']!,
+          tab: int.tryParse(s.uri.queryParameters['tab'] ?? '') ?? 0,
         ),
       ),
       GoRoute(

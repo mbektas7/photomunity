@@ -240,7 +240,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _send(Map<String, dynamic> payload) async {
+    // Çift dokunma ya da klavyenin gönder tuşu aynı mesajı iki kez göndermesin
+    if (_sending) return;
+    final draft = _text.text;
+    final isText = payload.containsKey('body');
     setState(() => _sending = true);
+    // Metin hemen temizlenir; hata olursa geri konur
+    if (isText) _text.clear();
     final api = ref.read(apiProvider);
     try {
       final cid = widget.conversationId;
@@ -260,8 +266,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(messagesProvider(cid).notifier).receive(ChatMessage.fromJson(m));
       ref.invalidate(conversationsProvider);
       ref.invalidate(conversationProvider(cid));
-      _text.clear();
     } catch (e) {
+      if (isText && _text.text.isEmpty) _text.text = draft;
       if (mounted) toast(context, errorText(context, e));
     } finally {
       if (mounted) setState(() => _sending = false);

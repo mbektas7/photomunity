@@ -9,21 +9,14 @@ import 'package:go_router/go_router.dart';
 
 import '../core/l10n.dart';
 import '../core/models.dart';
+import '../core/profile_images.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/common.dart';
 import 'feed_screen.dart';
 
-const _kitOrder = [
-  'body',
-  'lens',
-  'drone',
-  'flash',
-  'tripod',
-  'filter',
-  'other',
-];
+const _kitOrder = ['body', 'lens', 'drone', 'flash', 'tripod', 'filter', 'other'];
 
 /// Alt sekmedeki "Profil": oturumdaki kullanıcının profili.
 class MyProfileScreen extends ConsumerWidget {
@@ -93,22 +86,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (c) => AlertDialog(
         content: Text(t('messages.block_confirm', {'name': prof.displayName})),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text(t('common.cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: Text(t('messages.block')),
-          ),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('common.cancel'))),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text(t('messages.block'))),
         ],
       ),
     );
     if (ok != true) return;
     try {
-      await ref
-          .read(apiProvider)
-          .post<dynamic>('/users/${prof.username}/block');
+      await ref.read(apiProvider).post<dynamic>('/users/${prof.username}/block');
       ref.invalidate(photoPagesProvider);
       ref.invalidate(conversationsProvider);
       if (mounted) context.pop();
@@ -123,19 +108,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (mounted) toast(context, t('ui.link_copied'));
   }
 
-  /// Instagram'daki ☰ gibi: modüller (mesajlar, harita, rehber…) alttan açılan menüde.
-  void _openMenu(BuildContext context) {
-    showModalBottomSheet<void>(
+  String? _imgBusy; // avatar | cover
+
+  Future<void> _changeImage(String kind) async {
+    setState(() => _imgBusy = kind);
+    await uploadProfileImage(context, ref, kind);
+    if (mounted) setState(() => _imgBusy = null);
+  }
+
+  /// Kendi profilinde fotoğrafa / kapağa dokununca: değiştir ya da kaldır.
+  Future<void> _imageMenu(String kind, bool hasImage) async {
+    final t = L10n.of(context);
+    if (!hasImage) return _changeImage(kind);
+    final choice = await showModalBottomSheet<String>(
       context: context,
-      isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => const SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
-          child: ModuleMenu(),
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.image),
+              title: Text(t(kind == 'avatar' ? 'profile.change_avatar' : 'settings.change_cover')),
+              onTap: () => Navigator.pop(c, 'change'),
+            ),
+            ListTile(
+              leading: Icon(LucideIcons.trash2, color: context.palette.danger),
+              title: Text(
+                t(kind == 'avatar' ? 'settings.remove_avatar' : 'settings.remove_cover'),
+                style: TextStyle(color: context.palette.danger),
+              ),
+              onTap: () => Navigator.pop(c, 'remove'),
+            ),
+          ],
         ),
       ),
     );
+    if (!mounted || choice == null) return;
+    if (choice == 'change') {
+      await _changeImage(kind);
+    } else {
+      setState(() => _imgBusy = kind);
+      await removeProfileImage(context, ref, kind);
+      if (mounted) setState(() => _imgBusy = null);
+    }
   }
 
   Future<void> _refresh() async {
@@ -147,200 +163,291 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(profileProvider(widget.username));
-    final t = L10n.of(context);
-    final prof = async.asData?.value;
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        automaticallyImplyLeading: false,
-        titleSpacing: widget.isTab ? Space.s5 : 0,
-        leading: widget.isTab
-            ? null
-            : IconButton(
-                tooltip: t('ui.back'),
-                icon: const Icon(LucideIcons.chevronLeft, size: 28),
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-        title: prof == null
-            ? null
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!prof.isPublic) ...[
-                    Icon(LucideIcons.lock, size: 16, color: context.palette.ink),
-                    const SizedBox(width: 6),
-                  ],
-                  Flexible(
-                    child: Text(
-                      prof.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: font(20, weight: 700, spacing: -0.4, color: context.palette.ink),
-                    ),
-                  ),
-                ],
-              ),
-        actions: [
-          if (prof != null && !widget.isTab)
-            IconButton(
-              tooltip: t('ui.share'),
-              icon: const Icon(LucideIcons.share2),
-              onPressed: () => _share(prof),
-            ),
-          if (!widget.isTab && prof?.isMe == false)
-            PopupMenuButton<String>(
-              tooltip: t('ui.more'),
-              icon: const Icon(LucideIcons.ellipsisVertical),
-              onSelected: (v) => v == 'block' ? _block(prof!) : _report(prof!.id),
-              itemBuilder: (_) => [
-                PopupMenuItem(value: 'report', child: Text(t('report.button'))),
-                PopupMenuItem(
-                  value: 'block',
-                  child: Text(t('messages.block'), style: TextStyle(color: context.palette.danger)),
-                ),
-              ],
-            ),
-          if (widget.isTab) ...[
-            IconButton(
-              onPressed: () => _openMenu(context),
-              icon: const Icon(LucideIcons.menu),
-              tooltip: t('profile.menu'),
-            ),
-            IconButton(
-              onPressed: () => context.push('/settings'),
-              icon: const Icon(LucideIcons.settings),
-              tooltip: t('settings.heading'),
-            ),
-          ],
-          const SizedBox(width: 8),
-        ],
-      ),
       // Yenileme sırasında önceki veri gösterilmeye devam eder (titreme olmaz)
       body: async.hasValue
           ? _body(context, async.requireValue)
           : async.hasError
-          ? ErrorView(
-              error: async.error!,
-              onRetry: () => ref.invalidate(profileProvider(widget.username)),
+          ? SafeArea(
+              child: ErrorView(error: async.error!, onRetry: () => ref.invalidate(profileProvider(widget.username))),
             )
           : const Center(child: CircularProgressIndicator()),
     );
   }
 
-  int _tab = 0; // 0 fotoğraflar, 1 ekipman
+  /// Kapağın üzerindeki yarı saydam yuvarlak düğme.
+  Widget _glassButton(IconData icon, String label, VoidCallback onTap) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: Material(
+      color: const Color(0x7314161B),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(width: 44, height: 44, child: Icon(icon, size: 21, color: Colors.white)),
+      ),
+    ),
+  );
 
-  Widget _body(BuildContext context, Profile prof) {
+  Widget _header(BuildContext context, Profile prof, String place, Equipment? body) {
     final t = L10n.of(context);
     final p = context.palette;
-    final pages = prof.canViewPhotos
-        ? ref.watch(photoPagesProvider(_photosPath))
-        : null;
-    final kit = [...prof.equipment]
-      ..sort(
-        (a, b) =>
-            _kitOrder.indexOf(a.type).compareTo(_kitOrder.indexOf(b.type)),
-      );
-    final place = [prof.city, prof.country].whereType<String>().join(', ');
-    final body = kit.where((e) => e.type == 'body').firstOrNull;
     final nf = NumberFormat.decimalPattern(t.locale.languageCode);
-
-    Widget stat(int n, String label) => Expanded(
-      child: Column(
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(nf.format(n), style: font(20, weight: 700, spacing: -0.5, color: p.ink, tabular: true)),
-          ),
-          const SizedBox(height: 2),
-          Text(label.toLowerCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: font(13, color: p.inkMuted)),
-        ],
-      ),
-    );
-
-    final awards = prof.canViewPhotos
-        ? ref.watch(awardsProvider(widget.username)).asData?.value ?? const <Award>[]
-        : const <Award>[];
+    final top = MediaQuery.paddingOf(context).top;
+    final coverH = 150 + top;
     final secondary = FilledButton.styleFrom(
-      backgroundColor: p.surface,
+      backgroundColor: p.surface2,
       foregroundColor: p.ink,
       minimumSize: const Size.fromHeight(44),
     );
 
-    Widget tabButton(int i, String label) {
-      final active = _tab == i;
-      return Semantics(
-        selected: active,
-        button: true,
+    Widget stat(int n, String label, {VoidCallback? onTap}) => Expanded(
+      child: Semantics(
+        button: onTap != null,
         child: InkWell(
-          onTap: () => setState(() => _tab = i),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(4, 12, 4, 10),
-            margin: const EdgeInsets.only(right: 24),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: active ? p.ink : Colors.transparent, width: 2.5)),
+          borderRadius: BorderRadius.circular(Radii.box),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(nf.format(n), style: font(19, weight: 700, spacing: -0.5, color: p.ink, tabular: true)),
+                ),
+                Text(
+                  label.toLowerCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: font(12.5, color: p.inkMuted),
+                ),
+              ],
             ),
-            child: Text(label, style: font(16.5, weight: active ? 700 : 500, color: active ? p.ink : p.inkMuted)),
           ),
         ),
-      );
-    }
+      ),
+    );
 
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (n) => pages == null
-            ? false
-            : loadMoreOnScroll(
-                n,
-                ref.read(photoPagesProvider(_photosPath).notifier).loadMore,
+    final follows = prof.canViewPhotos || prof.isMe;
+    // Yığın: kapak üstte, bilgi kartı kapağın alt kenarına 44 px biner (boşluk bırakmadan)
+    return Stack(
+      children: [
+        // Kapak: tam genişlik; kendi profilinde "Kapağı değiştir"
+        SizedBox(
+          height: coverH,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (prof.coverUrl != null) NetPhoto(url: prof.coverUrl!) else ColoredBox(color: p.accentTint),
+              Positioned(
+                left: 16,
+                right: 16,
+                top: top + 8,
+                child: Row(
+                  children: [
+                    if (!widget.isTab) ...[
+                      _glassButton(LucideIcons.chevronLeft, t('ui.back'), () => Navigator.of(context).maybePop()),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                          decoration: BoxDecoration(
+                            color: const Color(0x7314161B),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!prof.isPublic) ...[
+                                const Icon(LucideIcons.lock, size: 14, color: Colors.white),
+                                const SizedBox(width: 6),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  prof.username,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: font(15, weight: 700, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (!widget.isTab) _glassButton(LucideIcons.share2, t('ui.share'), () => _share(prof)),
+                    if (!widget.isTab && !prof.isMe) ...[
+                      const SizedBox(width: 8),
+                      PopupMenuButton<String>(
+                        tooltip: t('ui.more'),
+                        onSelected: (v) => v == 'block' ? _block(prof) : _report(prof.id),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(value: 'report', child: Text(t('report.button'))),
+                          PopupMenuItem(
+                            value: 'block',
+                            child: Text(t('messages.block'), style: TextStyle(color: p.danger)),
+                          ),
+                        ],
+                        child: const IgnorePointer(child: _GlassIcon(icon: LucideIcons.ellipsisVertical)),
+                      ),
+                    ],
+                    if (widget.isTab)
+                      _glassButton(LucideIcons.settings, t('settings.heading'), () => context.push('/settings')),
+                  ],
+                ),
               ),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(Space.s5, Space.s1, Space.s5, 0),
-              sliver: SliverToBoxAdapter(
-                child: Column(
+              if (prof.isMe)
+                Positioned(
+                  right: 16,
+                  bottom: 56,
+                  child: Material(
+                    color: const Color(0x8C14161B),
+                    borderRadius: BorderRadius.circular(999),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(999),
+                      onTap: _imgBusy != null ? null : () => _imageMenu('cover', prof.coverUrl != null),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _imgBusy == 'cover'
+                                ? const SizedBox(
+                                    width: 15,
+                                    height: 15,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(LucideIcons.camera, size: 15, color: Colors.white),
+                            const SizedBox(width: 6),
+                            Text(
+                              t(prof.coverUrl != null ? 'settings.change_cover' : 'settings.add_cover'),
+                              style: font(13, weight: 600, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // Bilgi kartı kapağın üstüne biner
+        Padding(
+          padding: EdgeInsets.only(top: coverH - 44),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+            decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(26)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Fotoğraf kartın üst kenarından taşar; yer kaplamasın diye taşan kısım yığının dışında
+                    SizedBox(
+                      width: 94,
+                      height: 56,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            top: -38,
+                            left: 0,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(color: p.surface, shape: BoxShape.circle),
+                                  child: Opacity(
+                                    opacity: _imgBusy == 'avatar' ? 0.5 : 1,
+                                    child: Avatar(name: prof.displayName, url: prof.avatarUrl, size: 86),
+                                  ),
+                                ),
+                                if (prof.isMe)
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 4,
+                                    child: Semantics(
+                                      button: true,
+                                      label: t('profile.change_avatar'),
+                                      excludeSemantics: true,
+                                      child: GestureDetector(
+                                        onTap: _imgBusy != null
+                                            ? null
+                                            : () => _imageMenu('avatar', prof.avatarUrl != null),
+                                        child: Container(
+                                          width: 30,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: p.accent,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: p.surface, width: 3),
+                                          ),
+                                          child: Icon(
+                                            LucideIcons.plus,
+                                            size: 15,
+                                            color: p.accentInk,
+                                            weight: IconStroke.active,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: Space.s3),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Row(
+                          children: [
+                            stat(prof.photosCount, t('profile.posts')),
+                            stat(
+                              prof.followersCount,
+                              t('profile.followers'),
+                              onTap: follows ? () => context.push('/u/${prof.username}/follows?tab=0') : null,
+                            ),
+                            stat(
+                              prof.followingCount,
+                              t('profile.following'),
+                              onTap: follows ? () => context.push('/u/${prof.username}/follows?tab=1') : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (prof.coverUrl != null) ...[
-                      // Kapak bir afiş görseli; profilin üstünde şerit olarak durur
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(Radii.photo),
-                        child: AspectRatio(aspectRatio: 3, child: NetPhoto(url: prof.coverUrl!)),
-                      ),
-                      const SizedBox(height: Space.s4),
-                    ],
-                    // Instagram düzeni: solda fotoğraf, sağda sayılar
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
-                          child: Avatar(name: prof.displayName, url: prof.avatarUrl, size: 84),
-                        ),
-                        const SizedBox(width: Space.s4),
-                        stat(prof.photosCount, t('profile.posts')),
-                        stat(prof.followersCount, t('profile.followers')),
-                        stat(prof.followingCount, t('profile.following')),
-                      ],
-                    ),
-                    const SizedBox(height: Space.s3),
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(prof.displayName, style: font(17, weight: 700, height: 1.2, color: p.ink)),
+                        Text(prof.displayName, style: font(20, weight: 700, height: 1.15, spacing: -0.4, color: p.ink)),
                         if (prof.isPro) const ProBadge(),
                       ],
                     ),
-                    if (place.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      _Meta(icon: LucideIcons.mapPin, text: place),
-                    ],
+                    if (place.isNotEmpty) ...[const SizedBox(height: 3), _Meta(icon: LucideIcons.mapPin, text: place)],
                     if (prof.bio != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(prof.bio!, style: font(15, height: 1.45, color: p.ink)),
                     ],
                     // Çektiği alanlar ve kullandığı makine
@@ -350,8 +457,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          for (final sp in prof.specialties) ExifChip(t('specialties.$sp'), color: p.surface),
-                          if (body != null) ExifChip('${body.brand} ${body.model}', color: p.surface),
+                          for (final sp in prof.specialties) ExifChip(t('specialties.$sp')),
+                          if (body != null) ExifChip('${body.brand} ${body.model}'),
                         ],
                       ),
                     ],
@@ -361,7 +468,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         if (prof.isMe) ...[
                           Expanded(
                             child: FilledButton(
-                              style: secondary,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: p.ink,
+                                foregroundColor: p.bg,
+                                minimumSize: const Size.fromHeight(44),
+                              ),
                               onPressed: () => context.push('/settings'),
                               child: Text(t('profile.edit')),
                             ),
@@ -377,7 +488,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ] else ...[
                           Expanded(
                             child: FilledButton(
-                              style: prof.isFollowing ? secondary : FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                              style: prof.isFollowing
+                                  ? secondary
+                                  : FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
                               onPressed: _followBusy ? null : () => _toggleFollow(prof),
                               child: BusyLabel(
                                 busy: _followBusy,
@@ -400,8 +513,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  int _tab = 0; // 0 fotoğraflar, 1 ekipman
+
+  Widget _body(BuildContext context, Profile prof) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final pages = prof.canViewPhotos ? ref.watch(photoPagesProvider(_photosPath)) : null;
+    final kit = [...prof.equipment]..sort((a, b) => _kitOrder.indexOf(a.type).compareTo(_kitOrder.indexOf(b.type)));
+    final place = [prof.city, prof.country].whereType<String>().join(', ');
+    final body = kit.where((e) => e.type == 'body').firstOrNull;
+    final awards = prof.canViewPhotos
+        ? ref.watch(awardsProvider(widget.username)).asData?.value ?? const <Award>[]
+        : const <Award>[];
+    Widget tabButton(int i, String label) {
+      final active = _tab == i;
+      return Semantics(
+        selected: active,
+        button: true,
+        child: InkWell(
+          onTap: () => setState(() => _tab = i),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(4, 12, 4, 10),
+            margin: const EdgeInsets.only(right: 24),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: active ? p.ink : Colors.transparent, width: 2.5)),
+            ),
+            child: Text(
+              label,
+              style: font(16.5, weight: active ? 700 : 500, color: active ? p.ink : p.inkMuted),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) =>
+            pages == null ? false : loadMoreOnScroll(n, ref.read(photoPagesProvider(_photosPath).notifier).loadMore),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _header(context, prof, place, body)),
             // Instagram'daki "öne çıkanlar" yerine: yarışmalarda ilk üçe giren kareler
             if (awards.isNotEmpty)
               SliverToBoxAdapter(
@@ -468,8 +630,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Text('${e.brand} ${e.model}', maxLines: 1, overflow: TextOverflow.ellipsis,
-                                      style: font(15, weight: 600, color: p.ink)),
+                                  child: Text(
+                                    '${e.brand} ${e.model}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: font(15, weight: 600, color: p.ink),
+                                  ),
                                 ),
                                 Text(t('equipment.${e.type}'), style: AppText.caption(p.inkMuted)),
                               ],
@@ -508,7 +674,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(prof.isMe ? t('profile.empty_me') : t('profile.empty'), style: font(15, color: p.inkMuted)),
+                        Text(
+                          prof.isMe ? t('profile.empty_me') : t('profile.empty'),
+                          style: font(15, color: p.inkMuted),
+                        ),
                         if (prof.isMe) ...[
                           const SizedBox(height: 14),
                           FilledButton(
@@ -551,4 +720,17 @@ class _Meta extends StatelessWidget {
       ],
     );
   }
+}
+
+class _GlassIcon extends StatelessWidget {
+  const _GlassIcon({required this.icon});
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 44,
+    height: 44,
+    decoration: const BoxDecoration(color: Color(0x7314161B), shape: BoxShape.circle),
+    child: Icon(icon, size: 21, color: Colors.white),
+  );
 }

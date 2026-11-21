@@ -787,7 +787,7 @@ class FloatingBottomNav extends StatelessWidget {
                   item(0, LucideIcons.house, t('nav.feed')),
                   item(1, LucideIcons.map, t('nav.map')),
                   const Expanded(child: SizedBox()),
-                  item(3, LucideIcons.usersRound, t('nav.community')),
+                  item(3, LucideIcons.globe, t('nav.community')),
                   item(4, LucideIcons.userRound, t('nav.profile')),
                 ],
               ),

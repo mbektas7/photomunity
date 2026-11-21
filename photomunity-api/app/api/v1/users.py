@@ -142,12 +142,17 @@ async def unfollow(username: str, viewer: User = Depends(get_current_user), db: 
     return Response(status_code=204)
 
 
-async def _follow_page(db: AsyncSession, user_id: uuid.UUID, direction: str, before: datetime | None, limit: int):
+async def _follow_page(db: AsyncSession, user_id: uuid.UUID, direction: str, before: datetime | None, limit: int,
+                       search: str | None = None):
     if direction == "followers":
         join_on, where = Follow.follower_id == User.id, Follow.followee_id == user_id
     else:
         join_on, where = Follow.followee_id == User.id, Follow.follower_id == user_id
     q = select(User, Follow.created_at).join(Follow, join_on).where(where)
+    term = (search or "").strip().lstrip("@").lower()
+    if term:
+        esc = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        q = q.where(or_(User.username.ilike(f"%{esc}%", escape="\\"), User.display_name.ilike(f"%{esc}%", escape="\\")))
     if before:
         q = q.where(Follow.created_at < before)
     rows = (await db.execute(q.order_by(Follow.created_at.desc()).limit(limit + 1))).all()
@@ -158,16 +163,25 @@ async def _follow_page(db: AsyncSession, user_id: uuid.UUID, direction: str, bef
 
 @router.get("/users/{username}/followers", response_model=UserPage)
 async def followers(username: str, before: datetime | None = None, limit: int = Query(30, le=100),
-                    db: AsyncSession = Depends(get_db)):
+                    q: str | None = Query(None, max_length=50), db: AsyncSession = Depends(get_db)):
     user = await _get_by_username(db, username)
-    return await _follow_page(db, user.id, "followers", before, limit)
+    return await _follow_page(db, user.id, "followers", before, limit, q)
 
 
 @router.get("/users/{username}/following", response_model=UserPage)
 async def following(username: str, before: datetime | None = None, limit: int = Query(30, le=100),
-                    db: AsyncSession = Depends(get_db)):
+                    q: str | None = Query(None, max_length=50), db: AsyncSession = Depends(get_db)):
     user = await _get_by_username(db, username)
-    return await _follow_page(db, user.id, "following", before, limit)
+    return await _follow_page(db, user.id, "following", before, limit, q)
+
+
+@router.delete("/me/followers/{username}", status_code=204)
+async def remove_follower(username: str, viewer: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Takipçiyi listeden çıkarır (kişiye bildirim gitmez; isterse yeniden takip edebilir)."""
+    target = await _get_by_username(db, username)
+    await db.execute(delete(Follow).where(Follow.follower_id == target.id, Follow.followee_id == viewer.id))
+    await db.commit()
+    return Response(status_code=204)
 
 
 # ---------- Profil görselleri ----------

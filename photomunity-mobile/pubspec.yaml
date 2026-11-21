@@ -1,7 +1,7 @@
 name: photomunity
 description: Photomunity — fotoğrafçılar için topluluk uygulaması.
 publish_to: none
-version: 1.0.0+8
+version: 1.0.0+9
 
 environment:
   sdk: ^3.9.0
@@ -46,6 +46,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
+    - assets/tools/
   fonts:
     - family: BricolageGrotesque
       fonts:

@@ -186,3 +186,21 @@ async def test_user_search_ranks_prefix_and_hides_blocked(client):
     names = [u["username"] for u in (await client.get("/users/search?q=deniz", headers=me)).json()]
     assert "engelleyen" not in names
     assert (await client.get("/users/search?q=")).status_code == 422
+
+
+
+async def test_follow_lists_search_and_remove_follower(client):
+    me, _ = await register(client, "listeci")
+    for name in ("ayse.kaya", "burak", "kaya.can"):
+        h, _ = await register(client, name)
+        await client.post("/users/listeci/follow", headers=h)
+        await client.post(f"/users/{name}/follow", headers=me)
+    names = lambda r: sorted(u["username"] for u in r.json()["items"])
+    assert names(await client.get("/users/listeci/followers?q=kaya")) == ["ayse.kaya", "kaya.can"]
+    assert names(await client.get("/users/listeci/following?q=BUR")) == ["burak"]
+
+    assert (await client.delete("/me/followers/burak", headers=me)).status_code == 204
+    assert names(await client.get("/users/listeci/followers")) == ["ayse.kaya", "kaya.can"]
+    # Ben hâlâ onu takip ediyorum; yalnızca onun beni takibi kalktı
+    assert "burak" in names(await client.get("/users/listeci/following"))
+    assert (await client.delete("/me/followers/burak")).status_code == 401

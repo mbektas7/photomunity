@@ -18,10 +18,11 @@ class ToolsHubScreen extends ConsumerWidget {
     final t = L10n.of(context);
     final p = context.palette;
     final me = ref.watch(authProvider).asData?.value;
-    final tiles = <(IconData, String, String, String)>[
-      (LucideIcons.scan, t('hub.ar'), t('hub.ar_sub'), arRoute(me?.latitude, me?.longitude)),
-      (LucideIcons.calculator, t('tools.title'), t('hub.tools_sub'), '/tools'),
-      (LucideIcons.bookOpen, t('guide.title'), t('hub.guide_sub'), '/guide'),
+    // Her araç kendi konusunu anlatan bir fotoğrafın üzerinde
+    final tiles = <(String, String, String, String)>[
+      ('sunset', t('hub.ar'), t('hub.ar_sub'), arRoute(me?.latitude, me?.longitude)),
+      ('fog', t('tools.title'), t('hub.tools_sub'), '/tools'),
+      ('forest', t('guide.title'), t('hub.guide_sub'), '/guide'),
     ];
 
     return Scaffold(
@@ -53,24 +54,18 @@ class ToolsHubScreen extends ConsumerWidget {
                 child: InkWell(
                   onTap: () => context.push('/planner'),
                   child: SizedBox(
-                    height: 200,
+                    height: 210,
                     child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        for (final (x, y, r) in const [(0.86, 0.32, 2.0), (0.72, 0.48, 1.5), (0.58, 0.26, 1.2), (0.93, 0.6, 1.2)])
-                          Positioned.fill(
-                            child: Align(
-                              alignment: Alignment(x * 2 - 1, y * 2 - 1),
-                              child: Container(
-                                width: r * 2,
-                                height: r * 2,
-                                decoration: const BoxDecoration(color: Color(0xFFDDE2FF), shape: BoxShape.circle),
-                              ),
-                            ),
-                          ),
+                        Image.asset('assets/tools/milkyway.jpg', fit: BoxFit.cover),
+                        // Yazının okunması için alt şerit (gradyan yok, düz yarı saydam)
                         const Positioned(
-                          top: 18,
-                          right: 18,
-                          child: Icon(LucideIcons.moonStar, size: 30, color: Color(0xFFFFD58A)),
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 104,
+                          child: ColoredBox(color: Color(0x8C080A14)),
                         ),
                         Positioned(
                           left: 20,
@@ -82,7 +77,7 @@ class ToolsHubScreen extends ConsumerWidget {
                               Text(t('planner.title'),
                                   style: font(24, weight: 700, spacing: -0.6, color: const Color(0xFFF3F4F7))),
                               const SizedBox(height: 2),
-                              Text(t('hub.planner_sub'), style: font(14, color: const Color(0xFFA9B1D6))),
+                              Text(t('hub.planner_sub'), style: font(14, color: const Color(0xFFD6DBF0))),
                             ],
                           ),
                         ),
@@ -99,10 +94,10 @@ class ToolsHubScreen extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 1.32,
+              childAspectRatio: 1.15,
               children: [
-                for (final (icon, title, sub, route) in tiles)
-                  _Tile(icon: icon, title: title, subtitle: sub, onTap: () => context.push(route)),
+                for (final (image, title, sub, route) in tiles)
+                  _PhotoTile(image: image, title: title, subtitle: sub, onTap: () => context.push(route)),
                 _Tile(icon: LucideIcons.plus, title: t('hub.soon'), subtitle: t('hub.soon_sub'), dashed: true),
               ],
             ),
@@ -114,11 +109,10 @@ class ToolsHubScreen extends ConsumerWidget {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.icon, required this.title, required this.subtitle, this.onTap, this.dashed = false});
+  const _Tile({required this.icon, required this.title, required this.subtitle, this.dashed = false});
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback? onTap;
   final bool dashed;
 
   @override
@@ -164,7 +158,7 @@ class _Tile extends StatelessWidget {
         color: p.surface,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(onTap: onTap, child: body),
+        child: body,
       ),
     );
   }
@@ -190,4 +184,55 @@ class _DashedBorder extends CustomPainter {
 
   @override
   bool shouldRepaint(_DashedBorder old) => old.color != color;
+}
+
+/// Arka planında konuyla ilgili fotoğraf olan araç kartı.
+class _PhotoTile extends StatelessWidget {
+  const _PhotoTile({required this.image, required this.title, required this.subtitle, required this.onTap});
+  final String image;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: title,
+      excludeSemantics: true,
+      child: Material(
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset('assets/tools/$image.jpg', fit: BoxFit.cover),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ColoredBox(
+                  color: const Color(0x8C080A14),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: font(16, weight: 700, color: Colors.white)),
+                        Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: font(12.5, color: const Color(0xFFE3E6F2))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
