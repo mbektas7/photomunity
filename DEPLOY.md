@@ -192,11 +192,11 @@ ssh-keyscan SUNUCU_IP
 
 - [x] Ekip: bireysel hesap, Team ID `3C8FGT67DB`. Hesapta en az bir cihaz kayıtlı olmalı (yoksa otomatik imzalama "no devices" hatası verir).
 - [x] App Store Connect'te uygulama oluşturuldu.
-- [ ] Derleme ve yükleme. Gizli olmayan üretim değerleri `photomunity-mobile/config/prod.json` dosyasında (API adresi, Google istemci kimlikleri, RevenueCat genel anahtarı, AdMob birimleri). Her yüklemede `pubspec.yaml` içindeki derleme numarasını (+N) artırın.
+- [ ] Derleme ve yükleme. Gizli olmayan üretim değerleri `photomunity-mobile/config/prod.json` dosyasında (API adresi, Google istemci kimlikleri, RevenueCat genel anahtarı, AdMob birimleri). Her yüklemede `pubspec.yaml` içindeki derleme numarasını (+N) artırın. Anahtarlı değerler (CARTO harita altlığı adresleri, `MAP_TILES_LIGHT` / `MAP_TILES_DARK`) repo herkese açık olduğu için `config/prod.keys.json` dosyasında tutulur; bu dosya git'e girmez, derleme makinesinde elle oluşturulur.
 
 ```bash
 cd photomunity-mobile
-flutter build ios --release --no-codesign --dart-define-from-file=config/prod.json
+flutter build ios --release --no-codesign --dart-define-from-file=config/prod.json --dart-define-from-file=config/prod.keys.json
 xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
   -destination generic/platform=iOS -archivePath build/ios/archive/Runner.xcarchive \
   archive -allowProvisioningUpdates

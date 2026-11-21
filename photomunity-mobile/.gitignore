@@ -6,3 +6,5 @@ build/
 *.iml
 .idea/
 ios/Pods/
+# Anahtar içeren derleme değerleri (harita vb.); repoya girmez
+config/*.keys.json

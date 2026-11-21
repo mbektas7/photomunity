@@ -12,7 +12,8 @@ class AppConfig {
       ? _wsUrl
       : '${apiUrl.replaceFirst(RegExp('^http'), 'ws')}/ws';
 
-  /// Harita altlığı (raster). Varsayılan CARTO; üretimde anahtarlı bir sağlayıcı (MapTiler, Stadia) önerilir.
+  /// Harita altlığı (raster). CARTO artık uygulamalar için anahtar istiyor; üretim adresleri (anahtarlı) repoya girmeyen config/prod.keys.json'da.
+  /// Anahtarsız varsayılanlar yerel geliştirmede "API key required" görseli gösterebilir.
   static const mapTilesLight = String.fromEnvironment(
     'MAP_TILES_LIGHT',
     defaultValue:
