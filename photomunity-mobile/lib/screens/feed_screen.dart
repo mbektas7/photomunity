@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/ad_widgets.dart';
+import '../widgets/brand_logo.dart';
 import '../widgets/design.dart';
 import 'messages_screens.dart';
 import 'notifications_screen.dart';
@@ -34,10 +35,7 @@ class FeedScreen extends ConsumerWidget {
       appBar: AppBar(
         toolbarHeight: 68,
         titleSpacing: Space.s5,
-        title: Text(
-          'Photomunity',
-          style: font(30, weight: 700, spacing: -1.05, color: p.ink),
-        ),
+        title: const BrandLogo(height: 32),
         actions: const [
           MessagesButton(),
           NotificationBell(),

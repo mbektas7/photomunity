@@ -20,12 +20,13 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authAction } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
 import { Avatar } from "./Avatar";
+import { BrandLogo } from "./Logo";
 import { MessagesLink, useMessageUnread } from "./messages";
 import { NotificationBell, useNotificationUnread } from "./NotificationBell";
 import { buttonClass } from "./ui";
 
 export function Wordmark({ className }: { className?: string }) {
-  return <span className={clsx("text-[25px] font-bold leading-[30px] tracking-[-0.035em]", className)}>Photomunity</span>;
+  return <BrandLogo className={clsx("w-auto", className ?? "h-[30px]")} />;
 }
 
 /** Sol menülü akış düzeninde üst çubuk yalnızca dar ekranda görünür. */
@@ -191,7 +192,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-6 hidden w-[230px] shrink-0 flex-col gap-1.5 self-start md:flex">
       <Link href="/feed" aria-label="Photomunity" className="rounded-box px-3.5 pb-5 pt-1.5">
-        <Wordmark className="text-[26px]" />
+        <Wordmark className="h-8" />
       </Link>
       <nav aria-label={t("main")} className="flex flex-col gap-1">
         {items.map(({ href, label, icon: Icon, badge }) => {

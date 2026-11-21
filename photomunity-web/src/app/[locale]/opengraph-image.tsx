@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { BRAND_LOCKUP, BRAND_LOCKUP_INNER } from "@/components/Logo";
 
 // Görsel oluşturucu değişken yazı tipini desteklemez; statik kalın kesim (Türkçe karakterler latin-ext'te)
 const fontDir = join(process.cwd(), "node_modules/@fontsource/schibsted-grotesk/files");
@@ -9,6 +10,11 @@ const font = (subset: string, weight: number) => readFile(join(fontDir, `schibst
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Photomunity";
+
+const logoSrc = `data:image/svg+xml;base64,${Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BRAND_LOCKUP.viewBox}" fill="#1a1b1e">${BRAND_LOCKUP_INNER}</svg>`,
+).toString("base64")}`;
+const LOGO_H = 52;
 
 /** Paylaşım görseli: uygulamanın kimliği (galeri grisi, kırpılmamış baskılar, siyah vizör şeridi). */
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
@@ -24,7 +30,8 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#e6e6e3", padding: "56px 64px", color: "#1a1b1e", fontFamily: "SG, SG Ext" }}>
-        <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>Photomunity</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoSrc} alt="Photomunity" width={Math.round((LOGO_H * BRAND_LOCKUP.width) / BRAND_LOCKUP.height)} height={LOGO_H} />
         <div style={{ fontSize: 76, fontWeight: 700, letterSpacing: -3, lineHeight: 1, marginTop: 28, maxWidth: 900 }}>
           {tr ? "Fotoğrafçıların buluştuğu yer." : "Where photographers meet."}
         </div>

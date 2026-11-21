@@ -13,6 +13,7 @@ import '../core/config.dart';
 import '../core/l10n.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import '../widgets/brand_logo.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
 import '../widgets/justified_wall.dart';
@@ -21,9 +22,9 @@ class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => const Scaffold(
     body: Center(
-      child: Text('Photomunity', style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 28)),
+      child: BrandLogo(height: 120, stacked: true),
     ),
   );
 }
@@ -48,7 +49,7 @@ class WelcomeScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Photomunity', style: AppText.title(p.ink)),
+                    const BrandLogo(height: 30),
                     const SizedBox(height: 40),
                     Text(t('welcome.title'), style: font(44, weight: 700, height: 0.96, spacing: -1.9, color: p.ink)),
                     const SizedBox(height: 18),
@@ -121,7 +122,7 @@ class _AuthScaffold extends StatelessWidget {
                       ),
                       const SizedBox(width: Space.s3),
                     ],
-                    Text('Photomunity', style: AppText.title(p.ink)),
+                    const BrandLogo(height: 30),
                   ],
                 ),
               ),
