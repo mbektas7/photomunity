@@ -72,6 +72,9 @@
 	<string>Paylaşmak istediğin fotoğrafı seçebilmen için.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Fotoğrafına ve profiline isteğe bağlı konum ekleyebilmen için.</string>
+	<!-- Uygulama konumu yalnızca kullanırken ister; konum kitaplığı bu anahtara da başvurduğu için App Store zorunlu tutuyor -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Fotoğrafına ve profiline isteğe bağlı konum ekleyebilmen için. Konumun yalnızca uygulamayı kullanırken alınır.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Gökyüzü planlayıcıda Samanyolu ve Ay'ın yolunu kamera görüntüsü üzerinde göstermek için.</string>
 	<key>NSUserTrackingUsageDescription</key>
