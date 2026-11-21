@@ -190,21 +190,22 @@ ssh-keyscan SUNUCU_IP
 
 ## 11. iOS yayını
 
-- [ ] Apple Developer → Identifiers: `app.photomunity.photomunity`; Associated Domains, Sign in with Apple, Push Notifications açık.
-- [ ] App Store Connect'te uygulamayı oluşturun.
-- [ ] Derleme:
+- [x] Ekip: bireysel hesap, Team ID `3C8FGT67DB`. Hesapta en az bir cihaz kayıtlı olmalı (yoksa otomatik imzalama "no devices" hatası verir).
+- [x] App Store Connect'te uygulama oluşturuldu.
+- [ ] Derleme ve yükleme. Gizli olmayan üretim değerleri `photomunity-mobile/config/prod.json` dosyasında (API adresi, Google istemci kimlikleri, RevenueCat genel anahtarı, AdMob birimleri). Her yüklemede `pubspec.yaml` içindeki derleme numarasını (+N) artırın.
 
 ```bash
 cd photomunity-mobile
-flutter build ipa --release \
-  --dart-define=API_URL=https://api.photomunity.com/api/v1 \
-  --dart-define=WEB_URL=https://photomunity.com \
-  --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=... \
-  --dart-define=RC_IOS_KEY=appl_... \
-  --dart-define=ADMOB_BANNER_IOS=ca-app-pub-.../...
+flutter build ios --release --no-codesign --dart-define-from-file=config/prod.json
+xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
+  -destination generic/platform=iOS -archivePath build/ios/archive/Runner.xcarchive \
+  archive -allowProvisioningUpdates
+# ExportOptions.plist: method=app-store-connect, teamID=3C8FGT67DB, signingStyle=automatic, destination=upload
+xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath build/ios/upload -allowProvisioningUpdates
 ```
 
-- [ ] `build/ios/ipa/*.ipa` dosyasını Transporter ya da Xcode Organizer ile yükleyin → TestFlight'ta deneyin → incelemeye gönderin.
+- [ ] TestFlight'ta deneyin → incelemeye gönderin.
 - [ ] İnceleme için demo hesap bilgisi, gizlilik politikası adresi, gizlilik "beslenme etiketi" (toplanan veriler), yaş derecelendirmesi.
 
 ## 12. Android yayını
