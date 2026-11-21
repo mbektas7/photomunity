@@ -19,6 +19,7 @@ import 'screens/messages_screens.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/photo_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/search_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/upload_screen.dart';
 import 'state/providers.dart';
@@ -142,6 +143,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/p/:id',
         parentNavigatorKey: _rootKey,
         builder: (_, s) => PhotoScreen(id: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/search',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => UserSearchScreen(initialQuery: s.uri.queryParameters['q'] ?? ''),
       ),
       GoRoute(
         path: '/u/:username',

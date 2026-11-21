@@ -273,6 +273,16 @@ class PhotoPage(BaseModel):
     next_cursor: str | None
 
 
+class AwardOut(BaseModel):
+    """Sonuçlanmış bir yarışmada ilk üçe giren kare."""
+    rank: int
+    prize: str | None
+    contest_id: uuid.UUID
+    contest_title: str
+    awarded_at: datetime | None
+    photo: PhotoCard
+
+
 # ---------- Bildirimler ----------
 class NotificationPhoto(BaseModel):
     id: uuid.UUID

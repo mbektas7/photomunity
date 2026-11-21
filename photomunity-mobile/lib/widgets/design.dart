@@ -327,8 +327,9 @@ class StoryRing extends StatelessWidget {
                         ),
                         clipBehavior: Clip.antiAlias,
                         alignment: Alignment.center,
+                        // Yuvarlak küçük resim halkayı tam doldurur (marka kuralı: yalnızca bunlar kırpılabilir)
                         child: image != null
-                            ? NetPhoto(url: image!)
+                            ? SizedBox.expand(child: NetPhoto(url: image!))
                             : Text(
                                 initials,
                                 style: font(

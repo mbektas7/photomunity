@@ -212,38 +212,73 @@ class PhotoPages extends Notifier<PagesState> {
     return const PagesState(loading: true);
   }
 
+  // Aynı anda tek istek: yenileme sırasında kaydırma bildirimleri ikinci bir ilk sayfa
+  // isteği başlatıp listeyi çoğaltıyordu. Yenileme eski istekleri geçersiz kılar.
+  int _gen = 0;
+  bool _inFlight = false;
+
   Future<void> refresh() async {
+    _gen++;
+    _inFlight = false;
     state = const PagesState(loading: true);
     await _load(null);
   }
 
   Future<void> loadMore() async {
-    if (state.done || (state.loading && state.items.isNotEmpty)) return;
+    if (state.done || _inFlight) return;
     await _load(state.cursor);
   }
 
   Future<void> _load(String? cursor) async {
+    final gen = _gen;
+    _inFlight = true;
     state = state.copyWith(loading: true, clearError: true);
     try {
       final res = await ref
           .read(apiProvider)
           .get<Map<String, dynamic>>('/$path', query: {'before': ?cursor});
-      if (!ref.mounted) return;
+      if (!ref.mounted || gen != _gen) return;
       final items = (res['items'] as List)
           .map((e) => PhotoCard.fromJson(e as Map<String, dynamic>))
           .toList();
       final next = res['next_cursor'] as String?;
+      final seen = {for (final p in state.items) p.id};
       state = PagesState(
-        items: [...state.items, ...items],
+        items: [...state.items, ...items.where((p) => seen.add(p.id))],
         cursor: next,
         done: next == null,
       );
     } catch (e) {
-      if (!ref.mounted) return;
+      if (!ref.mounted || gen != _gen) return;
       state = state.copyWith(loading: false, error: ApiException.from(e));
+    } finally {
+      if (ref.mounted && gen == _gen) _inFlight = false;
     }
   }
 }
+
+/// Profildeki ödüllü kareler.
+final awardsProvider = FutureProvider.autoDispose.family<List<Award>, String>((
+  ref,
+  username,
+) async {
+  final res = await ref
+      .read(apiProvider)
+      .get<List<dynamic>>('/users/$username/awards');
+  return res.map((e) => Award.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+/// Kullanıcı arama (kullanıcı adı veya görünen ad).
+final userSearchProvider = FutureProvider.autoDispose
+    .family<List<UserCard>, String>((ref, q) async {
+      if (q.trim().isEmpty) return const [];
+      final res = await ref
+          .read(apiProvider)
+          .get<List<dynamic>>('/users/search', query: {'q': q.trim()});
+      return res
+          .map((e) => UserCard.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
 
 // ---------------------------------------------------------------- Detaylar
 

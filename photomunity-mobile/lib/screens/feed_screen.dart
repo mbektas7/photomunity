@@ -11,6 +11,7 @@ import '../widgets/brand_logo.dart';
 import '../widgets/design.dart';
 import 'messages_screens.dart';
 import 'notifications_screen.dart';
+import 'search_screen.dart';
 
 /// Sona yaklaşınca bir sonraki sayfayı yükler.
 bool loadMoreOnScroll(ScrollNotification n, VoidCallback loadMore) {
@@ -35,7 +36,13 @@ class FeedScreen extends ConsumerWidget {
       appBar: AppBar(
         toolbarHeight: 68,
         titleSpacing: Space.s5,
-        title: const BrandLogo(height: 32),
+        title: const Row(
+          children: [
+            BrandLogo(height: 24),
+            SizedBox(width: Space.s3),
+            Expanded(child: SearchPill()),
+          ],
+        ),
         actions: const [
           MessagesButton(),
           NotificationBell(),

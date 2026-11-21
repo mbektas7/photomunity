@@ -12,9 +12,9 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError, request_locale
 from app.core.messages import translate
-from app.models import Follow, Like, Photo, PhotoExif, PhotoStatus, User
+from app.models import Contest, ContestEntry, Follow, Like, Photo, PhotoExif, PhotoStatus, User
 from app.schemas import (
-    ALLOWED_CONTENT_TYPES, ExifOut, ExifSummary, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
+    ALLOWED_CONTENT_TYPES, AwardOut, ExifOut, ExifSummary, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
     PhotoUpdate, UploadUrlIn, UploadUrlOut, UserCard,
 )
 from app.services import storage
@@ -240,6 +240,32 @@ async def explore(before: datetime | None = None, limit: int = Query(20, le=50),
     q = _published().join(User, User.id == Photo.user_id).where(User.is_public.is_(True), User.is_active.is_(True))
     photos = list(await db.scalars(_paged(q, before, limit)))
     return _page(await _cards(db, photos, viewer), limit)
+
+
+@router.get("/users/{username}/awards", response_model=list[AwardOut])
+async def user_awards(username: str, viewer: User | None = Depends(get_optional_user), db: AsyncSession = Depends(get_db)):
+    """Sonuçlanmış yarışmalarda ilk üçe giren kareler, en yeni sonuç önce."""
+    owner = await db.scalar(select(User).where(User.username == username.lower(), User.is_active.is_(True)))
+    if not owner:
+        raise AppError(404, "not_found")
+    if not await can_view_photos(db, viewer, owner):
+        return []
+    rows = (await db.execute(
+        select(ContestEntry, Contest).join(Contest, Contest.id == ContestEntry.contest_id)
+        .where(ContestEntry.user_id == owner.id, ContestEntry.disqualified.is_(False), Contest.finalized_at.is_not(None))
+        .order_by(Contest.finalized_at.desc()).limit(100))).all()
+    won = []
+    for entry, contest in rows:
+        r = next((r for r in contest.results or [] if r.get("entry_id") == str(entry.id)), None)
+        if r and r.get("rank") is not None and r["rank"] <= 3:
+            won.append((entry, contest, r))
+    if not won:
+        return []
+    photos = {p.id: p for p in await db.scalars(_published().where(Photo.id.in_([e.photo_id for e, _, _ in won])))}
+    cards = {c.id: c for c in await _cards(db, list(photos.values()), viewer)}
+    return [AwardOut(rank=r["rank"], prize=r.get("prize"), contest_id=c.id, contest_title=c.title,
+                     awarded_at=c.finalized_at, photo=cards[e.photo_id])
+            for e, c, r in won if e.photo_id in cards]
 
 
 @router.get("/users/{username}/photos", response_model=PhotoPage)

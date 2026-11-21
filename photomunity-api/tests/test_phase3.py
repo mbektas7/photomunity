@@ -167,3 +167,22 @@ async def test_guides_localized(client):
             t = g[loc]
             assert set(t["settings"]) == {"mode", "aperture", "shutter", "iso", "focus", "white_balance", "other"}, (g["slug"], loc)
             assert t["tips"] and t["mistakes"] and len(t["tips"]) == len(g["tr"]["tips"])
+
+
+async def test_user_search_ranks_prefix_and_hides_blocked(client):
+    me, _ = await register(client, "arayan")
+    await register(client, "deniz.kaya")
+    await register(client, "kayadeniz")
+    other, _ = await register(client, "engelleyen")
+    await client.patch("/me", headers=other, json={"display_name": "Deniz Engel"})
+
+    names = [u["username"] for u in (await client.get("/users/search?q=deniz", headers=me)).json()]
+    assert names[0] == "deniz.kaya" and set(names) == {"deniz.kaya", "kayadeniz", "engelleyen"}
+    assert [u["username"] for u in (await client.get("/users/search?q=@KAYA")).json()] == ["kayadeniz", "deniz.kaya"]
+    # Joker karakterler düz metin sayılır
+    assert (await client.get("/users/search?q=%25")).json() == []
+
+    await client.post("/users/arayan/block", headers=other)
+    names = [u["username"] for u in (await client.get("/users/search?q=deniz", headers=me)).json()]
+    assert "engelleyen" not in names
+    assert (await client.get("/users/search?q=")).status_code == 422

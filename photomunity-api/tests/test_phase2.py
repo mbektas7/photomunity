@@ -176,6 +176,12 @@ async def test_jury_contest_weighted_scoring_and_tiebreak(client, fake_storage, 
     finished = (await client.get(f"/contests/{cid}/entries")).json()
     assert finished[0]["rank"] == 1 and finished[0]["user"]["username"] == "katilimci1"
 
+    # Profilde ödüllü kareler: ilk üçe girenler, ödül adıyla
+    awards = (await client.get("/users/katilimci1/awards")).json()
+    assert [(a["rank"], a["prize"], a["contest_id"], a["photo"]["id"]) for a in awards] == [(1, "Fujifilm X-T5", cid, p1)]
+    assert (await client.get("/users/katilimci2/awards")).json()[0]["rank"] == 3
+    assert (await client.get("/users/uye/awards")).json() == []
+
 
 async def test_public_voting_with_email_codes_and_bayesian_ranking(client, fake_storage, clock, outbox):
     owner, _ = await register(client, "yonetim")

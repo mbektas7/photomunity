@@ -248,6 +248,21 @@ class PhotoCard {
   );
 }
 
+/// Sonuçlanmış bir yarışmada ilk üçe giren kare (profildeki "Ödüllü fotoğraflar").
+class Award {
+  Award.fromJson(Map<String, dynamic> j)
+    : rank = j['rank'] as int,
+      prize = _opt(j['prize']),
+      contestId = j['contest_id'] as String,
+      contestTitle = j['contest_title'] as String,
+      photo = PhotoCard.fromJson(j['photo'] as Map<String, dynamic>);
+  final int rank;
+  final String? prize;
+  final String contestId;
+  final String contestTitle;
+  final PhotoCard photo;
+}
+
 class Exif {
   Exif.fromJson(Map<String, dynamic> j)
     : cameraMake = _opt(j['camera_make']),

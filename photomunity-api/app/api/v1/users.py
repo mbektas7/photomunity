@@ -3,14 +3,14 @@ from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response
 from starlette.concurrency import run_in_threadpool
-from sqlalchemy import delete, func, select
+from sqlalchemy import case, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import can_view_photos, get_current_user, get_optional_user, is_following
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError
-from app.models import Equipment, Follow, Photo, PhotoStatus, User
+from app.models import Block, Equipment, Follow, Photo, PhotoStatus, User
 from app.schemas import (
     ALLOWED_CONTENT_TYPES, EquipmentIn, EquipmentOut, MeDetail, MeOut, MeUpdate, ProfileImageCompleteIn,
     ProfileImageUploadIn, ProfileOut, UploadUrlOut, UserCard, UserPage,
@@ -76,6 +76,27 @@ async def replace_equipment(body: list[EquipmentIn], user: User = Depends(get_cu
         db.add(Equipment(user_id=user.id, position=i, **item.model_dump()))
     await db.commit()
     return await _equipment(db, user.id)
+
+
+@router.get("/users/search", response_model=list[UserCard])
+async def search_users(q: str = Query(..., min_length=1, max_length=50), limit: int = Query(20, le=50),
+                       viewer: User | None = Depends(get_optional_user), db: AsyncSession = Depends(get_db)):
+    """Kullanıcı adı veya görünen ada göre arama; önce kullanıcı adı başlangıcı eşleşenler."""
+    term = q.strip().lstrip("@").lower()
+    if not term:
+        return []
+    esc = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    like = f"%{esc}%"
+    query = select(User).where(User.is_active.is_(True),
+                               or_(User.username.ilike(like, escape="\\"), User.display_name.ilike(like, escape="\\")))
+    if viewer:
+        # İki yönlü engel: engellediğim ya da beni engelleyen kişiler listelenmez
+        blocked = select(Block.blocked_id).where(Block.blocker_id == viewer.id)
+        blockers = select(Block.blocker_id).where(Block.blocked_id == viewer.id)
+        query = query.where(User.id.not_in(blocked), User.id.not_in(blockers))
+    starts = case((User.username.ilike(f"{esc}%", escape="\\"), 0), else_=1)
+    users = await db.scalars(query.order_by(starts, func.length(User.username), User.username).limit(limit))
+    return [UserCard.model_validate(u) for u in users]
 
 
 @router.get("/users/{username}", response_model=ProfileOut)

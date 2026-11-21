@@ -161,7 +161,12 @@ void main() {
     await settle(); // oturum yüklenip açılış yönlendirmesi bitsin
     Directory(_out).createSync(recursive: true);
     for (final route in _routes.split(',')) {
-      final parts = route.split('=');
+      // "rota=dosya_adı"; rotanın kendisi sorgu içerebilir (/search?q=x=arama)
+      final cut = route.lastIndexOf('=');
+      final hasName = cut > 0 && route.indexOf('?') < cut && route.substring(cut + 1).isNotEmpty && !route.substring(0, cut).endsWith('?');
+      final parts = hasName && route.split('=').length > (route.contains('?') ? 2 : 1)
+          ? [route.substring(0, cut), route.substring(cut + 1)]
+          : [route];
       router.go(parts[0]);
       await tester.pump();
       await settle();

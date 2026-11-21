@@ -117,8 +117,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _share(Profile prof) async {
+    final t = L10n.of(context);
+    await Clipboard.setData(ClipboardData(text: '${AppConfig.webUrl}/${t.locale.languageCode}/u/${prof.username}'));
+    if (mounted) toast(context, t('ui.link_copied'));
+  }
+
+  /// Instagram'daki ☰ gibi: modüller (mesajlar, harita, rehber…) alttan açılan menüde.
+  void _openMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => const SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: ModuleMenu(),
+        ),
+      ),
+    );
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(profileProvider(widget.username));
+    ref.invalidate(awardsProvider(widget.username));
     await ref.read(photoPagesProvider(_photosPath).notifier).refresh();
   }
 
@@ -131,6 +153,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(
         toolbarHeight: 64,
         automaticallyImplyLeading: false,
+        titleSpacing: widget.isTab ? Space.s5 : 0,
         leading: widget.isTab
             ? null
             : IconButton(
@@ -138,15 +161,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 icon: const Icon(LucideIcons.chevronLeft, size: 28),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
+        title: prof == null
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!prof.isPublic) ...[
+                    Icon(LucideIcons.lock, size: 16, color: context.palette.ink),
+                    const SizedBox(width: 6),
+                  ],
+                  Flexible(
+                    child: Text(
+                      prof.username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: font(20, weight: 700, spacing: -0.4, color: context.palette.ink),
+                    ),
+                  ),
+                ],
+              ),
         actions: [
-          if (prof != null)
+          if (prof != null && !widget.isTab)
             IconButton(
               tooltip: t('ui.share'),
               icon: const Icon(LucideIcons.share2),
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: '${AppConfig.webUrl}/${t.locale.languageCode}/u/${prof.username}'));
-                if (context.mounted) toast(context, t('ui.link_copied'));
-              },
+              onPressed: () => _share(prof),
             ),
           if (!widget.isTab && prof?.isMe == false)
             PopupMenuButton<String>(
@@ -161,12 +200,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ],
             ),
-          if (widget.isTab)
+          if (widget.isTab) ...[
+            IconButton(
+              onPressed: () => _openMenu(context),
+              icon: const Icon(LucideIcons.menu),
+              tooltip: t('profile.menu'),
+            ),
             IconButton(
               onPressed: () => context.push('/settings'),
               icon: const Icon(LucideIcons.settings),
               tooltip: t('settings.heading'),
             ),
+          ],
           const SizedBox(width: 8),
         ],
       ),
@@ -200,24 +245,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final nf = NumberFormat.decimalPattern(t.locale.languageCode);
 
     Widget stat(int n, String label) => Expanded(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-        decoration: BoxDecoration(
-          color: p.surface2,
-          borderRadius: BorderRadius.circular(Radii.box),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(nf.format(n), style: font(24, weight: 700, spacing: -0.7, color: p.ink, tabular: true)),
-            ),
-            Text(label.toLowerCase(), style: font(13, color: p.inkMuted)),
-          ],
-        ),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(nf.format(n), style: font(20, weight: 700, spacing: -0.5, color: p.ink, tabular: true)),
+          ),
+          const SizedBox(height: 2),
+          Text(label.toLowerCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: font(13, color: p.inkMuted)),
+        ],
       ),
+    );
+
+    final awards = prof.canViewPhotos
+        ? ref.watch(awardsProvider(widget.username)).asData?.value ?? const <Award>[]
+        : const <Award>[];
+    final secondary = FilledButton.styleFrom(
+      backgroundColor: p.surface,
+      foregroundColor: p.ink,
+      minimumSize: const Size.fromHeight(44),
     );
 
     Widget tabButton(int i, String label) {
@@ -252,132 +298,150 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+              padding: const EdgeInsets.fromLTRB(Space.s5, Space.s1, Space.s5, 0),
               sliver: SliverToBoxAdapter(
-                child: SurfaceCard(
-                  padding: const EdgeInsets.all(Space.s4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (prof.coverUrl != null) ...[
+                      // Kapak bir afiş görseli; profilin üstünde şerit olarak durur
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Radii.photo),
+                        child: AspectRatio(aspectRatio: 3, child: NetPhoto(url: prof.coverUrl!)),
+                      ),
+                      const SizedBox(height: Space.s4),
+                    ],
+                    // Instagram düzeni: solda fotoğraf, sağda sayılar
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
+                          child: Avatar(name: prof.displayName, url: prof.avatarUrl, size: 84),
+                        ),
+                        const SizedBox(width: Space.s4),
+                        stat(prof.photosCount, t('profile.posts')),
+                        stat(prof.followersCount, t('profile.followers')),
+                        stat(prof.followingCount, t('profile.following')),
+                      ],
+                    ),
+                    const SizedBox(height: Space.s3),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(prof.displayName, style: font(17, weight: 700, height: 1.2, color: p.ink)),
+                        if (prof.isPro) const ProBadge(),
+                      ],
+                    ),
+                    if (place.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      _Meta(icon: LucideIcons.mapPin, text: place),
+                    ],
+                    if (prof.bio != null) ...[
+                      const SizedBox(height: 6),
+                      Text(prof.bio!, style: font(15, height: 1.45, color: p.ink)),
+                    ],
+                    // Çektiği alanlar ve kullandığı makine
+                    if (prof.specialties.isNotEmpty || body != null) ...[
+                      const SizedBox(height: Space.s3),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final sp in prof.specialties) ExifChip(t('specialties.$sp'), color: p.surface),
+                          if (body != null) ExifChip('${body.brand} ${body.model}', color: p.surface),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: Space.s4),
+                    Row(
+                      children: [
+                        if (prof.isMe) ...[
+                          Expanded(
+                            child: FilledButton(
+                              style: secondary,
+                              onPressed: () => context.push('/settings'),
+                              child: Text(t('profile.edit')),
+                            ),
+                          ),
+                          const SizedBox(width: Space.s2),
+                          Expanded(
+                            child: FilledButton(
+                              style: secondary,
+                              onPressed: () => _share(prof),
+                              child: Text(t('ui.share')),
+                            ),
+                          ),
+                        ] else ...[
+                          Expanded(
+                            child: FilledButton(
+                              style: prof.isFollowing ? secondary : FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                              onPressed: _followBusy ? null : () => _toggleFollow(prof),
+                              child: BusyLabel(
+                                busy: _followBusy,
+                                label: prof.isFollowing ? t('profile.following_button') : t('profile.follow'),
+                              ),
+                            ),
+                          ),
+                          if (prof.isPublic) ...[
+                            const SizedBox(width: Space.s2),
+                            Expanded(
+                              child: FilledButton(
+                                style: secondary,
+                                onPressed: () => context.push('/messages/new/${prof.username}'),
+                                child: Text(t('profile.message_short')),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Instagram'daki "öne çıkanlar" yerine: yarışmalarda ilk üçe giren kareler
+            if (awards.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: Space.s5),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (prof.coverUrl != null) ...[
-                        // Kapak bir afiş görseli; kart içinde şerit olarak durur
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(Radii.photo),
-                          child: AspectRatio(aspectRatio: 3, child: NetPhoto(url: prof.coverUrl!)),
-                        ),
-                        const SizedBox(height: Space.s4),
-                      ],
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
-                            child: Avatar(name: prof.displayName, url: prof.avatarUrl, size: 70),
-                          ),
-                          const SizedBox(width: Space.s4),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 4,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    Text(prof.displayName, style: font(26, weight: 700, height: 1.1, spacing: -0.9, color: p.ink)),
-                                    if (prof.isPro) const ProBadge(),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Wrap(
-                                  spacing: 10,
-                                  runSpacing: 2,
-                                  children: [
-                                    if (!prof.isPublic) _Meta(icon: LucideIcons.lock, text: t('profile.private')),
-                                    if (place.isNotEmpty) _Meta(icon: LucideIcons.mapPin, text: place),
-                                    if (place.isEmpty && prof.isPublic) _Meta(icon: LucideIcons.atSign, text: prof.username),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: Space.s5),
+                        child: Text(t('profile.awards'), style: font(15, weight: 700, color: p.ink)),
                       ),
-                      if (prof.bio != null) ...[
-                        const SizedBox(height: Space.s4),
-                        Text(prof.bio!, style: font(16, height: 1.5, color: p.ink)),
-                      ],
-                      const SizedBox(height: Space.s4),
-                      Row(
-                        children: [
-                          stat(prof.photosCount, t('profile.photos')),
-                          const SizedBox(width: Space.s2),
-                          stat(prof.followersCount, t('profile.followers')),
-                          const SizedBox(width: Space.s2),
-                          stat(prof.followingCount, t('profile.following')),
-                        ],
-                      ),
-                      const SizedBox(height: Space.s4),
-                      Row(
-                        children: [
-                          if (prof.isMe)
-                            Expanded(
-                              child: FilledButton(
-                                style: FilledButton.styleFrom(backgroundColor: p.surface2, foregroundColor: p.ink),
-                                onPressed: () => context.push('/settings'),
-                                child: Text(t('profile.edit')),
-                              ),
-                            )
-                          else ...[
-                            Expanded(
-                              child: FilledButton(
-                                style: prof.isFollowing
-                                    ? FilledButton.styleFrom(backgroundColor: p.surface2, foregroundColor: p.ink)
-                                    : null,
-                                onPressed: _followBusy ? null : () => _toggleFollow(prof),
-                                child: BusyLabel(
-                                  busy: _followBusy,
-                                  label: prof.isFollowing ? t('profile.following_button') : t('profile.follow'),
-                                ),
-                              ),
-                            ),
-                            if (prof.isPublic) ...[
-                              const SizedBox(width: Space.s2),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  style: FilledButton.styleFrom(backgroundColor: p.surface2, foregroundColor: p.ink),
-                                  onPressed: () => context.push('/messages/new/${prof.username}'),
-                                  icon: const Icon(LucideIcons.messageCircle, size: 20),
-                                  label: Text(t('profile.message_short')),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ],
-                      ),
-                      if (prof.specialties.isNotEmpty || body != null) ...[
-                        const SizedBox(height: Space.s4),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
+                      const SizedBox(height: Space.s2),
+                      SizedBox(
+                        height: 112,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                           children: [
-                            for (final sp in prof.specialties) ExifChip(t('specialties.$sp')),
-                            if (body != null) ExifChip('${body.brand} ${body.model}'),
+                            for (final a in awards)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: StoryRing(
+                                  label: '${a.rank}. ${a.contestTitle}',
+                                  image: a.photo.thumb?.url,
+                                  state: RingState.accent,
+                                  semanticLabel: t('profile.award_label', {'rank': a.rank, 'contest': a.contestTitle}),
+                                  size: 68,
+                                  onTap: () => context.push('/p/${a.photo.id}'),
+                                ),
+                              ),
                           ],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
               ),
-            ),
-            if (widget.isTab)
-              const SliverPadding(
-                padding: EdgeInsets.fromLTRB(12, Space.s3, 12, 0),
-                sliver: SliverToBoxAdapter(child: ModuleMenu()),
-              ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(Space.s5, Space.s4, Space.s5, Space.s3),
+              padding: const EdgeInsets.fromLTRB(Space.s5, Space.s3, Space.s5, Space.s3),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
