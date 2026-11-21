@@ -512,7 +512,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         if (prof.isMe) ...[
                           const SizedBox(height: 14),
                           FilledButton(
-                            onPressed: () => context.go('/upload'),
+                            onPressed: () => context.push('/upload'),
                             child: Text(t('profile.upload_first')),
                           ),
                         ],

@@ -430,3 +430,63 @@ class _PhotoPicker extends ConsumerWidget {
     );
   }
 }
+
+/// Topluluğa katılma düğmesi: "Katıl" (açık), "İstek gönder" (onaylı katılım),
+/// "İstek gönderildi" (dokununca geri çeker). Üyeyse görünmez.
+class JoinButton extends ConsumerStatefulWidget {
+  const JoinButton({super.key, required this.c, this.height = 36, this.expand = false});
+  final CommunityCard c;
+  final double height;
+  final bool expand;
+
+  @override
+  ConsumerState<JoinButton> createState() => _JoinButtonState();
+}
+
+class _JoinButtonState extends ConsumerState<JoinButton> {
+  bool _busy = false;
+
+  Future<void> _act() async {
+    final c = widget.c;
+    setState(() => _busy = true);
+    try {
+      final api = ref.read(apiProvider);
+      c.myRequest
+          ? await api.delete<dynamic>('/communities/${c.slug}/join')
+          : await api.post<dynamic>('/communities/${c.slug}/join');
+      ref.invalidate(communitiesProvider);
+      ref.invalidate(communityProvider(c.slug));
+      if (mounted && !c.myRequest && c.joinApproval) toast(context, L10n.of(context)('community.request_sent_toast'));
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final c = widget.c;
+    if (c.myRole != null) return const SizedBox.shrink();
+    final pending = c.myRequest;
+    final label = pending
+        ? t('community.request_sent')
+        : c.joinApproval
+        ? t('community.request_join')
+        : t('community.join');
+    final button = FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor: pending ? p.surface2 : p.accent,
+        foregroundColor: pending ? p.inkMuted : p.accentInk,
+        minimumSize: Size(0, widget.height),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        textStyle: font(13.5, weight: 700),
+      ),
+      onPressed: _busy ? null : _act,
+      child: BusyLabel(busy: _busy, label: label),
+    );
+    return widget.expand ? SizedBox(width: double.infinity, child: button) : button;
+  }
+}

@@ -119,6 +119,11 @@ export type CommunityCard = {
   logo_url: string | null;
   member_count: number;
   my_role: CommunityRole | null;
+  join_approval: boolean;
+  /** Görüntüleyenin bekleyen katılma isteği var */
+  my_request: boolean;
+  /** Yalnızca yöneticilere: bekleyen istek sayısı */
+  pending_requests: number | null;
 };
 
 export type Community = CommunityCard & {

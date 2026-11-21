@@ -732,7 +732,7 @@ class FloatingBottomNav extends StatelessWidget {
     required this.onSelect,
   });
 
-  /// Etkin hedef: 0 akış, 1 keşfet, 2 yükle, 3 yarışmalar, 4 profil.
+  /// Etkin hedef: 0 akış, 1 harita, 2 araçlar (ortadaki logo), 3 topluluk, 4 profil.
   final int current;
   final ValueChanged<int> onSelect;
 
@@ -766,10 +766,11 @@ class FloatingBottomNav extends StatelessWidget {
       );
     }
 
+    final hubActive = current == 2;
     return Padding(
       padding: EdgeInsets.fromLTRB(12, 0, 12, bottom > 0 ? bottom : 12),
       child: SizedBox(
-        height: 66 + 22,
+        height: 66 + 26,
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
@@ -784,31 +785,40 @@ class FloatingBottomNav extends StatelessWidget {
               child: Row(
                 children: [
                   item(0, LucideIcons.house, t('nav.feed')),
-                  item(1, LucideIcons.compass, t('nav.explore')),
+                  item(1, LucideIcons.map, t('nav.map')),
                   const Expanded(child: SizedBox()),
-                  item(3, LucideIcons.trophy, t('nav.contests')),
+                  item(3, LucideIcons.usersRound, t('nav.community')),
                   item(4, LucideIcons.userRound, t('nav.profile')),
                 ],
               ),
             ),
+            // Ortada logo: araçlar merkezi (planlayıcı, AR, rehber…)
             Positioned(
               top: 0,
               child: Semantics(
                 button: true,
-                selected: current == 2,
-                label: t('nav.upload'),
+                selected: hubActive,
+                label: t('nav.tools'),
                 excludeSemantics: true,
                 child: GestureDetector(
                   onTap: () => onSelect(2),
                   child: Container(
-                    width: 54,
-                    height: 54,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
-                      color: p.accent,
+                      color: hubActive ? p.accent : p.ink,
                       shape: BoxShape.circle,
-                      boxShadow: p.shadowAccent,
+                      border: Border.all(color: p.bg, width: 4),
+                      boxShadow: hubActive ? p.shadowAccent : p.shadowFloat,
                     ),
-                    child: Icon(LucideIcons.plus, size: 28, color: p.accentInk),
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      'assets/brand/mark.png',
+                      width: 30,
+                      height: 30,
+                      color: hubActive ? p.accentInk : p.bg,
+                      filterQuality: FilterQuality.high,
+                    ),
                   ),
                 ),
               ),

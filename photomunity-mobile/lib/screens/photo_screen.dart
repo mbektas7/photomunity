@@ -231,7 +231,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => context.go('/upload'),
+              onPressed: () => context.push('/upload'),
               child: Text(t('photo.try_another')),
             ),
             TextButton(

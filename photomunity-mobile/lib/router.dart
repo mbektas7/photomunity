@@ -19,7 +19,9 @@ import 'screens/messages_screens.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/photo_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/communities_hub_screen.dart';
 import 'screens/search_screen.dart';
+import 'screens/tools_hub_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/upload_screen.dart';
 import 'state/providers.dart';
@@ -111,10 +113,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
+              // Alt menüdeki harita: tam ekran harita, menünün altında kalmayacak boşlukla
               GoRoute(
-                path: '/explore',
-                builder: (_, _) => const ExploreScreen(),
+                path: '/maptab',
+                builder: (_, _) => const MapScreen(inTab: true),
               ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/hub', builder: (_, _) => const ToolsHubScreen()),
             ],
           ),
           StatefulShellBranch(
@@ -125,11 +133,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                   segment: int.tryParse(s.uri.queryParameters['s'] ?? ''),
                 ),
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(path: '/upload', builder: (_, _) => const UploadScreen()),
             ],
           ),
           StatefulShellBranch(
@@ -145,9 +148,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => PhotoScreen(id: s.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/upload',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const UploadScreen(),
+      ),
+      GoRoute(
+        path: '/explore',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const ExploreScreen(),
+      ),
+      GoRoute(
         path: '/search',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => UserSearchScreen(initialQuery: s.uri.queryParameters['q'] ?? ''),
+        // Arama kutusu ana sayfanın üst çubuğundan açılıyormuş gibi: kısa bir solma geçişi
+        pageBuilder: (_, s) => CustomTransitionPage(
+          key: s.pageKey,
+          transitionDuration: const Duration(milliseconds: 180),
+          reverseTransitionDuration: const Duration(milliseconds: 150),
+          transitionsBuilder: (_, a, _, child) => FadeTransition(opacity: a, child: child),
+          child: UserSearchScreen(
+            initialQuery: s.uri.queryParameters['q'] ?? '',
+            communities: s.uri.queryParameters['k'] == 'c',
+          ),
+        ),
       ),
       GoRoute(
         path: '/u/:username',
@@ -283,23 +306,16 @@ class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
   final StatefulNavigationShell shell;
 
-  // Dal sırası: 0 akış, 1 keşfet, 2 topluluklar/yarışmalar, 3 yükle, 4 profil.
-  // Menü sırası: Akış, Keşfet, (Yükle), Yarışmalar, Profil.
-  static const _branchOfNav = [0, 1, 3, 2, 4];
-
+  // Dallar menü sırasıyla aynı: 0 akış, 1 harita, 2 araçlar (ortadaki logo), 3 topluluk, 4 profil.
   @override
   Widget build(BuildContext context) {
-    final nav = _branchOfNav.indexOf(shell.currentIndex);
     return Scaffold(
       extendBody: true,
       body: shell,
       bottomNavigationBar: FloatingBottomNav(
-        current: nav,
+        current: shell.currentIndex,
         // Aynı hedefe tekrar dokunmak o sekmenin başına döner
-        onSelect: (i) {
-          final b = _branchOfNav[i];
-          shell.goBranch(b, initialLocation: b == shell.currentIndex);
-        },
+        onSelect: (b) => shell.goBranch(b, initialLocation: b == shell.currentIndex),
       ),
     );
   }

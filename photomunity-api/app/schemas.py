@@ -367,6 +367,7 @@ class CommunityIn(BaseModel):
 
 class CommunityUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=3, max_length=100)
+    join_approval: bool | None = None
     description: str | None = Field(default=None, max_length=3000)
     city: str | None = Field(default=None, max_length=120)
     country: str | None = Field(default=None, min_length=2, max_length=2)
@@ -381,6 +382,14 @@ class CommunityCard(BaseModel):
     logo_url: str | None
     member_count: int
     my_role: str | None
+    join_approval: bool = False
+    my_request: bool = False           # görüntüleyenin bekleyen katılma isteği var
+    pending_requests: int | None = None  # yalnızca yöneticilere: bekleyen istek sayısı
+
+
+class JoinRequestOut(BaseModel):
+    user: UserCard
+    created_at: datetime
 
 
 class CommunityOut(CommunityCard):

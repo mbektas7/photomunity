@@ -14,7 +14,6 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
-import 'feed_screen.dart' show navClearance;
 import '../widgets/design.dart';
 
 const _types = {
@@ -167,7 +166,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       });
       if (!mounted) return;
       _reset();
-      context.push('/p/$id');
+      context.pushReplacement('/p/$id');
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -235,13 +234,16 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 68,
-        leading: _file == null
-            ? null
-            : IconButton(
-                tooltip: t('ui.close'),
-                icon: const Icon(LucideIcons.x, size: 28),
-                onPressed: uploading ? null : _reset,
-              ),
+        // Ana sayfadaki + ile açılan tam ekran sayfa: kapat, seçim varsa önce seçimi sıfırlar
+        leading: IconButton(
+          tooltip: t('ui.close'),
+          icon: const Icon(LucideIcons.x, size: 28),
+          onPressed: uploading
+              ? null
+              : _file == null
+              ? () => context.pop()
+              : _reset,
+        ),
         title: Text(t('upload.heading'), style: font(24, weight: 700, spacing: -0.7, color: p.ink)),
         actions: [
           Padding(
@@ -254,7 +256,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, navClearance),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 32),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         children: [
           SurfaceCard(

@@ -79,8 +79,11 @@ function CommunityView() {
             )}
             {!me ? (
               <Button onClick={() => router.push(`/login?next=${encodeURIComponent(pathname)}`)}>{t("join")}</Button>
+            ) : !c.my_role && c.my_request ? (
+              // Onaylı katılım: istek bekliyor; dokununca geri çekilir
+              <Button variant="secondary" busy={membership.isPending} onClick={() => membership.mutate(false)}>{t("request_sent")}</Button>
             ) : !c.my_role ? (
-              <Button busy={membership.isPending} onClick={() => membership.mutate(true)}>{t("join")}</Button>
+              <Button busy={membership.isPending} onClick={() => membership.mutate(true)}>{c.join_approval ? t("request_join") : t("join")}</Button>
             ) : c.my_role === "member" ? (
               <Button variant="secondary" busy={membership.isPending} onClick={() => membership.mutate(false)}>{t("leave")}</Button>
             ) : null}

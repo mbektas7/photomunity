@@ -98,6 +98,46 @@ async def test_community_membership_admins_invites_posts(client, fake_storage, o
     assert listed[0]["slug"] == slug and listed[0]["member_count"] == 4
 
 
+async def test_community_join_approval_requests(client, fake_storage, outbox):
+    owner, _ = await register(client, "kurucu")
+    slug = await make_community(client, owner)
+    fan, _ = await register(client, "hevesli")
+    assert (await client.patch(f"/communities/{slug}", headers=fan, json={"join_approval": True})).status_code == 403
+    assert (await client.patch(f"/communities/{slug}", headers=owner, json={"join_approval": True})).json()["join_approval"] is True
+
+    # Onaylı katılım: istek oluşur, üye olunmaz, yöneticiye bildirim gider
+    assert (await client.post(f"/communities/{slug}/join", headers=fan)).status_code == 202
+    assert (await client.post(f"/communities/{slug}/join", headers=fan)).status_code == 202  # tekrar: aynı istek
+    view = (await client.get(f"/communities/{slug}", headers=fan)).json()
+    assert view["my_role"] is None and view["my_request"] is True and view["pending_requests"] is None
+    assert (await client.get(f"/communities/{slug}", headers=owner)).json()["pending_requests"] == 1
+    assert (await notifications(client, owner))["items"][0]["type"] == "community_join_request"
+    assert (await client.get(f"/communities/{slug}/join-requests", headers=fan)).status_code == 403
+    reqs = (await client.get(f"/communities/{slug}/join-requests", headers=owner)).json()
+    assert [r["user"]["username"] for r in reqs] == ["hevesli"]
+
+    # Onay: üye olur, istek kalkar, kişiye bildirim gider
+    assert (await client.post(f"/communities/{slug}/join-requests/hevesli/approve", headers=owner)).status_code == 204
+    view = (await client.get(f"/communities/{slug}", headers=fan)).json()
+    assert view["my_role"] == "member" and view["my_request"] is False
+    assert (await notifications(client, fan))["items"][0]["type"] == "community_join_approved"
+    assert (await client.post(f"/communities/{slug}/join-requests/hevesli/approve", headers=owner)).status_code == 404
+
+    # Ret ve istek geri çekme
+    other, _ = await register(client, "ikinci")
+    await client.post(f"/communities/{slug}/join", headers=other)
+    assert (await client.post(f"/communities/{slug}/join-requests/ikinci/decline", headers=owner)).status_code == 204
+    assert (await client.get(f"/communities/{slug}", headers=other)).json()["my_request"] is False
+    await client.post(f"/communities/{slug}/join", headers=other)
+    assert (await client.delete(f"/communities/{slug}/join", headers=other)).status_code == 204
+    assert (await client.get(f"/communities/{slug}/join-requests", headers=owner)).json() == []
+
+    # Ayar kapanınca doğrudan katılım
+    await client.patch(f"/communities/{slug}", headers=owner, json={"join_approval": False})
+    assert (await client.post(f"/communities/{slug}/join", headers=other)).status_code == 204
+    assert (await client.get(f"/communities/{slug}", headers=other)).json()["my_role"] == "member"
+
+
 async def test_jury_contest_weighted_scoring_and_tiebreak(client, fake_storage, clock, outbox):
     owner, _ = await register(client, "dernek")
     slug = await make_community(client, owner)

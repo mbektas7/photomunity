@@ -16,11 +16,11 @@ from app.core.database import get_db
 from app.core.errors import AppError
 from app.core.security import as_aware, hash_token, new_opaque_token, utcnow
 from app.models import (
-    Community, CommunityInvite, CommunityMember, CommunityPost, CommunityRole, Contest, Photo, PhotoStatus, User,
+    Community, CommunityInvite, CommunityJoinRequest, CommunityMember, CommunityPost, CommunityRole, Contest, Photo, PhotoStatus, User,
 )
 from app.schemas import (
     ALLOWED_CONTENT_TYPES, AdminIn, CommunityCard, CommunityImageCompleteIn, CommunityImageUploadIn, CommunityIn,
-    CommunityOut, CommunityUpdate, InviteIn, MemberOut, MemberPage, PostIn, TokenIn, UploadUrlOut, UserCard,
+    CommunityOut, CommunityUpdate, InviteIn, JoinRequestOut, MemberOut, MemberPage, PostIn, TokenIn, UploadUrlOut, UserCard,
 )
 from app.services import storage
 from app.services.contests import community_role, contest_status, is_admin_role
@@ -69,8 +69,20 @@ async def community_cards(db: AsyncSession, communities: list[Community], viewer
     if viewer and communities:
         roles = dict((await db.execute(select(CommunityMember.community_id, CommunityMember.role).where(
             CommunityMember.user_id == viewer.id, CommunityMember.community_id.in_([c.id for c in communities])))).all())
+    ids = [c.id for c in communities]
+    requested: set[uuid.UUID] = set()
+    pending: dict[uuid.UUID, int] = {}
+    if viewer and ids:
+        requested = set(await db.scalars(select(CommunityJoinRequest.community_id).where(
+            CommunityJoinRequest.user_id == viewer.id, CommunityJoinRequest.community_id.in_(ids))))
+        managed = [cid for cid, r in roles.items() if is_admin_role(r)]
+        if managed:
+            pending = dict((await db.execute(select(CommunityJoinRequest.community_id, func.count()).where(
+                CommunityJoinRequest.community_id.in_(managed)).group_by(CommunityJoinRequest.community_id))).all())
     return [CommunityCard(id=c.id, slug=c.slug, name=c.name, city=c.city, country=c.country, logo_url=c.logo_url,
-                          member_count=counts.get(c.id, 0), my_role=roles[c.id].value if c.id in roles else None)
+                          member_count=counts.get(c.id, 0), my_role=roles[c.id].value if c.id in roles else None,
+                          join_approval=bool(c.join_approval), my_request=c.id in requested,
+                          pending_requests=pending.get(c.id, 0) if is_admin_role(roles.get(c.id)) else None)
             for c in communities]
 
 
@@ -181,12 +193,74 @@ async def community_image_complete(slug: str, body: CommunityImageCompleteIn, ba
 
 
 # ---------- Üyelik ----------
-@router.post("/communities/{slug}/join", status_code=204)
-async def join(slug: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@router.post("/communities/{slug}/join", status_code=204,
+             responses={202: {"description": "Onaylı katılım: istek oluşturuldu, yönetici onayı bekleniyor"}})
+async def join(slug: str, background: BackgroundTasks, user: User = Depends(get_current_user),
+               db: AsyncSession = Depends(get_db)):
     c = await _get(db, slug)
-    if await community_role(db, c.id, user.id) is None:
+    if await community_role(db, c.id, user.id) is not None:
+        return Response(status_code=204)
+    if not c.join_approval:
         db.add(CommunityMember(community_id=c.id, user_id=user.id, role=CommunityRole.member))
         await db.commit()
+        return Response(status_code=204)
+    if not await db.get(CommunityJoinRequest, (c.id, user.id)):
+        db.add(CommunityJoinRequest(community_id=c.id, user_id=user.id))
+        admins = await db.scalars(select(CommunityMember.user_id).where(
+            CommunityMember.community_id == c.id, CommunityMember.role.in_([CommunityRole.owner, CommunityRole.admin])))
+        created = []
+        for admin_id in admins:
+            n = await notify(db, user_id=admin_id, type="community_join_request", actor_id=user.id,
+                             data={"community_slug": c.slug, "community": c.name}, dedupe=True)
+            if n:
+                created.append(n.id)
+        await db.commit()
+        if created:
+            background.add_task(deliver, created)
+    return Response(status_code=202)
+
+
+async def _request_or_404(db: AsyncSession, c: Community, username: str) -> CommunityJoinRequest:
+    target = await db.scalar(select(User).where(User.username == username.lower()))
+    req = await db.get(CommunityJoinRequest, (c.id, target.id)) if target else None
+    if not req:
+        raise AppError(404, "not_found")
+    return req
+
+
+@router.get("/communities/{slug}/join-requests", response_model=list[JoinRequestOut])
+async def join_requests(slug: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    c = await _get(db, slug)
+    await _require_admin(db, c, user)
+    rows = await db.scalars(select(CommunityJoinRequest).where(CommunityJoinRequest.community_id == c.id)
+                            .options(selectinload(CommunityJoinRequest.user)).order_by(CommunityJoinRequest.created_at.desc()))
+    return [JoinRequestOut(user=UserCard.model_validate(r.user), created_at=r.created_at) for r in rows]
+
+
+@router.post("/communities/{slug}/join-requests/{username}/approve", status_code=204)
+async def approve_join_request(slug: str, username: str, background: BackgroundTasks,
+                               user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    c = await _get(db, slug)
+    await _require_admin(db, c, user)
+    req = await _request_or_404(db, c, username)
+    if not await db.get(CommunityMember, (c.id, req.user_id)):
+        db.add(CommunityMember(community_id=c.id, user_id=req.user_id, role=CommunityRole.member))
+    await db.delete(req)
+    n = await notify(db, user_id=req.user_id, type="community_join_approved", actor_id=user.id,
+                     data={"community_slug": c.slug, "community": c.name})
+    await db.commit()
+    if n:
+        background.add_task(deliver, [n.id])
+    return Response(status_code=204)
+
+
+@router.post("/communities/{slug}/join-requests/{username}/decline", status_code=204)
+async def decline_join_request(slug: str, username: str, user: User = Depends(get_current_user),
+                               db: AsyncSession = Depends(get_db)):
+    c = await _get(db, slug)
+    await _require_admin(db, c, user)
+    await db.delete(await _request_or_404(db, c, username))
+    await db.commit()
     return Response(status_code=204)
 
 
@@ -198,7 +272,10 @@ async def leave(slug: str, user: User = Depends(get_current_user), db: AsyncSess
     m = await db.get(CommunityMember, (c.id, user.id))
     if m:
         await db.delete(m)
-        await db.commit()
+    req = await db.get(CommunityJoinRequest, (c.id, user.id))  # bekleyen isteği geri çekmek de buradan
+    if req:
+        await db.delete(req)
+    await db.commit()
     return Response(status_code=204)
 
 

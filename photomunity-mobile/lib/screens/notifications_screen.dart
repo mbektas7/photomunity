@@ -16,13 +16,19 @@ export '../widgets/design.dart' show relativeTime;
 
 /// Akış ekranının üst çubuğundaki zil ve okunmamış rozeti.
 class NotificationBell extends ConsumerWidget {
-  const NotificationBell({super.key});
+  const NotificationBell({super.key, this.filled = false});
+
+  /// Ana sayfa üst çubuğu: beyaz yuvarlak zemin.
+  final bool filled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.palette;
     final count = ref.watch(unreadCountProvider).asData?.value ?? 0;
     return IconButton(
+      style: filled
+          ? IconButton.styleFrom(backgroundColor: p.surface, fixedSize: const Size(44, 44), minimumSize: const Size(44, 44))
+          : null,
       tooltip: L10n.of(context)('notifications.title'),
       onPressed: () => context.push('/notifications'),
       icon: Badge(

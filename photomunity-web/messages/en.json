@@ -396,6 +396,8 @@
     "country": "Country code",
     "error": "Something went wrong. Try again.",
     "join": "Join",
+    "request_join": "Request to join",
+    "request_sent": "Requested",
     "leave": "Leave",
     "manage": "Manage",
     "sections": "Community sections",

@@ -32,9 +32,12 @@ const _specialties = [
 ];
 
 class MapScreen extends ConsumerStatefulWidget {
-  const MapScreen({super.key, this.initial, this.photos = false});
+  const MapScreen({super.key, this.initial, this.photos = false, this.inTab = false});
   final LatLng? initial;
   final bool photos;
+
+  /// Alt menüdeki sekme olarak açıldıysa alttaki öğeler menünün üstünde kalır.
+  final bool inTab;
 
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
@@ -250,8 +253,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 userAgentPackageName: 'app.photomunity.photomunity',
               ),
               MarkerLayer(markers: _markers(p)),
-              const RichAttributionWidget(
-                attributions: [TextSourceAttribution(AppConfig.mapAttribution)],
+              Padding(
+                padding: EdgeInsets.only(bottom: widget.inTab ? 92 : 0),
+                child: const RichAttributionWidget(
+                  attributions: [TextSourceAttribution(AppConfig.mapAttribution)],
+                ),
               ),
             ],
           ),
@@ -330,7 +336,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             Positioned(
               left: 12,
               right: 12,
-              bottom: 12 + MediaQuery.paddingOf(context).bottom,
+              bottom: (widget.inTab ? 96 : 12) + MediaQuery.paddingOf(context).bottom,
               child: _card(context, me?.id),
             ),
         ],

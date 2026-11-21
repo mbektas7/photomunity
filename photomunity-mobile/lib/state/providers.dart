@@ -441,6 +441,12 @@ final communitiesProvider = FutureProvider.autoDispose
           .toList();
     });
 
+/// Yöneticinin gördüğü bekleyen katılma istekleri.
+final joinRequestsProvider = FutureProvider.autoDispose.family<List<JoinRequest>, String>((ref, slug) async {
+  final res = await ref.read(apiProvider).get<List<dynamic>>('/communities/$slug/join-requests');
+  return res.map((e) => JoinRequest.fromJson(e as Map<String, dynamic>)).toList();
+});
+
 final communityProvider = FutureProvider.autoDispose.family<Community, String>((
   ref,
   slug,

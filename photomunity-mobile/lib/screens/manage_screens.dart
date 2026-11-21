@@ -1075,6 +1075,21 @@ class _CommunitySettingsScreenState extends ConsumerState<CommunitySettingsScree
                     ],
                   ),
                 ),
+                _Section(
+                  title: t('csettings.join_approval'),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: c.joinApproval,
+                    title: Text(t('csettings.join_approval'), style: font(15, weight: 600, color: p.ink)),
+                    subtitle: Text(t('csettings.join_approval_hint'), style: font(13, color: p.inkMuted)),
+                    onChanged: _busy != null
+                        ? null
+                        : (v) => _run(
+                            'approval',
+                            () => ref.read(apiProvider).patch<dynamic>('/communities/${c.slug}', {'join_approval': v}),
+                          ),
+                  ),
+                ),
                 if (c.myRole == 'owner')
                   _Section(
                     title: t('csettings.admins'),

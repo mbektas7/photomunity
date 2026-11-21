@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/l10n.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/ad_widgets.dart';
-import '../widgets/brand_logo.dart';
 import '../widgets/design.dart';
 import 'messages_screens.dart';
 import 'notifications_screen.dart';
-import 'search_screen.dart';
 
 /// Sona yaklaşınca bir sonraki sayfayı yükler.
 bool loadMoreOnScroll(ScrollNotification n, VoidCallback loadMore) {
@@ -36,17 +35,37 @@ class FeedScreen extends ConsumerWidget {
       appBar: AppBar(
         toolbarHeight: 68,
         titleSpacing: Space.s5,
-        title: const Row(
-          children: [
-            BrandLogo(height: 24),
-            SizedBox(width: Space.s3),
-            Expanded(child: SearchPill()),
-          ],
+        // Solda yükle; sağda arama (dokununca açılır), mesajlar ve bildirimler
+        title: Semantics(
+          button: true,
+          label: t('nav.upload'),
+          excludeSemantics: true,
+          child: Material(
+            color: p.accent,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => context.push('/upload'),
+              child: SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(LucideIcons.plus, size: 24, color: p.accentInk, weight: IconStroke.active),
+              ),
+            ),
+          ),
         ),
-        actions: const [
-          MessagesButton(),
-          NotificationBell(),
-          SizedBox(width: 10),
+        actions: [
+          IconButton(
+            style: IconButton.styleFrom(backgroundColor: p.surface, fixedSize: const Size(44, 44), minimumSize: const Size(44, 44)),
+            tooltip: t('search.hint'),
+            onPressed: () => context.push('/search'),
+            icon: const Icon(LucideIcons.search),
+          ),
+          const SizedBox(width: 8),
+          const MessagesButton(filled: true),
+          const SizedBox(width: 8),
+          const NotificationBell(filled: true),
+          const SizedBox(width: Space.s5),
         ],
       ),
       body: RefreshIndicator(
@@ -87,7 +106,7 @@ class FeedScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 20),
                           FilledButton(
-                            onPressed: () => context.go('/explore'),
+                            onPressed: () => context.push('/explore'),
                             child: Text(t('feed.go_explore')),
                           ),
                         ],

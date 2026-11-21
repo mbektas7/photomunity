@@ -15,7 +15,10 @@ import '../widgets/community_widgets.dart' show pickMyPhoto;
 
 /// Akış ekranının üst çubuğundaki mesaj simgesi ve okunmamış rozeti.
 class MessagesButton extends ConsumerWidget {
-  const MessagesButton({super.key});
+  const MessagesButton({super.key, this.filled = false});
+
+  /// Ana sayfa üst çubuğu: beyaz yuvarlak zemin.
+  final bool filled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,6 +26,9 @@ class MessagesButton extends ConsumerWidget {
     final u = ref.watch(messageUnreadProvider).asData?.value;
     final count = (u?.inbox ?? 0) + (u?.requests ?? 0);
     return IconButton(
+      style: filled
+          ? IconButton.styleFrom(backgroundColor: p.surface, fixedSize: const Size(44, 44), minimumSize: const Size(44, 44))
+          : null,
       tooltip: L10n.of(context)('messages.title'),
       onPressed: () => context.push('/messages'),
       icon: Badge(

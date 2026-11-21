@@ -396,6 +396,8 @@
     "country": "Ülke kodu",
     "error": "Bir şeyler ters gitti. Tekrar dene.",
     "join": "Katıl",
+    "request_join": "Katılma isteği gönder",
+    "request_sent": "İstek gönderildi",
     "leave": "Ayrıl",
     "manage": "Yönet",
     "sections": "Topluluk bölümleri",

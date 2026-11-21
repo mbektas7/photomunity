@@ -22,179 +22,6 @@ void openWeb(BuildContext context, String path) {
   );
 }
 
-/// Alt sekmedeki "Topluluklar": topluluklar ve yarışmalar.
-class CommunitiesScreen extends ConsumerStatefulWidget {
-  const CommunitiesScreen({super.key, this.segment});
-
-  /// 0 topluluklar, 1 yarışmalar; verilmezse yarışmalar (alt menüdeki Yarışmalar).
-  final int? segment;
-
-  @override
-  ConsumerState<CommunitiesScreen> createState() => _CommunitiesScreenState();
-}
-
-class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
-  late int _segment = widget.segment ?? 1; // 0 topluluklar, 1 yarışmalar
-
-  @override
-  void didUpdateWidget(covariant CommunitiesScreen old) {
-    super.didUpdateWidget(old);
-    if (widget.segment != null && widget.segment != old.segment) _segment = widget.segment!;
-  }
-  bool _mine = false;
-  String _q = '';
-  String _contestStatus = 'open';
-
-  @override
-  Widget build(BuildContext context) {
-    final t = L10n.of(context);
-    final p = context.palette;
-    return Scaffold(
-      appBar: AppBar(
-        title: SegmentedButton<int>(
-          segments: [
-            ButtonSegment(value: 0, label: Text(t('nav.communities'))),
-            ButtonSegment(value: 1, label: Text(t('nav.contests'))),
-          ],
-          selected: {_segment},
-          showSelectedIcon: false,
-          onSelectionChanged: (s) => setState(() => _segment = s.first),
-        ),
-        actions: [
-          if (_segment == 0)
-            IconButton(
-              tooltip: t('community.create'),
-              icon: const Icon(LucideIcons.plus),
-              onPressed: () => context.push('/communities/new'),
-            ),
-        ],
-      ),
-      body: _segment == 0 ? _communities(t, p) : _contests(t, p),
-    );
-  }
-
-  Widget _communities(L10n t, Palette p) {
-    final list = ref.watch(communitiesProvider((_q, _mine)));
-    return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(communitiesProvider),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          TextField(
-            decoration: InputDecoration(
-              prefixIcon: const Icon(LucideIcons.search),
-              hintText: t('community.search'),
-            ),
-            textInputAction: TextInputAction.search,
-            onSubmitted: (v) => setState(() => _q = v.trim()),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              ChoiceChip(
-                label: Text(t('community.all')),
-                selected: !_mine,
-                onSelected: (_) => setState(() => _mine = false),
-              ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: Text(t('community.mine')),
-                selected: _mine,
-                onSelected: (_) => setState(() => _mine = true),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ...switch (list) {
-            AsyncData(:final value) when value.isEmpty => [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  _mine ? t('community.empty_mine') : t('community.empty'),
-                  style: font(15, color: p.inkMuted),
-                ),
-              ),
-            ],
-            AsyncData(:final value) => [
-              for (final c in value)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: CommunityTile(c: c),
-                ),
-            ],
-            AsyncError(:final error) => [
-              ErrorView(
-                error: error,
-                onRetry: () => ref.invalidate(communitiesProvider),
-              ),
-            ],
-            _ => [
-              const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ],
-          },
-        ],
-      ),
-    );
-  }
-
-  Widget _contests(L10n t, Palette p) {
-    final list = ref.watch(contestsProvider(_contestStatus));
-    return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(contestsProvider),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final s in ['open', 'judging', 'finished'])
-                ChoiceChip(
-                  label: Text(t('contest.tab_$s')),
-                  selected: _contestStatus == s,
-                  onSelected: (_) => setState(() => _contestStatus = s),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ...switch (list) {
-            AsyncData(:final value) when value.isEmpty => [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  t('contest.empty_$_contestStatus'),
-                  style: font(15, color: p.inkMuted),
-                ),
-              ),
-            ],
-            AsyncData(:final value) => [
-              for (final c in value)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: ContestTile(c: c),
-                ),
-            ],
-            AsyncError(:final error) => [
-              ErrorView(
-                error: error,
-                onRetry: () => ref.invalidate(contestsProvider),
-              ),
-            ],
-            _ => [
-              const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ],
-          },
-        ],
-      ),
-    );
-  }
-}
-
 class NewCommunityScreen extends ConsumerStatefulWidget {
   const NewCommunityScreen({super.key});
 
@@ -475,6 +302,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                                 t('community.members', {
                                   'count': c.memberCount,
                                 }),
+                                if (c.joinApproval) t('community.approval_badge'),
                               ].join('  ·  '),
                               style: font(13.5, color: p.inkMuted),
                             ),
@@ -499,10 +327,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   ],
                   const SizedBox(height: 14),
                   if (c.myRole == null)
-                    FilledButton(
-                      onPressed: _busy ? null : () => _membership(true),
-                      child: BusyLabel(busy: _busy, label: t('community.join')),
-                    )
+                    JoinButton(c: c, height: 44, expand: true)
                   else if (c.myRole == 'member')
                     OutlinedButton(
                       onPressed: _busy ? null : () => _membership(false),
@@ -511,6 +336,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         label: t('community.leave'),
                       ),
                     ),
+                  if (c.isAdmin && (c.pendingRequests ?? 0) > 0) ...[
+                    const SizedBox(height: 18),
+                    _JoinRequests(slug: c.slug, count: c.pendingRequests!),
+                  ],
                 ],
               ),
             ),
@@ -761,4 +590,104 @@ class _TabsHeader extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _TabsHeader old) =>
       old.tabs != tabs || old.color != color;
+}
+
+
+/// Yönetici görünümü: bekleyen katılma istekleri, onayla / reddet.
+class _JoinRequests extends ConsumerStatefulWidget {
+  const _JoinRequests({required this.slug, required this.count});
+  final String slug;
+  final int count;
+
+  @override
+  ConsumerState<_JoinRequests> createState() => _JoinRequestsState();
+}
+
+class _JoinRequestsState extends ConsumerState<_JoinRequests> {
+  final _busy = <String>{};
+
+  Future<void> _decide(String username, bool approve) async {
+    setState(() => _busy.add(username));
+    try {
+      await ref.read(apiProvider).post<dynamic>(
+        '/communities/${widget.slug}/join-requests/$username/${approve ? 'approve' : 'decline'}',
+      );
+      ref.invalidate(joinRequestsProvider(widget.slug));
+      ref.invalidate(communityProvider(widget.slug));
+      ref.invalidate(communitiesProvider);
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _busy.remove(username));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final list = ref.watch(joinRequestsProvider(widget.slug)).asData?.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(children: [
+            TextSpan(text: '${t('community.join_requests')}  '),
+            TextSpan(text: '${list?.length ?? widget.count}', style: TextStyle(color: p.accentText)),
+          ]),
+          style: font(18, weight: 700, color: p.ink),
+        ),
+        const SizedBox(height: 10),
+        if (list == null)
+          const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()))
+        else
+          DecoratedBox(
+            decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(22)),
+            child: Column(
+              children: [
+                for (final (i, r) in list.indexed) ...[
+                  if (i > 0) Divider(color: p.line, indent: 70, height: 1),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => context.push('/u/${r.user.username}'),
+                          child: Avatar(name: r.user.displayName, url: r.user.avatarUrl, size: 44),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(r.user.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: font(15, weight: 700, color: p.ink)),
+                              Text('@${r.user.username} · ${relativeTime(r.createdAt, t.locale.languageCode)}',
+                                  maxLines: 1, overflow: TextOverflow.ellipsis, style: font(12.5, color: p.inkMuted)),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: t('community.decline'),
+                          style: IconButton.styleFrom(backgroundColor: p.surface2),
+                          onPressed: _busy.contains(r.user.username) ? null : () => _decide(r.user.username, false),
+                          icon: Icon(LucideIcons.x, size: 18, color: p.inkMuted),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton(
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
+                          onPressed: _busy.contains(r.user.username) ? null : () => _decide(r.user.username, true),
+                          child: Text(t('community.approve')),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }

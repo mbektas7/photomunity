@@ -263,6 +263,15 @@ class Award {
   final PhotoCard photo;
 }
 
+/// Topluluğa katılma isteği (yönetici görünümü).
+class JoinRequest {
+  JoinRequest.fromJson(Map<String, dynamic> j)
+    : user = UserCard.fromJson(j['user'] as Map<String, dynamic>),
+      createdAt = DateTime.parse(j['created_at'] as String);
+  final UserCard user;
+  final DateTime createdAt;
+}
+
 class Exif {
   Exif.fromJson(Map<String, dynamic> j)
     : cameraMake = _opt(j['camera_make']),
@@ -423,7 +432,19 @@ class CommunityCard {
       country = _opt(j['country']),
       logoUrl = _opt(j['logo_url']),
       memberCount = j['member_count'] as int? ?? 0,
-      myRole = _opt(j['my_role']);
+      myRole = _opt(j['my_role']),
+      joinApproval = j['join_approval'] as bool? ?? false,
+      myRequest = j['my_request'] as bool? ?? false,
+      pendingRequests = j['pending_requests'] as int?;
+
+  /// Açıksa katılım yönetici onayıyla olur.
+  final bool joinApproval;
+
+  /// Görüntüleyenin bekleyen katılma isteği var.
+  final bool myRequest;
+
+  /// Yalnızca yöneticilere: bekleyen istek sayısı.
+  final int? pendingRequests;
 
   final String id;
   final String slug;
