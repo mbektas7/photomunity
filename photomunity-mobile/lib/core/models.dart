@@ -163,6 +163,7 @@ class Profile extends UserCard {
       avatarUrl: c.avatarUrl,
       isPublic: c.isPublic,
       isPro: c.isPro,
+      coverUrl: _opt(j['cover_url']),
       bio: _opt(j['bio']),
       website: _opt(j['website']),
       specialties: ((j['specialties'] as List?) ?? const []).cast<String>(),
