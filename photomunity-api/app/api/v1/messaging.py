@@ -2,7 +2,8 @@ import uuid
 from datetime import datetime
 
 import jwt
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, WebSocket, WebSocketDisconnect
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,12 +13,16 @@ from app.api.v1.photos import _cards
 from app.core import database
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.errors import AppError
+from app.core.errors import AppError, request_locale
 from app.core.security import as_aware, decode_token, utcnow
-from app.models import Block, Conversation, ConversationRead, Message, Photo, PhotoStatus, User
+from app.models import Block, Conversation, ConversationRead, Message, MessageReaction, Photo, PhotoStatus, User
 from app.schemas import (
-    ConversationOut, LocationIn, MessageIn, MessageOut, MessagePage, StartConversationIn, UserCard,
+    ConversationOut, GifOut, ImageVariant, LocationIn, MessageIn, MessageOut, MessagePage, MessageQuote, ReactionIn,
+    ReactionOut, StartConversationIn, UserCard,
 )
+from app.services import giphy, storage
+from app.services.moderation import moderate
+from app.services.profile_images import ProfileImageError, process_news_image
 from app.services.notifications import push_direct
 from app.services.ratelimit import rate_limit
 from app.services.realtime import hub
@@ -45,6 +50,18 @@ async def _conversation(db: AsyncSession, cid: uuid.UUID, user: User) -> Convers
     return c
 
 
+def _kind(m: Message) -> str:
+    if m.image:
+        return "image"
+    if m.gif:
+        return "gif"
+    if m.photo_id:
+        return "photo"
+    if m.latitude is not None:
+        return "location"
+    return "text"
+
+
 async def _message_outs(db: AsyncSession, messages: list[Message], viewer: User) -> list[MessageOut]:
     photos = [m.photo for m in messages if m.photo is not None and m.photo.status == PhotoStatus.published and not m.photo.hidden]
     if photos:
@@ -52,11 +69,27 @@ async def _message_outs(db: AsyncSession, messages: list[Message], viewer: User)
         ids = [p.id for p in photos]
         photos = list(await db.scalars(select(Photo).where(Photo.id.in_(ids)).options(selectinload(Photo.user))))
     cards = {c.id: c for c in await _cards(db, photos, viewer)} if photos else {}
-    return [MessageOut(
-        id=m.id, conversation_id=m.conversation_id, sender_id=m.sender_id, body=m.body, created_at=m.created_at,
-        photo=cards.get(m.photo_id) if m.photo_id else None,
-        location=LocationIn(latitude=m.latitude, longitude=m.longitude, name=m.location_name) if m.latitude is not None else None,
-    ) for m in messages]
+    reply_ids = {m.reply_to_id for m in messages if m.reply_to_id}
+    replies = {r.id: r for r in await db.scalars(select(Message).where(Message.id.in_(reply_ids)))} if reply_ids else {}
+    mids = [m.id for m in messages]
+    reactions: dict[uuid.UUID, list[ReactionOut]] = {}
+    if mids:
+        for r in await db.scalars(select(MessageReaction).where(MessageReaction.message_id.in_(mids))
+                                  .order_by(MessageReaction.created_at)):
+            reactions.setdefault(r.message_id, []).append(ReactionOut(user_id=r.user_id, emoji=r.emoji))
+    out = []
+    for m in messages:
+        q = replies.get(m.reply_to_id) if m.reply_to_id else None
+        out.append(MessageOut(
+            id=m.id, conversation_id=m.conversation_id, sender_id=m.sender_id, body=m.body, created_at=m.created_at,
+            photo=cards.get(m.photo_id) if m.photo_id else None,
+            location=LocationIn(latitude=m.latitude, longitude=m.longitude, name=m.location_name) if m.latitude is not None else None,
+            reply_to=MessageQuote(id=q.id, sender_id=q.sender_id, kind=_kind(q), preview=(q.body or "")[:140] or None) if q else None,
+            image=ImageVariant(url=storage.public_url(m.image["key"]), width=m.image["width"], height=m.image["height"]) if m.image else None,
+            gif=GifOut(**m.gif) if m.gif else None,
+            reactions=reactions.get(m.id, []),
+        ))
+    return out
 
 
 async def _last_read(db: AsyncSession, cid: uuid.UUID, user_id: uuid.UUID) -> datetime | None:
@@ -121,7 +154,7 @@ async def unread_count(user: User = Depends(get_current_user), db: AsyncSession 
 
 async def _send(db: AsyncSession, background: BackgroundTasks, c: Conversation, sender: User, body: MessageIn) -> MessageOut:
     text = (body.body or "").strip()
-    if not text and not body.photo_id and not body.location:
+    if not text and not body.photo_id and not body.location and not body.image_key and not body.gif:
         raise AppError(422, "empty_message")
     other_id = c.other(sender.id)
     if await _blocked(db, sender.id, other_id):
@@ -146,10 +179,18 @@ async def _send(db: AsyncSession, background: BackgroundTasks, c: Conversation, 
             c.status = "accepted"  # alıcının yanıtı isteği kabul etmek demektir
     deliver = c.status != "declined"  # reddedilmiş istekte mesaj saklanır ama alıcıya ulaşmaz
 
+    if body.reply_to_id:
+        target = await db.get(Message, body.reply_to_id)
+        if not target or target.conversation_id != c.id:
+            raise AppError(404, "not_found")
+    gif = await giphy.fetch(body.gif.id, body.gif.kind) if body.gif else None
+    image = await _message_image(c, sender, body.image_key, background) if body.image_key else None
+
     msg = Message(conversation_id=c.id, sender_id=sender.id, body=text or None, photo_id=body.photo_id,
                   latitude=body.location.latitude if body.location else None,
                   longitude=body.location.longitude if body.location else None,
-                  location_name=body.location.name if body.location else None)
+                  location_name=body.location.name if body.location else None,
+                  reply_to_id=body.reply_to_id, image=image, gif=gif)
     db.add(msg)
     c.last_message_at = utcnow()
     await _mark_read(db, c.id, sender.id)
@@ -161,10 +202,31 @@ async def _send(db: AsyncSession, background: BackgroundTasks, c: Conversation, 
     background.add_task(hub.publish, recipients, {"type": "message", "conversation_id": str(c.id), "status": c.status,
                                                   "message": out.model_dump(mode="json")})
     if deliver and notify_type:
-        preview = text[:80] if text else ("📷" if body.photo_id else "📍")
+        preview = text[:80] if text else ("📷" if body.photo_id or image else "GIF" if gif else "📍")
         background.add_task(push_direct, other_id, notify_type, sender.display_name,
                             {"conversation_id": str(c.id), "username": sender.username}, {"preview": preview})
     return out
+
+
+async def _message_image(c: Conversation, sender: User, key: str, background: BackgroundTasks) -> dict:
+    """Galeriden/kameradan yüklenen görsel: kırpılmaz, uzun kenar en fazla 2048 px, WebP, EXIF'siz, denetimden geçer.
+    Yalnız bu sohbette gösterilir; adresi tahmin edilemez."""
+    if not key.startswith(f"uploads/{sender.id}/") or ".." in key:
+        raise AppError(400, "invalid_key")
+    try:
+        data = await run_in_threadpool(storage.get_object, key)
+    except Exception:
+        raise AppError(400, "storage_missing")
+    background.add_task(run_in_threadpool, storage.delete_objects, [key])
+    try:
+        webp, w, h = await run_in_threadpool(process_news_image, data)
+    except ProfileImageError as e:
+        raise AppError(422, e.code)
+    if not (await run_in_threadpool(moderate, webp)).safe:
+        raise AppError(422, "inappropriate_content")
+    new_key = f"photos/messages/{c.id}/{uuid.uuid4().hex}.webp"
+    await run_in_threadpool(storage.put_object, new_key, webp, "image/webp")
+    return {"key": new_key, "width": w, "height": h}
 
 
 async def _mark_read(db: AsyncSession, cid: uuid.UUID, user_id: uuid.UUID) -> None:
@@ -258,6 +320,59 @@ async def mark_read(cid: uuid.UUID, background: BackgroundTasks, user: User = De
     await db.commit()
     background.add_task(hub.publish, [c.other(user.id)], {"type": "read", "conversation_id": str(c.id), "at": utcnow().isoformat()})
     return Response(status_code=204)
+
+
+# ---------- Tepkiler ----------
+async def _publish_reactions(db: AsyncSession, background: BackgroundTasks, c: Conversation, m: Message) -> list[ReactionOut]:
+    rows = await db.scalars(select(MessageReaction).where(MessageReaction.message_id == m.id).order_by(MessageReaction.created_at))
+    reactions = [ReactionOut(user_id=r.user_id, emoji=r.emoji) for r in rows]
+    background.add_task(hub.publish, [c.user_low_id, c.user_high_id], {
+        "type": "reaction", "conversation_id": str(c.id), "message_id": str(m.id),
+        "reactions": [r.model_dump(mode="json") for r in reactions]})
+    return reactions
+
+
+async def _message(db: AsyncSession, cid: uuid.UUID, mid: uuid.UUID, user: User) -> tuple[Conversation, Message]:
+    c = await _conversation(db, cid, user)
+    m = await db.get(Message, mid)
+    if not m or m.conversation_id != c.id:
+        raise AppError(404, "not_found")
+    if await _blocked(db, user.id, c.other(user.id)):
+        raise AppError(403, "cannot_message")
+    return c, m
+
+
+@router.put("/conversations/{cid}/messages/{mid}/reaction", response_model=list[ReactionOut],
+            dependencies=[rate_limit("reaction", 120, 60, by="user")])
+async def react(cid: uuid.UUID, mid: uuid.UUID, body: ReactionIn, background: BackgroundTasks,
+                user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Mesaja tepki ekler ya da değiştirir (kişi başına bir tepki)."""
+    c, m = await _message(db, cid, mid, user)
+    row = await db.get(MessageReaction, (m.id, user.id))
+    if row:
+        row.emoji = body.emoji
+    else:
+        db.add(MessageReaction(message_id=m.id, user_id=user.id, emoji=body.emoji))
+    await db.commit()
+    return await _publish_reactions(db, background, c, m)
+
+
+@router.delete("/conversations/{cid}/messages/{mid}/reaction", response_model=list[ReactionOut])
+async def unreact(cid: uuid.UUID, mid: uuid.UUID, background: BackgroundTasks,
+                  user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    c, m = await _message(db, cid, mid, user)
+    await db.execute(delete(MessageReaction).where(MessageReaction.message_id == m.id, MessageReaction.user_id == user.id))
+    await db.commit()
+    return await _publish_reactions(db, background, c, m)
+
+
+# ---------- GIF ve çıkartma (GIPHY) ----------
+@router.get("/gifs", response_model=list[GifOut], dependencies=[rate_limit("gifs", 120, 60, by="user")])
+async def gifs(request: Request, q: str | None = Query(None, max_length=50), kind: str = Query("gif", pattern="^(gif|sticker)$"),
+               offset: int = Query(0, ge=0, le=500), limit: int = Query(24, ge=1, le=50),
+               _: User = Depends(get_current_user)):
+    """Arama yoksa popüler olanlar. GIPHY anahtarı tanımlı değilse 503 gifs_unavailable."""
+    return await giphy.search((q or "").strip() or None, kind, limit, offset, request_locale(request))
 
 
 # ---------- Engelleme ----------

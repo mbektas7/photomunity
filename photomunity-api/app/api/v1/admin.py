@@ -19,9 +19,9 @@ from app.core.database import get_db
 from app.core.errors import AppError
 from app.core.security import as_aware, utcnow
 from app.models import (
-    AdminAction, Announcement, AuthIdentity, Community, CommunityJoinRequest, CommunityMember, CommunityPost,
+    AdminAction, Announcement, AuthIdentity, Comment, Community, CommunityJoinRequest, CommunityMember, CommunityPost,
     CommunityRole, Contest, ContestEntry, ContestJudge, DeviceToken, Follow, JuryScore, Like, Notification, Photo,
-    PhotoStatus, RefreshSession, Report, Subscription, User,
+    Message, PhotoStatus, RefreshSession, Report, Subscription, User,
 )
 from app.schemas import ImageVariant, UserCard
 from app.services import storage
@@ -172,14 +172,15 @@ async def search(q: str = Query(min_length=2), _: User = Depends(require_admin),
 
 # ---------------------------------------------------------------- şikâyetler
 class ReportGroupResolve(BaseModel):
-    target_type: Literal["photo", "user"]
+    target_type: Literal["photo", "user", "comment", "message"]
     target_id: uuid.UUID
-    action: Literal["dismiss", "hide_photo", "disable_user"]
+    action: Literal["dismiss", "hide_photo", "disable_user", "remove_content"]
     note: str | None = Field(default=None, max_length=1000)
 
 
 @router.get("/report-groups")
-async def report_groups(status: Literal["open", "resolved", "all"] = "open", target_type: Literal["photo", "user"] | None = None,
+async def report_groups(status: Literal["open", "resolved", "all"] = "open",
+                        target_type: Literal["photo", "user", "comment", "message"] | None = None,
                         reason: str | None = None, _: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     q = select(Report).order_by(Report.created_at.asc())
     if status != "all":
@@ -198,7 +199,13 @@ async def report_groups(status: Literal["open", "resolved", "all"] = "open", tar
     reporters = {u.id: u for u in await db.scalars(select(User).where(User.id.in_(reporter_ids)))} if reporter_ids else {}
     photo_ids = [k[1] for k in keys if k[0] == "photo"]
     photos = {p.id: p for p in await db.scalars(select(Photo).options(selectinload(Photo.user)).where(Photo.id.in_(photo_ids)))} if photo_ids else {}
-    user_ids = [k[1] for k in keys if k[0] == "user"] + [p.user_id for p in photos.values()]
+    # Yorum ve mesaj şikâyetleri: içerik ve yazarı
+    comment_ids = [k[1] for k in keys if k[0] == "comment"]
+    comments = {c.id: c for c in await db.scalars(select(Comment).where(Comment.id.in_(comment_ids)))} if comment_ids else {}
+    message_ids = [k[1] for k in keys if k[0] == "message"]
+    messages = {m.id: m for m in await db.scalars(select(Message).where(Message.id.in_(message_ids)))} if message_ids else {}
+    authors = {**{c.id: c.user_id for c in comments.values()}, **{m.id: m.sender_id for m in messages.values()}}
+    user_ids = ([k[1] for k in keys if k[0] == "user"] + [p.user_id for p in photos.values()] + list(authors.values()))
     users = {u.id: u for u in await db.scalars(select(User).where(User.id.in_(user_ids)))} if user_ids else {}
     owners = {r.id: r for r in await _user_rows(db, list(users.values()))}
     # Sahibin daha önce kapanmış şikâyetleri (fotoğrafları ya da kendisi hakkında)
@@ -219,7 +226,16 @@ async def report_groups(status: Literal["open", "resolved", "all"] = "open", tar
     for k in keys:
         rs = groups[k]
         photo = photos.get(k[1]) if k[0] == "photo" else None
-        owner_id = photo.user_id if photo else k[1]
+        owner_id = photo.user_id if photo else authors.get(k[1], k[1])
+        content = None
+        if k[0] == "comment" and k[1] in comments:
+            cm = comments[k[1]]
+            content = {"body": cm.body, "photo_id": cm.photo_id, "created_at": cm.created_at, "removed": cm.deleted_at is not None}
+        elif k[0] == "message" and k[1] in messages:
+            mm = messages[k[1]]
+            content = {"body": mm.body, "created_at": mm.created_at, "removed": not (mm.body or mm.image or mm.gif or mm.photo_id),
+                       "image_url": storage.public_url(mm.image["key"]) if mm.image else None,
+                       "gif_url": mm.gif["url"] if mm.gif else None}
         out.append({
             "target_type": k[0], "target_id": k[1],
             "status": "open" if any(r.status == "open" for r in rs) else "resolved",
@@ -230,6 +246,7 @@ async def report_groups(status: Literal["open", "resolved", "all"] = "open", tar
                          "reporter": UserCard.model_validate(reporters[r.reporter_id]) if r.reporter_id in reporters else None}
                         for r in rs],
             "photo": (await _admin_photos(db, [photo]))[0] if photo else None,
+            "content": content,
             "owner": owners.get(owner_id),
             "owner_prior_reports": prior.get(owner_id, 0),
         })
@@ -243,11 +260,22 @@ async def resolve_group(body: ReportGroupResolve, admin: User = Depends(require_
     if not reports:
         raise AppError(404, "not_found")
     photo = await db.get(Photo, body.target_id) if body.target_type == "photo" else None
-    label = (photo.title or str(photo.id)) if photo else None
-    if body.action == "hide_photo" and photo:
+    comment = await db.get(Comment, body.target_id) if body.target_type == "comment" else None
+    message = await db.get(Message, body.target_id) if body.target_type == "message" else None
+    author_id = comment.user_id if comment else message.sender_id if message else None
+    label = (photo.title or str(photo.id)) if photo else (comment.body[:60] if comment else (message.body or "")[:60] or None if message else None)
+    if body.action == "remove_content":
+        if comment:
+            comment.deleted_at = utcnow()
+        elif message:
+            if message.image:
+                await run_in_threadpool(storage.delete_objects, [message.image["key"]])
+            message.body, message.image, message.gif, message.photo_id = None, None, None, None
+            message.latitude = message.longitude = message.location_name = None
+    elif body.action == "hide_photo" and photo:
         photo.hidden = True
     elif body.action == "disable_user":
-        target = await db.get(User, photo.user_id if photo else body.target_id)
+        target = await db.get(User, photo.user_id if photo else author_id or body.target_id)
         if target:
             if target.username == _owner_username():
                 raise AppError(403, "forbidden")
@@ -255,8 +283,8 @@ async def resolve_group(body: ReportGroupResolve, admin: User = Depends(require_
             label = label or f"@{target.username}"
     elif body.action == "dismiss" and photo:
         photo.hidden = False  # otomatik gizlenmiş fotoğraf geri açılır
-    if label is None and body.target_type == "user":
-        u = await db.get(User, body.target_id)
+    if label is None and body.target_type in ("user", "comment", "message"):
+        u = await db.get(User, author_id or body.target_id)
         label = f"@{u.username}" if u else None
     for r in reports:
         r.status, r.resolution = "resolved", body.action

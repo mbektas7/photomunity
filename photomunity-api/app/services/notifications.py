@@ -28,6 +28,8 @@ PUSH_DEFAULTS: dict[str, bool] = {
     "contest_entry_disqualified": True,
     "new_message": True,
     "message_request": True,
+    "photo_comment": True,
+    "comment_reply": True,
 }
 
 TEXT: dict[str, dict[str, str]] = {
@@ -46,6 +48,8 @@ TEXT: dict[str, dict[str, str]] = {
     "contest_entry_disqualified": {"tr": "{contest} yarışmasındaki katılımın geçersiz sayıldı.", "en": "Your entry in {contest} was disqualified."},
     "new_message": {"tr": "{actor}: {preview}", "en": "{actor}: {preview}"},
     "message_request": {"tr": "{actor} sana mesaj göndermek istiyor.", "en": "{actor} wants to send you a message."},
+    "photo_comment": {"tr": "{actor} fotoğrafına yorum yaptı: {preview}", "en": "{actor} commented on your photo: {preview}"},
+    "comment_reply": {"tr": "{actor} yorumuna cevap verdi: {preview}", "en": "{actor} replied to your comment: {preview}"},
 }
 
 

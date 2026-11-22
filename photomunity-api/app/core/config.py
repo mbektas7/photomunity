@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     min_avatar_px: int = 200
     # Kapak kırpılırken yakınlaştırılabildiği için genişlik 1080'in altına düşebilir; 600 px üstü kabul, 1800×600'e ölçeklenir
     min_cover_width_px: int = 600
+    # GIPHY (mesajlarda GIF ve çıkartma). Boşsa GIF araması kapalıdır; anahtar yalnız sunucuda tutulur.
+    giphy_api_key: str = ""
 
     # Push bildirimleri (Firebase Cloud Messaging HTTP v1). Servis hesabı JSON'u dosya yolu veya içerik olarak.
     fcm_service_account_file: str | None = None

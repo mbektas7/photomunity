@@ -201,11 +201,15 @@ class LocationIn(BaseModel):
     name: str | None = Field(default=None, max_length=200)
 
 
+CommentPolicy = Literal["everyone", "followers", "off"]
+
+
 class PhotoMetaIn(BaseModel):
     title: str | None = Field(default=None, max_length=150)
     description: str | None = Field(default=None, max_length=2000)
     tags: list[str] = Field(default_factory=list, max_length=15)
     location: LocationIn | None = None
+    comment_policy: CommentPolicy | None = None
 
 
 class PhotoUpdate(BaseModel):
@@ -214,6 +218,7 @@ class PhotoUpdate(BaseModel):
     tags: list[str] | None = Field(default=None, max_length=15)
     location: LocationIn | None = None
     clear_location: bool = False
+    comment_policy: CommentPolicy | None = None
 
 
 class ImageVariant(BaseModel):
@@ -267,6 +272,40 @@ class PhotoDetail(PhotoCard):
     status: PhotoStatus
     rejection: list[dict] | None = None        # yalnızca sahibine
     suggested_location: LocationIn | None = None  # EXIF GPS, yalnızca sahibine
+    comment_policy: str = "everyone"
+    comment_count: int = 0
+    can_comment: bool = False  # bakan kişi şu an yorum yazabilir mi
+
+
+class CommentIn(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+    parent_id: uuid.UUID | None = None  # cevap verilen yorum (cevaba cevap, aynı üst yoruma bağlanır)
+    quote_id: uuid.UUID | None = None   # alıntılanan yorum
+
+
+class CommentQuote(BaseModel):
+    id: uuid.UUID
+    user: UserCard
+    body: str | None  # silinmişse None
+
+
+class CommentOut(BaseModel):
+    id: uuid.UUID
+    photo_id: uuid.UUID
+    user: UserCard
+    body: str
+    created_at: datetime
+    parent_id: uuid.UUID | None
+    quote: CommentQuote | None = None
+    reply_count: int = 0
+    by_photo_owner: bool = False
+    can_delete: bool = False
+
+
+class CommentPage(BaseModel):
+    items: list[CommentOut]
+    next_cursor: str | None
+    total: int = 0
 
 
 class PhotoPage(BaseModel):
@@ -334,7 +373,7 @@ class ProfileImageCompleteIn(BaseModel):
 
 # ---------- Şikayet ----------
 class ReportIn(BaseModel):
-    target_type: Literal["photo", "user"]
+    target_type: Literal["photo", "user", "comment", "message"]
     target_id: uuid.UUID
     reason: Literal["spam", "nudity", "violence", "harassment", "copyright", "other"]
     note: str | None = Field(default=None, max_length=1000)
@@ -596,10 +635,18 @@ class ContestSummary(BaseModel):
 
 
 # =====================================================================  Faz 3
+class GifIn(BaseModel):
+    id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9]+$")
+    kind: Literal["gif", "sticker"] = "gif"
+
+
 class MessageIn(BaseModel):
     body: str | None = Field(default=None, max_length=4000)
     photo_id: uuid.UUID | None = None
     location: LocationIn | None = None
+    reply_to_id: uuid.UUID | None = None
+    image_key: str | None = Field(default=None, max_length=300)  # /me/images/upload-url ile yüklenen dosya
+    gif: GifIn | None = None
 
 
 class StartConversationIn(MessageIn):
@@ -614,6 +661,34 @@ class MessageOut(BaseModel):
     photo: PhotoCard | None = None
     location: LocationIn | None = None
     created_at: datetime
+    reply_to: "MessageQuote | None" = None
+    image: ImageVariant | None = None
+    gif: "GifOut | None" = None
+    reactions: list["ReactionOut"] = Field(default_factory=list)
+
+
+class MessageQuote(BaseModel):
+    id: uuid.UUID
+    sender_id: uuid.UUID
+    kind: str  # text | photo | image | gif | location
+    preview: str | None
+
+
+class GifOut(BaseModel):
+    id: str
+    kind: str
+    url: str
+    width: int
+    height: int
+
+
+class ReactionOut(BaseModel):
+    user_id: uuid.UUID
+    emoji: str
+
+
+class ReactionIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=16)
 
 
 class ConversationOut(BaseModel):
@@ -682,3 +757,6 @@ class BillingStatus(BaseModel):
 
 class CheckoutIn(BaseModel):
     plan: Literal["monthly", "yearly"]
+
+
+MessageOut.model_rebuild()

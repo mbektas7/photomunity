@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import admin, auth, billing, communities, stats, contests, guides, map, messaging, moderation, notifications, photos, users
+from app.api.v1 import admin, auth, billing, comments, communities, stats, contests, guides, map, messaging, moderation, notifications, photos, users
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.services.ratelimit import limiter
@@ -40,7 +40,7 @@ register_error_handlers(app)
 
 for router in (auth.router, users.router, photos.router, notifications.router, moderation.router,
                communities.router, contests.router, messaging.router, map.router, guides.router, billing.router, stats.router,
-               admin.router, admin.public):
+               admin.router, admin.public, comments.router):
     app.include_router(router, prefix=settings.api_prefix)
 
 

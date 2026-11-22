@@ -147,9 +147,28 @@ class Photo(Base):
     created_at: Mapped[datetime] = _created()
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)  # moderasyon nedeniyle gizli
+    # Kim yorum yapabilir: everyone | followers | off ("off" iken eski yorumlar gizlenir, silinmez)
+    comment_policy: Mapped[str] = mapped_column(String(10), default="everyone", server_default="everyone")
 
     user: Mapped[User] = relationship(lazy="raise")
     exif: Mapped["PhotoExif | None"] = relationship(lazy="raise", uselist=False)
+
+
+class Comment(Base):
+    """Fotoğraf yorumu. Cevaplar tek seviyedir (parent_id üst yorumu gösterir); quote_id alıntılanan yorumdur."""
+
+    __tablename__ = "comments"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("comments.id", ondelete="CASCADE"), index=True)
+    quote_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("comments.id", ondelete="SET NULL"))
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    user: Mapped[User] = relationship(lazy="raise")
 
 
 class PhotoExif(Base):
@@ -234,7 +253,7 @@ class Report(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     reporter_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    target_type: Mapped[str] = mapped_column(String(10))  # photo | user
+    target_type: Mapped[str] = mapped_column(String(10))  # photo | user | comment | message
     target_id: Mapped[uuid.UUID] = mapped_column(Uuid, index=True)
     reason: Mapped[ReportReason] = mapped_column(Enum(ReportReason, name="report_reason"))
     note: Mapped[str | None] = mapped_column(Text)
@@ -481,9 +500,25 @@ class Message(Base):
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
     location_name: Mapped[str | None] = mapped_column(String(200))
+    reply_to_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("messages.id", ondelete="SET NULL"))
+    # Galeriden/kameradan gönderilen, yalnız bu sohbette görünen görsel: {"key","width","height"}
+    image: Mapped[dict | None] = mapped_column(JSON)
+    # GIPHY GIF ya da çıkartması: {"id","kind","url","width","height"}
+    gif: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), index=True)
 
     photo: Mapped["Photo | None"] = relationship(lazy="raise")
+
+
+class MessageReaction(Base):
+    """Mesaja emoji tepkisi; kişi başına bir tepki."""
+
+    __tablename__ = "message_reactions"
+
+    message_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    emoji: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = _created()
 
 
 class Block(Base):

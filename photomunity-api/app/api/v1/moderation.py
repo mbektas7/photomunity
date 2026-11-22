@@ -23,9 +23,16 @@ async def require_admin(user: User = Depends(get_current_user)) -> User:
 
 @router.post("/reports", status_code=201, dependencies=[rate_limit("report", 20, 3600, by="user")])
 async def create_report(body: ReportIn, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    target = await db.get(Photo if body.target_type == "photo" else User, body.target_id)
+    from app.models import Comment, Conversation, Message
+
+    model = {"photo": Photo, "user": User, "comment": Comment, "message": Message}[body.target_type]
+    target = await db.get(model, body.target_id)
     if not target:
         raise AppError(404, "not_found")
+    if body.target_type == "message":  # yalnız sohbetin tarafları ve karşı tarafın mesajı
+        conv = await db.get(Conversation, target.conversation_id)
+        if user.id not in (conv.user_low_id, conv.user_high_id) or target.sender_id == user.id:
+            raise AppError(404, "not_found")
     if await db.scalar(select(Report.id).where(Report.reporter_id == user.id, Report.target_type == body.target_type,
                                                Report.target_id == body.target_id)):
         raise AppError(409, "already_reported")

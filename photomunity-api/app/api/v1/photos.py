@@ -114,6 +114,8 @@ async def complete_upload(photo_id: uuid.UUID, body: PhotoMetaIn, request: Reque
     if photo.status != PhotoStatus.pending:
         raise AppError(409, "invalid_state")
     _apply_meta(photo, body.title, body.description, body.tags, body.location)
+    if body.comment_policy:
+        photo.comment_policy = body.comment_policy
     photo.status = PhotoStatus.processing
     await db.commit()
 
@@ -148,10 +150,15 @@ async def _detail(db: AsyncSession, photo: Photo, viewer: User | None, locale: s
     rejection = None
     if is_owner and photo.status == PhotoStatus.rejected:
         rejection = [{"code": c, "message": translate(c, locale)} for c in photo.rejection_codes]
+    from app.api.v1.comments import can_comment, comment_count
+
     return PhotoDetail(
         **card.model_dump(exclude={"exif"}), description=photo.description, tags=photo.tags or [],
         width=photo.width, height=photo.height, exif=ExifOut.model_validate(exif) if exif else None,
         location=location, status=photo.status, rejection=rejection, suggested_location=suggested,
+        comment_policy=photo.comment_policy or "everyone",
+        comment_count=await comment_count(db, photo) if (photo.comment_policy or "everyone") != "off" else 0,
+        can_comment=await can_comment(db, photo, viewer),
     )
 
 
@@ -172,6 +179,8 @@ async def update_photo(photo_id: uuid.UUID, body: PhotoUpdate, request: Request,
     _apply_meta(photo, body.title, body.description, body.tags, body.location)
     if body.clear_location:
         photo.latitude = photo.longitude = photo.location_name = None
+    if body.comment_policy:
+        photo.comment_policy = body.comment_policy
     await db.commit()
     return await _detail(db, await _load(db, photo_id), user, request_locale(request))
 
