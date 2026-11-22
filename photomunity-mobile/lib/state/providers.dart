@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_client.dart';
@@ -586,10 +587,20 @@ final realtimeProvider = Provider<RealtimeService>((ref) {
   // Gelen olayları önbelleğe işle
   final sub = rt.events.listen((e) {
     final cid = e['conversation_id'] as String?;
-    if (e['type'] == 'message' && cid != null) {
-      ref
-          .read(messagesProvider(cid).notifier)
-          .receive(ChatMessage.fromJson(e['message'] as Map<String, dynamic>));
+    if (e['type'] == 'connected') {
+      // Yeniden bağlandık: kopukken gelen mesajları açık sohbetlere ve listeye işle
+      ref.invalidate(conversationsProvider);
+      ref.invalidate(messageUnreadProvider);
+      for (final id in MessagesController.open.toList()) {
+        ref.read(messagesProvider(id).notifier).syncLatest();
+      }
+    } else if (e['type'] == 'message' && cid != null) {
+      // Yalnız ekranda açık sohbetin önbelleği güncellenir; diğerleri açılınca sunucudan yüklenir
+      if (MessagesController.open.contains(cid)) {
+        ref
+            .read(messagesProvider(cid).notifier)
+            .receive(ChatMessage.fromJson(e['message'] as Map<String, dynamic>));
+      }
       ref.invalidate(conversationsProvider);
       ref.invalidate(messageUnreadProvider);
       ref.invalidate(conversationProvider(cid));
@@ -597,7 +608,10 @@ final realtimeProvider = Provider<RealtimeService>((ref) {
       ref.invalidate(conversationProvider(cid));
     }
   });
+  // Arka plandan dönünce bağlantıyı hemen tazele (iOS soketi askıya alır)
+  final life = AppLifecycleListener(onPause: rt.pause, onResume: rt.resume);
   ref.onDispose(() {
+    life.dispose();
     sub.cancel();
     rt.dispose();
   });
@@ -647,19 +661,47 @@ class MessagesState {
   final bool done;
 }
 
-final messagesProvider =
-    NotifierProvider.family<MessagesController, MessagesState, String>(
-      MessagesController.new,
-    );
+// Sohbetten çıkınca önbellek atılır; sohbete her girişte güncel mesajlar sunucudan gelir
+final messagesProvider = NotifierProvider.autoDispose
+    .family<MessagesController, MessagesState, String>(MessagesController.new);
 
 class MessagesController extends Notifier<MessagesState> {
   MessagesController(this.conversationId);
   final String conversationId;
 
+  /// Şu an bellekte olan sohbetler (yeniden bağlanınca eşitlenir).
+  static final open = <String>{};
+
   @override
   MessagesState build() {
+    open.add(conversationId);
+    ref.onDispose(() => open.remove(conversationId));
     Future.microtask(loadOlder);
     return const MessagesState(loading: true);
+  }
+
+  /// En yeni sayfayı çekip eksik mesajları ekler (yeniden bağlanma, uygulamaya dönüş).
+  Future<void> syncLatest() async {
+    if (state.items.isEmpty) return loadOlder();
+    try {
+      final res = await ref
+          .read(apiProvider)
+          .get<Map<String, dynamic>>('/conversations/$conversationId/messages');
+      if (!ref.mounted) return;
+      final have = {for (final m in state.items) m.id};
+      final fresh = (res['items'] as List)
+          .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+          .where((m) => !have.contains(m.id))
+          .toList();
+      if (fresh.isEmpty) return;
+      final items = [...state.items, ...fresh]
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      state = MessagesState(
+        items: items,
+        cursor: state.cursor,
+        done: state.done,
+      );
+    } catch (_) {}
   }
 
   Future<void> loadOlder() async {

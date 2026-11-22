@@ -34,6 +34,12 @@ export function RealtimeBridge() {
         return;
       }
       ws.onopen = () => {
+        // Bağlantı kopukken gelen mesajları ve sohbet listesini tazele
+        if (attempt > 0) {
+          qc.invalidateQueries({ queryKey: ["messages"] });
+          qc.invalidateQueries({ queryKey: ["conversations"] });
+          qc.invalidateQueries({ queryKey: ["messages-unread"] });
+        }
         attempt = 0;
         ping = setInterval(() => ws?.readyState === WebSocket.OPEN && ws.send("ping"), 25_000);
       };
