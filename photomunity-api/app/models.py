@@ -268,6 +268,7 @@ class Community(Base):
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     # Açıksa "Katıl" doğrudan üye yapmaz; istek oluşturur, yöneticiler onaylar
     join_approval: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), index=True)  # site yönetimi gizledi
     created_at: Mapped[datetime] = _created()
 
 
@@ -346,6 +347,8 @@ class Contest(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deadline_reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), index=True)  # site yönetimi gizledi
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # site yönetimi iptal etti
     results: Mapped[list] = mapped_column(JSON, default=list)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = _created()
@@ -526,3 +529,43 @@ class ProcessedWebhook(Base):
 
     event_id: Mapped[str] = mapped_column(String(200), primary_key=True)
     created_at: Mapped[datetime] = _created()
+
+
+# =====================================================================  Site yönetimi
+
+
+class AdminAction(Base):
+    """Yönetim panelinde yapılan her işlemin kaydı."""
+
+    __tablename__ = "admin_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    admin_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    action: Mapped[str] = mapped_column(String(40))  # photo_hide, user_disable, announcement_send ...
+    kind: Mapped[str] = mapped_column(String(20), index=True)  # moderation | user | content | announcement | team
+    target_type: Mapped[str | None] = mapped_column(String(20))
+    target_id: Mapped[str | None] = mapped_column(String(60))
+    target_label: Mapped[str | None] = mapped_column(String(300))
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), index=True)
+
+    admin: Mapped["User | None"] = relationship(lazy="raise")
+
+
+class Announcement(Base):
+    """Yönetimin duyurusu: push, uygulama içi bildirim ve/veya ana sayfa bandı. Metinler TR ve EN."""
+
+    __tablename__ = "announcements"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    admin_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    channels: Mapped[list] = mapped_column(JSON, default=list)  # push | inbox | banner
+    title_tr: Mapped[str] = mapped_column(String(120))
+    title_en: Mapped[str] = mapped_column(String(120))
+    body_tr: Mapped[str] = mapped_column(String(400))
+    body_en: Mapped[str] = mapped_column(String(400))
+    link: Mapped[str | None] = mapped_column(String(300))  # uygulama içi yol, örn. /contests/...
+    audience: Mapped[dict] = mapped_column(JSON, default=dict)  # {"kind": "all|pro|community|locale|country", "value": ...}
+    recipient_count: Mapped[int] = mapped_column(Integer, default=0)
+    banner_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), index=True)

@@ -13,6 +13,8 @@ import { relativeTime } from "@/lib/relative-time";
 import type { AppNotification, NotificationPage } from "@/lib/types";
 
 function target(n: AppNotification) {
+  // Yönetim duyurusu kendi uygulama içi yolunu taşır
+  if (typeof n.data.link === "string" && n.data.link.startsWith("/")) return n.data.link;
   if (n.data.contest_id) return `/contests/${n.data.contest_id}`;
   if (n.data.community_slug) return `/c/${n.data.community_slug}`;
   if (n.photo) return `/p/${n.photo.id}`;

@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     app_name: str = "Photomunity API"
     environment: str = "development"  # development | test | production
     api_prefix: str = "/api/v1"
+    # Yönetim panelinin sahibi: yöneticilikten çıkarılamaz, devre dışı bırakılamaz
+    admin_owner_username: str = "mbektas7"
     frontend_url: str = "http://localhost:3000"
     cors_origins: list[str] = ["http://localhost:3000"]
 

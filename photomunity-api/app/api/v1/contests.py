@@ -38,7 +38,7 @@ router = APIRouter(tags=["contests"])
 # ---------------------------------------------------------------- yardımcılar
 async def _contest(db: AsyncSession, contest_id: uuid.UUID) -> Contest:
     c = await db.scalar(select(Contest).where(Contest.id == contest_id).options(selectinload(Contest.community)))
-    if not c:
+    if not c or c.hidden or c.community.hidden:
         raise AppError(404, "not_found")
     return c
 
@@ -92,6 +92,10 @@ async def contest_cards(db: AsyncSession, contests: list[Contest], viewer: User 
 
     communities = {c.community_id: None for c in contests}
     rows = list(await db.scalars(select(Community).where(Community.id.in_(list(communities)))))
+    # Site yönetiminin gizlediği yarışmalar ve toplulukları hiçbir listede görünmez
+    hidden = {r.id for r in rows if r.hidden}
+    rows = [r for r in rows if not r.hidden]
+    contests = [c for c in contests if not c.hidden and c.community_id not in hidden]
     comm_cards = {card.id: card for card in await community_cards(db, rows, viewer)}
     counts = await entry_counts(db, [c.id for c in contests])
     return [ContestCard(id=c.id, title=c.title, status=contest_status(c), judging_mode=c.judging_mode,
@@ -127,7 +131,7 @@ async def _replace_prizes(db: AsyncSession, contest_id: uuid.UUID, prizes) -> No
 @router.post("/communities/{slug}/contests", response_model=ContestOut, status_code=201)
 async def create_contest(slug: str, body: ContestIn, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     community = await db.scalar(select(Community).where(Community.slug == slug))
-    if not community:
+    if not community or community.hidden:
         raise AppError(404, "not_found")
     if not is_admin_role(await community_role(db, community.id, user.id)):
         raise AppError(403, "forbidden")
@@ -206,7 +210,7 @@ async def get_contest(contest_id: uuid.UUID, background: BackgroundTasks, viewer
 @router.get("/communities/{slug}/contests", response_model=list[ContestCard])
 async def community_contests(slug: str, viewer: User | None = Depends(get_optional_user), db: AsyncSession = Depends(get_db)):
     community = await db.scalar(select(Community).where(Community.slug == slug))
-    if not community:
+    if not community or community.hidden:
         raise AppError(404, "not_found")
     q = select(Contest).where(Contest.community_id == community.id)
     if not (viewer and is_admin_role(await community_role(db, community.id, viewer.id))):

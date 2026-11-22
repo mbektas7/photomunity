@@ -113,6 +113,7 @@ class MeOut(ORM):
     latitude: float | None
     longitude: float | None
     is_pro: bool
+    is_admin: bool = False
     created_at: datetime
 
 

@@ -43,7 +43,7 @@ def slugify(name: str) -> str:
 
 async def _get(db: AsyncSession, slug: str) -> Community:
     c = await db.scalar(select(Community).where(Community.slug == slug))
-    if not c:
+    if not c or c.hidden:
         raise AppError(404, "not_found")
     return c
 
@@ -91,7 +91,7 @@ async def community_out(db: AsyncSession, c: Community, viewer: User | None) -> 
     owner = await db.get(User, c.owner_id)
     admins = await db.scalars(select(User).join(CommunityMember, CommunityMember.user_id == User.id).where(
         CommunityMember.community_id == c.id, CommunityMember.role == CommunityRole.admin))
-    contests = await db.scalars(select(Contest).where(Contest.community_id == c.id, Contest.published_at.is_not(None)))
+    contests = await db.scalars(select(Contest).where(Contest.community_id == c.id, Contest.published_at.is_not(None), Contest.hidden.is_(False)))
     open_count = sum(1 for x in contests if contest_status(x) in ("open", "judging"))
     return CommunityOut(**card.model_dump(), description=c.description, cover_url=c.cover_url,
                         owner=UserCard.model_validate(owner), admins=[UserCard.model_validate(a) for a in admins],
@@ -119,7 +119,7 @@ async def create_community(body: CommunityIn, user: User = Depends(get_current_u
 @router.get("/communities", response_model=list[CommunityCard])
 async def list_communities(q: str | None = None, mine: bool = False, limit: int = Query(30, le=100),
                            viewer: User | None = Depends(get_optional_user), db: AsyncSession = Depends(get_db)):
-    query = select(Community)
+    query = select(Community).where(Community.hidden.is_(False))
     if mine:
         if not viewer:
             return []

@@ -795,3 +795,22 @@ final billingProvider = FutureProvider.autoDispose<BillingStatus>((ref) async {
     willRenew: r['will_renew'] as bool? ?? false,
   );
 });
+
+
+/// Yönetimin ana sayfa duyurusu (yoksa null).
+typedef HomeBannerData = ({String id, String title, String body, String? link});
+
+final homeBannerProvider = FutureProvider.autoDispose.family<HomeBannerData?, String>((ref, locale) async {
+  final r = await ref.read(apiProvider).get<dynamic>('/announcements/banner', query: {'locale': locale});
+  if (r is! Map<String, dynamic>) return null;
+  return (id: r['id'] as String, title: r['title'] as String, body: r['body'] as String, link: r['link'] as String?);
+});
+
+/// Bu oturumda kapatılan duyuru bandı.
+final closedBannerProvider = NotifierProvider<ClosedBanner, String?>(ClosedBanner.new);
+
+class ClosedBanner extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void close(String id) => state = id;
+}

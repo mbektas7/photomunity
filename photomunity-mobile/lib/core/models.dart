@@ -406,6 +406,8 @@ class AppNotification {
 }
 
 String routeFor(Map<String, String> data, {String? photoId, String? username}) {
+  final link = data['link'];
+  if (link != null && link.startsWith('/')) return link; // yönetim duyurusu
   final contest = data['contest_id'];
   final community = data['community_slug'];
   final photo = photoId ?? data['photo_id'];

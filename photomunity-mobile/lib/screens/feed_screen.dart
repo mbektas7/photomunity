@@ -81,6 +81,7 @@ class FeedScreen extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               const SliverToBoxAdapter(child: _Stories()),
+              const SliverToBoxAdapter(child: _HomeBanner()),
               if (pages.initialLoading)
                 const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
@@ -198,6 +199,56 @@ class _Stories extends ConsumerWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Yönetimin ana sayfa duyurusu; kapatılınca bu oturumda gizlenir.
+class _HomeBanner extends ConsumerWidget {
+  const _HomeBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final b = ref.watch(homeBannerProvider(t.locale.languageCode)).asData?.value;
+    if (b == null || ref.watch(closedBannerProvider) == b.id) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      child: Material(
+        color: p.accentTint,
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.card),
+          onTap: b.link == null ? null : () => context.push(b.link!),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.megaphone, size: 20, color: p.accentText),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(b.title, style: font(15, weight: 700, color: p.ink)),
+                      const SizedBox(height: 2),
+                      Text(b.body, style: font(14, height: 1.4, color: p.inkMuted)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: t('ui.close'),
+                  icon: Icon(LucideIcons.x, size: 18, color: p.ink),
+                  onPressed: () => ref.read(closedBannerProvider.notifier).close(b.id),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

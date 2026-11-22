@@ -50,6 +50,10 @@ TEXT: dict[str, dict[str, str]] = {
 
 
 def render(n: Notification, locale: str) -> str:
+    if n.type == "announcement":  # yönetimin duyurusu: metin TR/EN olarak bildirimin içinde
+        d = n.data or {}
+        lang = "tr" if locale == "tr" else "en"
+        return f"{d.get(f'title_{lang}', '')}: {d.get(f'body_{lang}', '')}"
     template = TEXT.get(n.type, {}).get(locale) or TEXT.get(n.type, {}).get("en") or n.type
     params = {"actor": n.actor.display_name if n.actor else "", **{k: str(v) for k, v in (n.data or {}).items()}}
     try:

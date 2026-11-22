@@ -25,12 +25,12 @@ async def contest_tick(ctx):
     now = utcnow()
     async with database.SessionLocal() as db:
         created = []
-        due = await db.scalars(select(Contest).where(Contest.published_at.is_not(None), Contest.finalized_at.is_(None),
+        due = await db.scalars(select(Contest).where(Contest.published_at.is_not(None), Contest.finalized_at.is_(None), Contest.cancelled_at.is_(None),
                                                      Contest.results_at <= now))
         for c in due:
             created += await finalize_if_due(db, c)
         soon = await db.scalars(select(Contest).options(selectinload(Contest.community)).where(
-            Contest.published_at.is_not(None), Contest.deadline_reminder_sent.is_(False),
+            Contest.published_at.is_not(None), Contest.hidden.is_(False), Contest.deadline_reminder_sent.is_(False),
             Contest.submission_deadline > now, Contest.submission_deadline <= now + timedelta(hours=24)))
         for c in soon:
             created += await notify_members(db, c, c.community.name, "contest_deadline", exclude_entrants=True)

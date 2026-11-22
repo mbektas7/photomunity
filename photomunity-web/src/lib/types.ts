@@ -12,6 +12,7 @@ export type UserCard = {
 };
 
 export type Me = UserCard & {
+  is_admin?: boolean;
   email: string;
   email_verified: boolean;
   bio: string | null;

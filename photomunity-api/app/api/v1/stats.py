@@ -24,7 +24,7 @@ async def public_stats(db: AsyncSession = Depends(get_db)):
     communities = await db.scalar(select(func.count()).select_from(Community)) or 0
     countries = await db.scalar(select(func.count(func.distinct(User.country))).where(
         User.is_active.is_(True), User.country.is_not(None))) or 0
-    published = await db.scalars(select(Contest).where(Contest.published_at.is_not(None), Contest.finalized_at.is_(None)))
+    published = await db.scalars(select(Contest).where(Contest.published_at.is_not(None), Contest.finalized_at.is_(None), Contest.hidden.is_(False)))
     open_contests = sum(1 for c in published if contest_status(c) in ("open", "judging"))
     data = {"photographers": photographers, "photos": photos, "communities": communities,
             "countries": countries, "open_contests": open_contests}

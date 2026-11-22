@@ -94,6 +94,11 @@ function UserMenu({ size = 40, withName = false }: { size?: number; withName?: b
         <Link href="/settings" className={item}>
           {t("settings")}
         </Link>
+        {me.is_admin && (
+          <Link href="/admin" className={item}>
+            {t("admin")}
+          </Link>
+        )}
         <Link href="/pro" className={clsx(item, "justify-between")}>
           Photomunity Pro {me.is_pro && <span className="text-xs font-bold text-accent-text">✓</span>}
         </Link>
