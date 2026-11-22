@@ -91,7 +91,29 @@ export type PhotoDetail = PhotoCard & {
   status: PhotoStatus;
   rejection: { code: string; message: string }[] | null;
   suggested_location: Location | null;
+  comment_policy: CommentPolicy;
+  comment_count: number;
+  /** Bakan kişi şu an yorum yazabilir mi */
+  can_comment: boolean;
 };
+
+export type CommentPolicy = "everyone" | "followers" | "off";
+
+export type PhotoComment = {
+  id: string;
+  photo_id: string;
+  user: UserCard;
+  body: string;
+  created_at: string;
+  parent_id: string | null;
+  /** Alıntılanan yorum; silinmişse body null */
+  quote: { id: string; user: UserCard; body: string | null } | null;
+  reply_count: number;
+  by_photo_owner: boolean;
+  can_delete: boolean;
+};
+
+export type CommentPage = { items: PhotoComment[]; next_cursor: string | null; total: number };
 
 export type Page<T> = { items: T[]; next_cursor: string | null };
 
@@ -216,7 +238,16 @@ export type ChatMessage = {
   photo: PhotoCard | null;
   location: Location | null;
   created_at: string;
+  reply_to: MessageQuote | null;
+  /** Galeriden gönderilen görsel; yalnızca bu sohbette görünür */
+  image: ImageVariant | null;
+  gif: Gif | null;
+  reactions: Reaction[];
 };
+
+export type MessageQuote = { id: string; sender_id: string; kind: "text" | "photo" | "image" | "gif" | "location"; preview: string | null };
+export type Gif = { id: string; kind: "gif" | "sticker"; url: string; width: number; height: number };
+export type Reaction = { user_id: string; emoji: string };
 
 export type Conversation = {
   id: string;

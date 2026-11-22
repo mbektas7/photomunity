@@ -233,7 +233,7 @@ async def report_groups(status: Literal["open", "resolved", "all"] = "open",
             content = {"body": cm.body, "photo_id": cm.photo_id, "created_at": cm.created_at, "removed": cm.deleted_at is not None}
         elif k[0] == "message" and k[1] in messages:
             mm = messages[k[1]]
-            content = {"body": mm.body, "created_at": mm.created_at, "removed": not (mm.body or mm.image or mm.gif or mm.photo_id),
+            content = {"body": mm.body, "created_at": mm.created_at, "removed": not (mm.body or mm.image or mm.gif or mm.photo_id or mm.latitude is not None),
                        "image_url": storage.public_url(mm.image["key"]) if mm.image else None,
                        "gif_url": mm.gif["url"] if mm.gif else None}
         out.append({

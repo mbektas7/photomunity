@@ -95,7 +95,7 @@ export function ProfileImages({ me }: { me: Me }) {
   );
 }
 
-const PUSH_TYPES = ["new_follower", "photo_liked", "photo_published", "photo_rejected", "contest_new", "contest_deadline", "contest_results"] as const;
+const PUSH_TYPES = ["new_follower", "photo_liked", "photo_published", "photo_rejected", "photo_comment", "comment_reply", "contest_new", "contest_deadline", "contest_results"] as const;
 
 export function NotificationSettingsForm() {
   const t = useTranslations("settings");

@@ -45,7 +45,7 @@ export function preview(c: Conversation, meId: string | undefined, t: (k: string
   const m = c.last_message;
   if (!m) return "";
   const prefix = m.sender_id === meId ? `${t("you")}: ` : "";
-  return prefix + (m.body ?? (m.photo ? `📷 ${t("photo")}` : m.location ? `📍 ${t("location")}` : ""));
+  return prefix + (m.body ?? (m.photo || m.image ? `📷 ${t("photo")}` : m.gif ? "GIF" : m.location ? `📍 ${t("location")}` : t("removed")));
 }
 
 export function ConversationList({ folder, meId, activeId }: { folder: "inbox" | "requests"; meId?: string; activeId?: string }) {

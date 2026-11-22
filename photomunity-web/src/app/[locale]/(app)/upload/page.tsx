@@ -4,11 +4,12 @@ import clsx from "clsx";
 import { ImagePlus, LocateFixed, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { CommentPolicyField } from "@/components/Comments";
 import { Button, Notice, TextArea, TextField } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, api, uploadToStorage } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
-import type { Location } from "@/lib/types";
+import type { CommentPolicy, Location } from "@/lib/types";
 
 // Backend varsayılanlarıyla aynı; sunucu yine de kesin kontrolü yapar.
 const MIN_BYTES = 0;
@@ -50,6 +51,7 @@ export default function UploadPage() {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
   const [location, setLocation] = useState<Location | null>(null);
+  const [commentPolicy, setCommentPolicy] = useState<CommentPolicy>("everyone");
   const [locating, setLocating] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +103,7 @@ export default function UploadPage() {
           description: description || null,
           tags: tags.split(",").map((s) => s.trim()).filter(Boolean),
           location: location ? { ...location, name: location.name || null } : null,
+          comment_policy: commentPolicy,
         },
       });
       router.push(`/p/${slot.photo_id}`);
@@ -222,6 +225,10 @@ export default function UploadPage() {
               <p className="text-sm text-ink-muted">{t("location_hint")}</p>
             )}
           </fieldset>
+
+          <div className="border-t border-line pt-5">
+            <CommentPolicyField value={commentPolicy} onChange={setCommentPolicy} />
+          </div>
 
           {error && <Notice tone="error">{error}</Notice>}
 

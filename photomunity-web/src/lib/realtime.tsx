@@ -1,10 +1,11 @@
 "use client";
 
-import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { api } from "./api";
+import { appendMessage, setMessageReactions } from "./chat-cache";
 import { useMe } from "./hooks";
-import type { ChatMessage, MessagePageData } from "./types";
+import type { ChatMessage, Reaction } from "./types";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/api/v1/ws";
 
@@ -47,14 +48,12 @@ export function RealtimeBridge() {
         const e = JSON.parse(ev.data);
         if (e.type === "message") {
           const m: ChatMessage = e.message;
-          qc.setQueryData<InfiniteData<MessagePageData>>(["messages", e.conversation_id], (data) => {
-            if (!data || data.pages[0]?.items.some((x) => x.id === m.id)) return data;
-            const [first, ...rest] = data.pages;
-            return { ...data, pages: [{ ...first!, items: [...first!.items, m] }, ...rest] };
-          });
+          appendMessage(qc, e.conversation_id, m);
           qc.invalidateQueries({ queryKey: ["conversations"] });
           qc.invalidateQueries({ queryKey: ["conversation", e.conversation_id] });
           qc.invalidateQueries({ queryKey: ["messages-unread"] });
+        } else if (e.type === "reaction") {
+          setMessageReactions(qc, e.conversation_id, e.message_id, e.reactions as Reaction[]);
         } else if (e.type === "read") {
           qc.invalidateQueries({ queryKey: ["conversation", e.conversation_id] });
         }

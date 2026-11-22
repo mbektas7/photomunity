@@ -56,7 +56,7 @@ export type AdminStats = {
 };
 
 export type ReportGroup = {
-  target_type: "photo" | "user";
+  target_type: "photo" | "user" | "comment" | "message";
   target_id: string;
   status: "open" | "resolved";
   resolution: string | null;
@@ -64,8 +64,19 @@ export type ReportGroup = {
   reasons: string[];
   reports: { id: string; reason: string; note: string | null; created_at: string; reporter: UserCard | null }[];
   photo: AdminPhoto | null;
+  /** Yorum ve mesaj şikâyetlerinde içerik; sahibi (owner) yazandır */
+  content: ReportContent | null;
   owner: AdminUserRow | null;
   owner_prior_reports: number;
+};
+
+export type ReportContent = {
+  body: string | null;
+  photo_id?: string | null;
+  image_url?: string | null;
+  gif_url?: string | null;
+  created_at: string;
+  removed: boolean;
 };
 
 export type CommunityMini = { id: string; slug: string; name: string; logo_url: string | null };

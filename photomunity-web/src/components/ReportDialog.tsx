@@ -3,13 +3,29 @@
 import { useMutation } from "@tanstack/react-query";
 import { Flag } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api";
 import { Button, Notice } from "./ui";
 
 const REASONS = ["spam", "nudity", "violence", "harassment", "copyright", "other"] as const;
 
-export function ReportButton({ targetType, targetId }: { targetType: "photo" | "user"; targetId: string }) {
+export type ReportTarget = "photo" | "user" | "comment" | "message";
+
+export function ReportButton({ targetType, targetId }: { targetType: ReportTarget; targetId: string }) {
+  const t = useTranslations("report");
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-box px-3 text-[14.5px] font-medium text-ink-muted hover:bg-surface-2 hover:text-ink">
+        <Flag className="h-4 w-4" /> {t("button")}
+      </button>
+      <ReportDialog targetType={targetType} targetId={targetId} open={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+/** Şikâyet penceresi; menülerden açılabilsin diye düğmeden ayrı. */
+export function ReportDialog({ targetType, targetId, open, onClose }: { targetType: ReportTarget; targetId: string; open: boolean; onClose: () => void }) {
   const t = useTranslations("report");
   const dialog = useRef<HTMLDialogElement>(null);
   const [reason, setReason] = useState<(typeof REASONS)[number] | null>(null);
@@ -19,15 +35,19 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
   });
   const already = send.error instanceof ApiError && send.error.code === "already_reported";
 
+  useEffect(() => {
+    if (open && !dialog.current?.open) dialog.current?.showModal();
+    else if (!open && dialog.current?.open) dialog.current.close();
+  }, [open]);
+
   return (
-    <>
-      <button type="button" onClick={() => dialog.current?.showModal()} className="inline-flex min-h-11 items-center gap-2 rounded-box px-3 text-[14.5px] font-medium text-ink-muted hover:bg-surface-2 hover:text-ink">
-        <Flag className="h-4 w-4" /> {t("button")}
-      </button>
       <dialog
         ref={dialog}
         className="m-auto w-[min(440px,calc(100vw-2rem))] rounded-sheet bg-surface p-6 text-ink shadow-float backdrop:bg-black/50"
-        onClose={() => send.reset()}
+        onClose={() => {
+          send.reset();
+          onClose();
+        }}
       >
         <h2 className="text-heading">{t("title")}</h2>
         {send.isSuccess || already ? (
@@ -47,7 +67,7 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
           >
             <fieldset className="flex flex-col gap-1">
               <legend className="sr-only">{t("reason")}</legend>
-              {REASONS.map((r) => (
+              {REASONS.filter((r) => r !== "copyright" || targetType === "photo" || targetType === "user").map((r) => (
                 <label key={r} className="flex cursor-pointer items-center gap-3 min-h-11 rounded-box px-3 py-2 hover:bg-surface-2">
                   <input type="radio" name="reason" value={r} checked={reason === r} onChange={() => setReason(r)} className="accent-[var(--accent)]" />
                   <span className="text-[15px]">{t(`reasons.${r}`)}</span>
@@ -74,6 +94,5 @@ export function ReportButton({ targetType, targetId }: { targetType: "photo" | "
           </form>
         )}
       </dialog>
-    </>
   );
 }

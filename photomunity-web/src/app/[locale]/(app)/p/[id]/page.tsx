@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { CommentPolicyField, Comments } from "@/components/Comments";
 import { LikeButton } from "@/components/LikeButton";
 import { ReportButton } from "@/components/ReportDialog";
 import { ExifChip, ExifGrid } from "@/components/ExifChip";
@@ -18,7 +19,7 @@ import { ApiError, api } from "@/lib/api";
 import { formatDateTime } from "@/lib/dates";
 import { cameraName, countryName, genitive } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
-import type { Location, Page, PhotoCard as PhotoCardData, PhotoDetail, Profile } from "@/lib/types";
+import type { CommentPolicy, Location, Page, PhotoCard as PhotoCardData, PhotoDetail, Profile } from "@/lib/types";
 
 function mapUrl(loc: Location) {
   return `/map?layer=photos&lat=${loc.latitude}&lng=${loc.longitude}&z=13`;
@@ -56,6 +57,7 @@ export default function PhotoPage() {
     mutationFn: (body: Record<string, unknown>) => api<PhotoDetail>(`photos/${id}`, { method: "PATCH", body }),
     onSuccess: (data) => {
       qc.setQueryData(["photo", id], data);
+      qc.invalidateQueries({ queryKey: ["comments", id] });
       setEditing(false);
     },
   });
@@ -255,6 +257,7 @@ export default function PhotoPage() {
                   )}
                 </div>
               )}
+              <Comments photo={photo} />
             </>
           )}
         </aside>
@@ -283,18 +286,20 @@ function EditForm({ photo, busy, onCancel, onSave }: { photo: PhotoDetail; busy:
   const [title, setTitle] = useState(photo.title ?? "");
   const [description, setDescription] = useState(photo.description ?? "");
   const [tags, setTags] = useState(photo.tags.join(", "));
+  const [policy, setPolicy] = useState<CommentPolicy>(photo.comment_policy ?? "everyone");
 
   return (
     <form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave({ title, description, tags: tags.split(",").map((s) => s.trim()).filter(Boolean) });
+        onSave({ title, description, tags: tags.split(",").map((s) => s.trim()).filter(Boolean), comment_policy: policy });
       }}
     >
       <TextField label={tu("title")} name="title" value={title} maxLength={150} onChange={(e) => setTitle(e.target.value)} />
       <TextArea label={tu("description")} name="description" value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
       <TextField label={tu("tags")} hint={tu("tags_hint")} name="tags" value={tags} onChange={(e) => setTags(e.target.value)} />
+      <CommentPolicyField value={policy} onChange={setPolicy} />
       {photo.location && (
         <Button type="button" variant="secondary" className="self-start" onClick={() => onSave({ clear_location: true })}>
           {t("remove_location")}
