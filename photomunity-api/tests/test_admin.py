@@ -131,3 +131,23 @@ async def test_admin_community_delete_and_contest_dates(client, fake_storage):
     # Gerçek sahip kullanıcı adıyla: kendini yöneticilikten çıkaramaz
     me = (await client.get("/me", headers=boss)).json()["id"]
     assert (await client.delete(f"/admin/admins/{me}", headers=boss)).status_code == 403
+
+
+async def test_cover_cropped_below_1080_is_accepted():
+    """Kapak kırpılırken yakınlaştırılınca genişlik 1080'in altına düşer; 600 px üstü kabul edilir."""
+    import io
+
+    from PIL import Image
+
+    from app.core.config import get_settings
+    from app.services.profile_images import ProfileImageError, process_profile_image
+
+    def jpeg(w, h):
+        b = io.BytesIO()
+        Image.new("RGB", (w, h), (90, 90, 90)).save(b, "JPEG")
+        return b.getvalue()
+
+    out = Image.open(io.BytesIO(process_profile_image(jpeg(960, 320), "cover", get_settings())))
+    assert out.size == (1800, 600)
+    with pytest.raises(ProfileImageError):
+        process_profile_image(jpeg(500, 167), "cover", get_settings())

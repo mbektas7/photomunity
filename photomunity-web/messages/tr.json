@@ -300,7 +300,7 @@
     "remove_cover": "Kapağı kaldır",
     "uploading": "Yükleniyor…",
     "upload_failed": "Görsel yüklenemedi. Tekrar dene.",
-    "images_hint": "Profil fotoğrafı kare olarak kırpılır. Kapak 3:1 oranında, en az 1200 piksel genişliğinde olmalı.",
+    "images_hint": "Profil fotoğrafı kare olarak kırpılır. Kapak 3:1 oranında, en az 600 piksel genişliğinde olmalı.",
     "notifications": "Bildirimler",
     "notifications_lead": "Mobil uygulamada hangi durumlarda bildirim almak istediğini seç. Uygulama içi bildirimler her zaman listelenir.",
     "push": {
@@ -423,7 +423,7 @@
     "add_cover": "Kapak ekle",
     "change_logo": "Logoyu değiştir",
     "uploading": "Yükleniyor…",
-    "images_hint": "Logo kare olarak kırpılır. Kapak 3:1 oranında, en az 1200 piksel genişliğinde olmalı.",
+    "images_hint": "Logo kare olarak kırpılır. Kapak 3:1 oranında, en az 600 piksel genişliğinde olmalı.",
     "info": "Bilgiler",
     "saved": "Kaydedildi.",
     "save": "Kaydet",

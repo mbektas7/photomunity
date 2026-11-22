@@ -300,7 +300,7 @@
     "remove_cover": "Remove cover",
     "uploading": "Uploading…",
     "upload_failed": "The image couldn't be uploaded. Try again.",
-    "images_hint": "Profile photos are cropped square. Covers are 3:1 and at least 1200 px wide.",
+    "images_hint": "Profile photos are cropped square. Covers are 3:1 and at least 600 px wide.",
     "notifications": "Notifications",
     "notifications_lead": "Choose when the mobile app notifies you. In-app notifications are always listed.",
     "push": {
@@ -423,7 +423,7 @@
     "add_cover": "Add cover",
     "change_logo": "Change logo",
     "uploading": "Uploading…",
-    "images_hint": "Logos are cropped square. Covers are 3:1 and at least 1200 px wide.",
+    "images_hint": "Logos are cropped square. Covers are 3:1 and at least 600 px wide.",
     "info": "Details",
     "saved": "Saved.",
     "save": "Save",

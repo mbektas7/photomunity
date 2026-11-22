@@ -26,7 +26,7 @@ MESSAGES: dict[str, dict[str, str]] = {
     "underexposed": {"tr": "Görsel aşırı karanlık.", "en": "The image is too dark."},
     "too_many_requests": {"tr": "Çok fazla deneme yaptın. Biraz bekleyip tekrar dene.", "en": "Too many attempts. Wait a moment and try again."},
     "inappropriate_content": {"tr": "Görsel topluluk kurallarına uygun görünmüyor.", "en": "The image doesn't appear to follow the community guidelines."},
-    "image_too_small": {"tr": "Görsel çok küçük. Profil fotoğrafı en az 200 piksel, kapak en az 1200 piksel genişliğinde olmalı.", "en": "The image is too small. Avatars need at least 200 px, covers at least 1200 px wide."},
+    "image_too_small": {"tr": "Görsel çok küçük. Profil fotoğrafı en az 200 piksel, kapak en az 600 piksel genişliğinde olmalı.", "en": "The image is too small. Avatars need at least 200 px, covers at least 600 px wide."},
     "already_reported": {"tr": "Bunu zaten bildirdin; inceleniyor.", "en": "You've already reported this; it's being reviewed."},
     "invalid_key": {"tr": "Yükleme bulunamadı, tekrar dene.", "en": "Upload not found, please try again."},
     "slug_taken": {"tr": "Bu adres başka bir topluluk tarafından kullanılıyor.", "en": "This address is taken by another community."},
