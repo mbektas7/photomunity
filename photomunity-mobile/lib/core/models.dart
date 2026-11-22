@@ -340,6 +340,9 @@ class PhotoDetail extends PhotoCard {
       rejection = ((j['rejection'] as List?) ?? const [])
           .map((r) => (r as Map)['message'] as String)
           .toList(),
+      commentPolicy = j['comment_policy'] as String? ?? 'everyone',
+      commentCount = j['comment_count'] as int? ?? 0,
+      canComment = j['can_comment'] as bool? ?? false,
       super(
         id: j['id'] as String,
         user: UserCard.fromJson(j['user'] as Map<String, dynamic>),
@@ -364,6 +367,9 @@ class PhotoDetail extends PhotoCard {
   final GeoPoint? suggestedLocation;
   final String status; // pending | processing | published | rejected
   final List<String> rejection;
+  final String commentPolicy; // everyone | followers | off
+  final int commentCount;
+  final bool canComment;
 
   bool get isProcessing => status == 'processing' || status == 'pending';
 }
@@ -416,6 +422,7 @@ String routeFor(Map<String, String> data, {String? photoId, String? username}) {
   if (conversation != null) return '/messages/$conversation';
   if (contest != null) return '/contests/$contest';
   if (community != null) return '/c/$community';
+  if (photo != null && data['comment_id'] != null) return '/p/$photo/comments';
   if (photo != null) return '/p/$photo';
   if (user != null) return '/u/$user';
   return '/notifications';
@@ -683,6 +690,42 @@ class MapPhotoPoint {
   final UserCard user;
 }
 
+class MessageQuote {
+  MessageQuote.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      senderId = j['sender_id'] as String,
+      kind = j['kind'] as String? ?? 'text',
+      preview = _opt(j['preview']);
+  final String id;
+  final String senderId;
+  final String kind; // text | photo | image | gif | location
+  final String? preview;
+}
+
+class GifItem {
+  GifItem.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      kind = j['kind'] as String? ?? 'gif',
+      url = j['url'] as String,
+      width = j['width'] as int,
+      height = j['height'] as int;
+  final String id;
+  final String kind; // gif | sticker
+  final String url;
+  final int width;
+  final int height;
+  double get ratio => height == 0 ? 1 : width / height;
+}
+
+class Reaction {
+  const Reaction(this.userId, this.emoji);
+  Reaction.fromJson(Map<String, dynamic> j)
+    : userId = j['user_id'] as String,
+      emoji = j['emoji'] as String;
+  final String userId;
+  final String emoji;
+}
+
 class ChatMessage {
   ChatMessage.fromJson(Map<String, dynamic> j)
     : id = j['id'] as String,
@@ -695,14 +738,95 @@ class ChatMessage {
       location = j['location'] == null
           ? null
           : GeoPoint.fromJson(j['location'] as Map<String, dynamic>),
+      replyTo = j['reply_to'] == null
+          ? null
+          : MessageQuote.fromJson(j['reply_to'] as Map<String, dynamic>),
+      image = j['image'] == null
+          ? null
+          : ImageVariant.fromJson(j['image'] as Map<String, dynamic>),
+      gif = j['gif'] == null
+          ? null
+          : GifItem.fromJson(j['gif'] as Map<String, dynamic>),
+      reactions = ((j['reactions'] as List?) ?? const [])
+          .map((e) => Reaction.fromJson(e as Map<String, dynamic>))
+          .toList(),
       createdAt = _dt(j['created_at']);
+
+  ChatMessage._copy(ChatMessage m, this.reactions)
+    : id = m.id,
+      conversationId = m.conversationId,
+      senderId = m.senderId,
+      body = m.body,
+      photo = m.photo,
+      location = m.location,
+      replyTo = m.replyTo,
+      image = m.image,
+      gif = m.gif,
+      createdAt = m.createdAt;
+
+  ChatMessage withReactions(List<Reaction> r) => ChatMessage._copy(this, r);
+
   final String id;
   final String conversationId;
   final String senderId;
   final String? body;
   final PhotoCard? photo;
   final GeoPoint? location;
+  final MessageQuote? replyTo;
+  final ImageVariant? image;
+  final GifItem? gif;
+  final List<Reaction> reactions;
   final DateTime createdAt;
+
+  /// Moderasyonla içeriği kaldırılmış mesaj.
+  bool get removed =>
+      body == null && photo == null && location == null && image == null && gif == null;
+}
+
+class PhotoComment {
+  PhotoComment.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      photoId = j['photo_id'] as String,
+      user = UserCard.fromJson(j['user'] as Map<String, dynamic>),
+      body = j['body'] as String,
+      createdAt = _dt(j['created_at']),
+      parentId = _opt(j['parent_id']),
+      quoteUser = j['quote'] == null
+          ? null
+          : UserCard.fromJson((j['quote'] as Map)['user'] as Map<String, dynamic>),
+      quoteBody = j['quote'] == null ? null : _opt((j['quote'] as Map)['body']),
+      hasQuote = j['quote'] != null,
+      replyCount = j['reply_count'] as int? ?? 0,
+      byPhotoOwner = j['by_photo_owner'] as bool? ?? false,
+      canDelete = j['can_delete'] as bool? ?? false;
+
+  PhotoComment._copy(PhotoComment c, this.replyCount)
+    : id = c.id,
+      photoId = c.photoId,
+      user = c.user,
+      body = c.body,
+      createdAt = c.createdAt,
+      parentId = c.parentId,
+      hasQuote = c.hasQuote,
+      quoteUser = c.quoteUser,
+      quoteBody = c.quoteBody,
+      byPhotoOwner = c.byPhotoOwner,
+      canDelete = c.canDelete;
+
+  PhotoComment withReplyCount(int n) => PhotoComment._copy(this, n < 0 ? 0 : n);
+
+  final String id;
+  final String photoId;
+  final UserCard user;
+  final String body;
+  final DateTime createdAt;
+  final String? parentId;
+  final bool hasQuote;
+  final UserCard? quoteUser;
+  final String? quoteBody; // null + hasQuote: alıntılanan yorum silindi
+  final int replyCount;
+  final bool byPhotoOwner;
+  final bool canDelete;
 }
 
 class Conversation {

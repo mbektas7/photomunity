@@ -9,6 +9,7 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import '../widgets/comment_policy.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
 import '../widgets/share_sheet.dart';
@@ -317,6 +318,36 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               children: [
                 LikePill(photo: photo),
                 const SizedBox(width: Space.s2),
+                if (photo.commentPolicy != 'off' || isOwner) ...[
+                  Material(
+                    color: p.surface,
+                    shape: const StadiumBorder(),
+                    child: InkWell(
+                      customBorder: const StadiumBorder(),
+                      onTap: () => context.push('/p/${photo.id}/comments'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              photo.commentPolicy == 'off' ? LucideIcons.messageCircleOff : LucideIcons.messageCircle,
+                              size: 19,
+                              color: p.ink,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${photo.commentCount}',
+                              semanticsLabel: t('comments.count', {'count': '${photo.commentCount}'}),
+                              style: font(14, weight: 700, color: p.ink, tabular: true),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Space.s2),
+                ],
                 RoundIconButton(
                   icon: LucideIcons.share,
                   label: t('ui.share'),
@@ -446,10 +477,11 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     final title = TextEditingController(text: photo.title);
     final desc = TextEditingController(text: photo.description);
     final tags = TextEditingController(text: photo.tags.join(', '));
+    var policy = photo.commentPolicy;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (c) => Padding(
+      builder: (c) => StatefulBuilder(builder: (c, setSheet) => SingleChildScrollView(child: Padding(
         padding: EdgeInsets.fromLTRB(
           20,
           0,
@@ -493,16 +525,19 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                 ),
               ),
             const SizedBox(height: 12),
+            CommentPolicyPicker(value: policy, onChanged: (v) => setSheet(() => policy = v)),
+            const SizedBox(height: 12),
             FilledButton(
               onPressed: () => Navigator.pop(c, true),
               child: Text(t('common.save')),
             ),
           ],
         ),
-      ),
+      ))),
     );
     if (saved == true) {
       await _patch({
+        'comment_policy': policy,
         'title': title.text,
         'description': desc.text,
         'tags': tags.text

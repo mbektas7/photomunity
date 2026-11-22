@@ -730,6 +730,8 @@ class _AccountSectionState extends ConsumerState<_AccountSection> {
 const _pushTypes = [
   'new_follower',
   'photo_liked',
+  'photo_comment',
+  'comment_reply',
   'photo_published',
   'photo_rejected',
   'contest_new',

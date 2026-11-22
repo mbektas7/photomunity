@@ -361,7 +361,7 @@ class NotificationSettings(BaseModel):
 
 # ---------- Profil görselleri ----------
 class ProfileImageUploadIn(BaseModel):
-    kind: Literal["avatar", "cover"]
+    kind: Literal["avatar", "cover", "message"]  # message: sohbete galeriden/kameradan gönderilecek görsel
     content_type: str
     size_bytes: int = Field(gt=0)
 

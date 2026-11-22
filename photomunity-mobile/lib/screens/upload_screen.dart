@@ -13,6 +13,7 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import '../widgets/comment_policy.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
 
@@ -72,6 +73,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   List<String> _issues = const [];
   GeoPoint? _location;
   bool _locating = false;
+  String _commentPolicy = 'everyone';
   double? _progress;
   String? _error;
 
@@ -171,6 +173,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             .map((s) => s.trim())
             .where((s) => s.isNotEmpty)
             .toList(),
+        'comment_policy': _commentPolicy,
         'location': _location == null
             ? null
             : GeoPoint(
@@ -209,6 +212,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     }
     setState(() {
       _file = null;
+      _commentPolicy = 'everyone';
       _issues = const [];
       _location = null;
       _progress = null;
@@ -416,6 +420,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(Space.s3, Space.s4, Space.s3, 0),
             child: Text(t('upload.location_hint'), style: font(14, height: 1.45, color: p.inkMuted)),
+          ),
+          const SizedBox(height: Space.s4),
+          SurfaceCard(
+            padding: const EdgeInsets.fromLTRB(Space.s4, Space.s4, Space.s4, Space.s2),
+            child: CommentPolicyPicker(
+              value: _commentPolicy,
+              onChanged: (v) => setState(() => _commentPolicy = v),
+            ),
           ),
           const SizedBox(height: Space.s5),
           if (_error != null) ...[

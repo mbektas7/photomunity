@@ -604,6 +604,15 @@ final realtimeProvider = Provider<RealtimeService>((ref) {
       ref.invalidate(conversationsProvider);
       ref.invalidate(messageUnreadProvider);
       ref.invalidate(conversationProvider(cid));
+    } else if (e['type'] == 'reaction' && cid != null) {
+      if (MessagesController.open.contains(cid)) {
+        ref.read(messagesProvider(cid).notifier).setReactions(
+          e['message_id'] as String,
+          ((e['reactions'] as List?) ?? const [])
+              .map((x) => Reaction.fromJson(x as Map<String, dynamic>))
+              .toList(),
+        );
+      }
     } else if (e['type'] == 'read' && cid != null) {
       ref.invalidate(conversationProvider(cid));
     }
@@ -737,6 +746,47 @@ class MessagesController extends Notifier<MessagesState> {
     }
   }
 
+  void setReactions(String messageId, List<Reaction> reactions) {
+    state = MessagesState(
+      items: [
+        for (final m in state.items)
+          m.id == messageId ? m.withReactions(reactions) : m,
+      ],
+      cursor: state.cursor,
+      loading: state.loading,
+      done: state.done,
+    );
+  }
+
+  /// Tepki ekler, değiştirir ya da (aynı emojiye tekrar dokununca) kaldırır.
+  Future<void> react(String messageId, String emoji, String meId) async {
+    final m = state.items.where((x) => x.id == messageId).firstOrNull;
+    if (m == null) return;
+    final mine = m.reactions.where((r) => r.userId == meId).firstOrNull;
+    final remove = mine?.emoji == emoji;
+    // İyimser güncelleme; sunucunun yanıtı (ve WebSocket olayı) kesin listeyi getirir
+    final before = m.reactions;
+    setReactions(messageId, [
+      ...before.where((r) => r.userId != meId),
+      if (!remove) Reaction(meId, emoji),
+    ]);
+    final api = ref.read(apiProvider);
+    final path = '/conversations/$conversationId/messages/$messageId/reaction';
+    try {
+      final res = remove
+          ? await api.delete<List<dynamic>>(path)
+          : await api.put<List<dynamic>>(path, {'emoji': emoji});
+      if (!ref.mounted) return;
+      setReactions(
+        messageId,
+        res.map((x) => Reaction.fromJson(x as Map<String, dynamic>)).toList(),
+      );
+    } catch (_) {
+      if (ref.mounted) setReactions(messageId, before);
+      rethrow;
+    }
+  }
+
   /// WebSocket ya da kendi gönderdiğimiz mesaj; tekrar eklenmez.
   void receive(ChatMessage m) {
     if (state.items.any((x) => x.id == m.id)) return;
@@ -747,6 +797,170 @@ class MessagesController extends Notifier<MessagesState> {
     );
   }
 }
+
+// ---------------------------------------------------------------- Yorumlar
+
+class CommentsState {
+  const CommentsState({
+    this.items = const [],
+    this.cursor,
+    this.loading = false,
+    this.done = false,
+    this.total = 0,
+    this.replies = const {},
+  });
+  final List<PhotoComment> items; // üst yorumlar, en yeni önce
+  final String? cursor;
+  final bool loading;
+  final bool done;
+  final int total;
+  final Map<String, List<PhotoComment>> replies; // açılmış cevaplar
+
+  CommentsState copy({
+    List<PhotoComment>? items,
+    String? cursor,
+    bool? loading,
+    bool? done,
+    int? total,
+    Map<String, List<PhotoComment>>? replies,
+  }) => CommentsState(
+    items: items ?? this.items,
+    cursor: cursor ?? this.cursor,
+    loading: loading ?? this.loading,
+    done: done ?? this.done,
+    total: total ?? this.total,
+    replies: replies ?? this.replies,
+  );
+}
+
+final commentsProvider = NotifierProvider.autoDispose
+    .family<CommentsController, CommentsState, String>(CommentsController.new);
+
+class CommentsController extends Notifier<CommentsState> {
+  CommentsController(this.photoId);
+  final String photoId;
+
+  @override
+  CommentsState build() {
+    Future.microtask(loadMore);
+    return const CommentsState(loading: true);
+  }
+
+  Future<void> loadMore() async {
+    if (state.done || (state.loading && state.items.isNotEmpty)) return;
+    state = state.copy(loading: true);
+    try {
+      final r = await ref
+          .read(apiProvider)
+          .get<Map<String, dynamic>>(
+            '/photos/$photoId/comments',
+            query: {'before': ?state.cursor},
+          );
+      if (!ref.mounted) return;
+      final next = r['next_cursor'] as String?;
+      final have = {for (final c in state.items) c.id};
+      state = CommentsState(
+        items: [
+          ...state.items,
+          ...(r['items'] as List)
+              .map((e) => PhotoComment.fromJson(e as Map<String, dynamic>))
+              .where((c) => !have.contains(c.id)),
+        ],
+        cursor: next,
+        done: next == null,
+        total: r['total'] as int? ?? 0,
+        replies: state.replies,
+      );
+    } catch (_) {
+      if (ref.mounted) state = state.copy(loading: false);
+    }
+  }
+
+  Future<void> loadReplies(String commentId) async {
+    final r = await ref
+        .read(apiProvider)
+        .get<List<dynamic>>('/comments/$commentId/replies');
+    if (!ref.mounted) return;
+    state = state.copy(
+      replies: {
+        ...state.replies,
+        commentId: r
+            .map((e) => PhotoComment.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      },
+    );
+  }
+
+  Future<void> add(String body, {String? parentId, String? quoteId}) async {
+    final c = PhotoComment.fromJson(
+      await ref.read(apiProvider).post<Map<String, dynamic>>(
+        '/photos/$photoId/comments',
+        {'body': body, 'parent_id': ?parentId, 'quote_id': ?quoteId},
+      ),
+    );
+    if (!ref.mounted) return;
+    if (c.parentId == null) {
+      state = state.copy(items: [c, ...state.items], total: state.total + 1);
+    } else {
+      final pid = c.parentId!;
+      state = state.copy(
+        total: state.total + 1,
+        items: [
+          for (final x in state.items)
+            x.id == pid ? x.withReplyCount(x.replyCount + 1) : x,
+        ],
+        replies: {
+          ...state.replies,
+          pid: [...?state.replies[pid], c],
+        },
+      );
+      if (!state.replies.containsKey(pid) || state.replies[pid]!.length == 1) {
+        await loadReplies(pid);
+      }
+    }
+    ref.invalidate(photoProvider(photoId));
+  }
+
+  Future<void> remove(PhotoComment c) async {
+    await ref.read(apiProvider).delete<dynamic>('/comments/${c.id}');
+    if (!ref.mounted) return;
+    if (c.parentId == null) {
+      final removed = 1 + c.replyCount;
+      state = state.copy(
+        items: state.items.where((x) => x.id != c.id).toList(),
+        total: (state.total - removed).clamp(0, 1 << 30),
+      );
+    } else {
+      state = state.copy(
+        total: (state.total - 1).clamp(0, 1 << 30),
+        items: [
+          for (final x in state.items)
+            x.id == c.parentId ? x.withReplyCount(x.replyCount - 1) : x,
+        ],
+        replies: {
+          ...state.replies,
+          c.parentId!: [
+            ...?state.replies[c.parentId]?.where((x) => x.id != c.id),
+          ],
+        },
+      );
+    }
+    ref.invalidate(photoProvider(photoId));
+  }
+
+}
+
+final gifsProvider = FutureProvider.autoDispose
+    .family<List<GifItem>, (String, String)>((ref, arg) async {
+      final (kind, q) = arg;
+      final r = await ref
+          .read(apiProvider)
+          .get<List<dynamic>>(
+            '/gifs',
+            query: {'kind': kind, if (q.isNotEmpty) 'q': q},
+          );
+      return r.map((e) => GifItem.fromJson(e as Map<String, dynamic>)).toList();
+    });
 
 final photographerMapProvider = FutureProvider.autoDispose
     .family<

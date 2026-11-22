@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../core/config.dart';
-import 'package:flutter/services.dart';
 import '../widgets/design.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +12,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/common.dart';
+import '../widgets/share_sheet.dart';
 import 'feed_screen.dart';
 
 const _kitOrder = ['body', 'lens', 'drone', 'flash', 'tripod', 'filter', 'other'];
@@ -102,11 +101,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _share(Profile prof) async {
-    final t = L10n.of(context);
-    await Clipboard.setData(ClipboardData(text: '${AppConfig.webUrl}/${t.locale.languageCode}/u/${prof.username}'));
-    if (mounted) toast(context, t('ui.link_copied'));
-  }
+  Future<void> _share(Profile prof) => showProfileShareSheet(context, prof);
 
   String? _imgBusy; // avatar | cover
 

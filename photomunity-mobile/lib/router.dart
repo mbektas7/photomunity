@@ -24,6 +24,7 @@ import 'screens/profile_screen.dart';
 import 'screens/communities_hub_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/tools_hub_screen.dart';
+import 'screens/comments_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/upload_screen.dart';
 import 'state/providers.dart';
@@ -148,6 +149,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/p/:id',
         parentNavigatorKey: _rootKey,
         builder: (_, s) => PhotoScreen(id: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/p/:id/comments',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => CommentsScreen(photoId: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/upload',

@@ -76,7 +76,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Fotoğrafına ve profiline isteğe bağlı konum ekleyebilmen için. Konumun yalnızca uygulamayı kullanırken alınır.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Gökyüzü planlayıcıda Samanyolu ve Ay'ın yolunu kamera görüntüsü üzerinde göstermek için.</string>
+	<string>Mesajda fotoğraf çekip gönderebilmen ve gökyüzü planlayıcıda Samanyolu ile Ay'ın yolunu kamera görüntüsü üzerinde gösterebilmek için.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Sana daha ilgili reklamlar gösterebilmek için.</string>
 	<!-- AdMob uygulama kimliği: Google'ın herkese açık TEST kimliği; yayından önce gerçek kimlikle değiştirin. -->

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../core/l10n.dart';
@@ -11,6 +13,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
+import '../widgets/chat_extras.dart';
 import '../widgets/community_widgets.dart' show pickMyPhoto;
 
 /// Akış ekranının üst çubuğundaki mesaj simgesi ve okunmamış rozeti.
@@ -126,7 +129,7 @@ class _List extends ConsumerWidget {
             final m = c.lastMessage;
             final preview = m == null
                 ? ''
-                : '${m.senderId == me?.id ? '${t('messages.you')}: ' : ''}${m.body ?? (m.photo != null ? '📷 ${t('messages.photo')}' : '📍 ${t('messages.location')}')}';
+                : '${m.senderId == me?.id ? '${t('messages.you')}: ' : ''}${m.body ?? (m.photo != null || m.image != null ? '📷 ${t('messages.photo')}' : m.gif != null ? 'GIF' : m.location != null ? '📍 ${t('messages.location')}' : t('messages.removed'))}';
             return ListTile(
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -203,6 +206,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _text = TextEditingController();
   final _scroll = ScrollController();
   bool _sending = false;
+  bool _uploading = false;
+  bool _gifOpen = false;
+  ChatMessage? _replyTo; // alıntıyla cevaplanan mesaj
+  final _focus = FocusNode();
   String? _lastReadFor;
 
   @override
@@ -236,6 +243,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     _text.dispose();
     _scroll.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -248,6 +256,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // Metin hemen temizlenir; hata olursa geri konur
     if (isText) _text.clear();
     final api = ref.read(apiProvider);
+    final reply = _replyTo;
+    if (reply != null) payload = {...payload, 'reply_to_id': reply.id};
     try {
       final cid = widget.conversationId;
       if (cid == null) {
@@ -266,12 +276,98 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(messagesProvider(cid).notifier).receive(ChatMessage.fromJson(m));
       ref.invalidate(conversationsProvider);
       ref.invalidate(conversationProvider(cid));
+      if (mounted && _replyTo?.id == reply?.id) setState(() => _replyTo = null);
     } catch (e) {
       if (isText && _text.text.isEmpty) _text.text = draft;
       if (mounted) toast(context, errorText(context, e));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  Future<void> _attach() async {
+    setState(() => _gifOpen = false);
+    final choice = await showAttachSheet(context);
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case 'camera':
+        await _sendImage(ImageSource.camera);
+      case 'gallery':
+        await _sendImage(ImageSource.gallery);
+      case 'mine':
+        await _sharePhoto();
+      case 'location':
+        await _shareLocation();
+    }
+  }
+
+  Future<void> _sendImage(ImageSource source) async {
+    setState(() => _uploading = true);
+    try {
+      final key = await pickAndUploadChatImage(ref, source);
+      if (key != null) await _send({'image_key': key});
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  void _toggleGifs() {
+    if (_gifOpen) {
+      setState(() => _gifOpen = false);
+      _focus.requestFocus();
+    } else {
+      _focus.unfocus();
+      setState(() => _gifOpen = true);
+    }
+  }
+
+  Future<void> _messageMenu(ChatMessage m, String? meId, UserCard other) async {
+    final mine = m.senderId == meId;
+    final myReaction = m.reactions.where((r) => r.userId == meId).firstOrNull?.emoji;
+    final action = await showMessageMenu(
+      context,
+      preview: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 320),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: _Bubble(m: m, mine: mine, meId: meId, otherName: other.displayName, compact: true),
+        ),
+      ),
+      mine: mine,
+      canCopy: m.body != null,
+      myReaction: myReaction,
+    );
+    if (!mounted || action == null) return;
+    if (action.startsWith('react:')) {
+      await _react(m, action.substring(6), meId);
+    } else if (action == 'reply') {
+      _startReply(m);
+    } else if (action == 'copy') {
+      await copyText(context, m.body!);
+    } else if (action == 'report') {
+      await reportContent(context, ref, 'message', m.id);
+    }
+  }
+
+  Future<void> _react(ChatMessage m, String emoji, String? meId) async {
+    if (meId == null) return;
+    try {
+      await ref.read(messagesProvider(m.conversationId).notifier).react(m.id, emoji, meId);
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    }
+  }
+
+  void _startReply(ChatMessage m) {
+    if (m.removed) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _replyTo = m;
+      _gifOpen = false;
+    });
+    _focus.requestFocus();
   }
 
   Future<void> _sharePhoto() async {
@@ -498,7 +594,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 style: font(13, weight: 600, color: p.inkMuted),
                               ),
                             ),
-                          _Bubble(m: m, mine: m.senderId == me?.id),
+                          _Swipe(
+                            onReply: () => _startReply(m),
+                            child: GestureDetector(
+                              onLongPress: m.removed ? null : () {
+                                HapticFeedback.mediumImpact();
+                                _messageMenu(m, me?.id, other);
+                              },
+                              child: _Bubble(
+                                m: m,
+                                mine: m.senderId == me?.id,
+                                meId: me?.id,
+                                otherName: other.displayName,
+                                onReact: (e) => _react(m, e, me?.id),
+                              ),
+                            ),
+                          ),
                         ],
                       );
                     },
@@ -549,6 +660,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           else
             SafeArea(
               top: false,
+              bottom: !_gifOpen,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Column(
@@ -562,26 +674,47 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           style: font(12, color: p.inkMuted),
                         ),
                       ),
+                    if (_replyTo != null)
+                      ReplyChip(
+                        title: t('messages.replying_to', {
+                          'name': _replyTo!.senderId == me?.id ? t('messages.you') : other.displayName,
+                        }),
+                        text: _replyTo!.body ??
+                            (_replyTo!.gif != null
+                                ? 'GIF'
+                                : _replyTo!.location != null
+                                ? t('messages.location')
+                                : t('messages.photo')),
+                        onClose: () => setState(() => _replyTo = null),
+                      ),
+                    if (_uploading)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                            const SizedBox(width: 10),
+                            Text(t('messages.uploading'), style: font(13, color: p.inkMuted)),
+                          ],
+                        ),
+                      ),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         RoundIconButton(
-                          icon: LucideIcons.imagePlus,
-                          label: t('messages.attach_photo'),
+                          icon: LucideIcons.plus,
+                          label: t('messages.attach'),
                           color: p.surface,
-                          onPressed: _sending ? null : _sharePhoto,
-                        ),
-                        const SizedBox(width: 6),
-                        RoundIconButton(
-                          icon: LucideIcons.locateFixed,
-                          label: t('messages.attach_location'),
-                          color: p.surface,
-                          onPressed: _sending ? null : _shareLocation,
+                          onPressed: _sending || _uploading ? null : _attach,
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: _text,
+                            focusNode: _focus,
+                            onTap: () {
+                              if (_gifOpen) setState(() => _gifOpen = false);
+                            },
                             minLines: 1,
                             maxLines: 5,
                             maxLength: 4000,
@@ -589,6 +722,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             decoration: InputDecoration(
                               hintText: t('messages.placeholder'),
                               counterText: '',
+                              suffixIcon: IconButton(
+                                tooltip: t('messages.emoji_gif'),
+                                onPressed: _sending ? null : _toggleGifs,
+                                icon: Icon(
+                                  _gifOpen ? LucideIcons.keyboard : LucideIcons.smile,
+                                  size: 22,
+                                  color: p.ink,
+                                ),
+                              ),
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                               border: OutlineInputBorder(
@@ -630,6 +772,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ),
             ),
+          if (_gifOpen && !requestToMe)
+            Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+              child: GifPanel(
+                onPick: (g) {
+                  setState(() => _gifOpen = false);
+                  _send({
+                    'gif': {'id': g.id, 'kind': g.kind},
+                  });
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -645,10 +799,71 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
+/// Mesajı sağa kaydırınca cevapla (WhatsApp/Instagram gibi).
+class _Swipe extends StatefulWidget {
+  const _Swipe({required this.child, required this.onReply});
+  final Widget child;
+  final VoidCallback onReply;
+
+  @override
+  State<_Swipe> createState() => _SwipeState();
+}
+
+class _SwipeState extends State<_Swipe> {
+  double _dx = 0;
+  static const _trigger = 64.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragUpdate: (d) {
+        final next = (_dx + d.delta.dx).clamp(0.0, 90.0);
+        if (_dx < _trigger && next >= _trigger) HapticFeedback.selectionClick();
+        setState(() => _dx = next);
+      },
+      onHorizontalDragEnd: (_) {
+        if (_dx >= _trigger) widget.onReply();
+        setState(() => _dx = 0);
+      },
+      onHorizontalDragCancel: () => setState(() => _dx = 0),
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          Opacity(
+            opacity: (_dx / _trigger).clamp(0.0, 1.0),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Icon(LucideIcons.reply, size: 20, color: p.inkMuted),
+            ),
+          ),
+          AnimatedContainer(
+            duration: Duration(milliseconds: _dx == 0 ? 180 : 0),
+            transform: Matrix4.translationValues(_dx, 0, 0),
+            child: widget.child,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.m, required this.mine});
+  const _Bubble({
+    required this.m,
+    required this.mine,
+    required this.meId,
+    required this.otherName,
+    this.onReact,
+    this.compact = false,
+  });
   final ChatMessage m;
   final bool mine;
+  final String? meId;
+  final String otherName;
+  final void Function(String emoji)? onReact;
+  final bool compact; // uzun basma menüsündeki önizleme
 
   @override
   Widget build(BuildContext context) {
@@ -658,22 +873,74 @@ class _Bubble extends StatelessWidget {
     final bg = mine ? p.accent : p.surface;
     final fg = mine ? p.accentInk : p.ink;
     final img = m.photo?.feed;
+    final width = MediaQuery.sizeOf(context).width;
+    final q = m.replyTo;
+    final quote = q == null
+        ? null
+        : QuoteBlock(
+            name: q.senderId == meId ? t('messages.you') : otherName,
+            text: quoteText(t, q),
+            onDark: mine && (m.body != null),
+          );
+    // Alıntı, metin varsa metin baloncuğunun içinde; yoksa medyanın üstünde ayrı durur
+    final quoteAboveMedia = quote != null && m.body == null;
+
+    Widget media(Widget child, {double maxH = 300}) => Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      constraints: BoxConstraints(maxHeight: maxH, maxWidth: width * 0.66),
+      child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
+    );
+
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.78,
-        ),
+        constraints: BoxConstraints(maxWidth: width * 0.78),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
-            crossAxisAlignment: mine
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+            crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
+              if (m.removed)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: p.line),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    t('messages.removed'),
+                    style: font(14.5, color: p.inkMuted).copyWith(fontStyle: FontStyle.italic),
+                  ),
+                ),
+              if (quoteAboveMedia)
+                ConstrainedBox(constraints: BoxConstraints(maxWidth: width * 0.66), child: quote),
+              if (m.image != null)
+                GestureDetector(
+                  onTap: compact ? null : () => _openImage(context, m.image!.url),
+                  child: media(
+                    AspectRatio(
+                      aspectRatio: m.image!.ratio,
+                      child: NetPhoto(url: m.image!.url),
+                    ),
+                    maxH: 340,
+                  ),
+                ),
+              if (m.gif != null)
+                media(
+                  AspectRatio(
+                    aspectRatio: m.gif!.ratio,
+                    child: Image.network(
+                      m.gif!.url,
+                      fit: BoxFit.contain,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => Container(color: p.surface2),
+                    ),
+                  ),
+                  maxH: m.gif!.kind == 'sticker' ? 160 : 240,
+                ),
               if (m.photo != null && img != null)
                 GestureDetector(
-                  onTap: () => context.push('/p/${m.photo!.id}'),
+                  onTap: compact ? null : () => context.push('/p/${m.photo!.id}'),
                   child: Container(
                     padding: const EdgeInsets.all(Space.s3),
                     margin: const EdgeInsets.only(bottom: 4),
@@ -707,19 +974,15 @@ class _Bubble extends StatelessWidget {
                 ),
               if (m.location != null)
                 GestureDetector(
-                  onTap: () => context.push(
-                    '/map?lat=${m.location!.latitude}&lng=${m.location!.longitude}&photos=1',
-                  ),
+                  onTap: compact
+                      ? null
+                      : () => context.push(
+                          '/map?lat=${m.location!.latitude}&lng=${m.location!.longitude}&photos=1',
+                        ),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 4),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: bg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -735,24 +998,53 @@ class _Bubble extends StatelessWidget {
                 ),
               if (m.body != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    m.body!,
-                    style: font(15.5, height: 1.4, color: fg),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ?(quoteAboveMedia ? null : quote),
+                      Text(m.body!, style: font(15.5, height: 1.4, color: fg)),
+                    ],
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 3, 4, 0),
-                child: Text(time, style: font(12, color: p.inkMuted, tabular: true)),
-              ),
+              if (m.reactions.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(left: mine ? 0 : 10, right: mine ? 10 : 0, top: 2),
+                  child: ReactionPills(
+                    reactions: m.reactions,
+                    meId: meId,
+                    onTap: onReact ?? (_) {},
+                  ),
+                ),
+              if (!compact)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(4, m.reactions.isNotEmpty ? 0 : 3, 4, 0),
+                  child: Text(time, style: font(12, color: p.inkMuted, tabular: true)),
+                ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openImage(BuildContext context, String url) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (c) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              maxScale: 5,
+              child: NetPhoto(url: url, fit: BoxFit.contain),
+            ),
           ),
         ),
       ),
