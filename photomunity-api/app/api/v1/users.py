@@ -10,6 +10,7 @@ from app.api.deps import can_view_photos, get_current_user, get_optional_user, i
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError
+from app.core.security import utcnow
 from app.models import Block, Equipment, Follow, Photo, PhotoStatus, User
 from app.schemas import (
     ALLOWED_CONTENT_TYPES, EquipmentIn, EquipmentOut, MeDetail, MeOut, MeUpdate, ProfileImageCompleteIn,
@@ -42,9 +43,16 @@ async def _get_by_username(db: AsyncSession, username: str) -> User:
     return user
 
 
+async def _me_detail(db: AsyncSession, user: User) -> MeDetail:
+    has_photos = await db.scalar(select(Photo.id).where(
+        Photo.user_id == user.id, Photo.status == PhotoStatus.published).limit(1)) is not None
+    return MeDetail(**MeOut.model_validate(user).model_dump(), equipment=await _equipment(db, user.id),
+                    has_photos=has_photos)
+
+
 @router.get("/me", response_model=MeDetail)
 async def get_me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    return MeDetail(**MeOut.model_validate(user).model_dump(), equipment=await _equipment(db, user.id))
+    return await _me_detail(db, user)
 
 
 @router.patch("/me", response_model=MeDetail)
@@ -59,11 +67,14 @@ async def update_me(body: MeUpdate, user: User = Depends(get_current_user), db: 
         data["longitude"] = _fuzz(data["longitude"])
     if "country" in data and data["country"]:
         data["country"] = data["country"].upper()
+    if "onboarding_done" in data:
+        done = data.pop("onboarding_done")
+        user.onboarding_done_at = (user.onboarding_done_at or utcnow()) if done else None
     for key, value in data.items():
         setattr(user, key, value)
     await db.commit()
     await db.refresh(user)
-    return MeDetail(**MeOut.model_validate(user).model_dump(), equipment=await _equipment(db, user.id))
+    return await _me_detail(db, user)
 
 
 @router.put("/me/equipment", response_model=list[EquipmentOut])
@@ -228,7 +239,7 @@ async def profile_image_complete(body: ProfileImageCompleteIn, background: Backg
     await db.commit()
     await db.refresh(user)
     background.add_task(run_in_threadpool, storage.delete_objects, [k for k in (body.key, old_key) if k])
-    return MeDetail(**MeOut.model_validate(user).model_dump(), equipment=await _equipment(db, user.id))
+    return await _me_detail(db, user)
 
 
 @router.delete("/me/images/{kind}", response_model=MeDetail)
@@ -245,4 +256,4 @@ async def delete_profile_image(kind: str, background: BackgroundTasks, user: Use
     await db.refresh(user)
     if old:
         background.add_task(run_in_threadpool, storage.delete_objects, [old])
-    return MeDetail(**MeOut.model_validate(user).model_dump(), equipment=await _equipment(db, user.id))
+    return await _me_detail(db, user)

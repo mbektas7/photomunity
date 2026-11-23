@@ -116,7 +116,7 @@ async def deliver(notification_ids: list[uuid.UUID]) -> None:
                 data["photo_id"] = str(n.photo_id)
             if n.actor:
                 data["username"] = n.actor.username
-            for k in ("community_slug", "contest_id", "comment_id"):
+            for k in ("community_slug", "contest_id", "comment_id", "conversation_id"):
                 if k in (n.data or {}):
                     data[k] = str(n.data[k])
             if fcm is None:

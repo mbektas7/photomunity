@@ -114,11 +114,13 @@ class MeOut(ORM):
     longitude: float | None
     is_pro: bool
     is_admin: bool = False
+    onboarding_done: bool = True
     created_at: datetime
 
 
 class MeDetail(MeOut):
     equipment: list[EquipmentOut] = []
+    has_photos: bool = False  # tanıtımdaki "ilk fotoğrafını paylaş" adımı için
 
 
 class AuthResponse(BaseModel):
@@ -139,6 +141,7 @@ class MeUpdate(BaseModel):
     country: str | None = Field(default=None, min_length=2, max_length=2)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
+    onboarding_done: bool | None = None  # true: tanıtım bitti ya da kapatıldı
 
     @field_validator("username")
     @classmethod
@@ -249,6 +252,11 @@ class ExifSummary(ORM):
     focal_length_mm: float | None
 
 
+class CommentPreview(BaseModel):
+    username: str
+    body: str
+
+
 class PhotoCard(BaseModel):
     id: uuid.UUID
     user: UserCard
@@ -260,6 +268,10 @@ class PhotoCard(BaseModel):
     # Akış kartı: çekim bilgisi çipleri ve yer adı (yalnızca sahibin eklediği konum adı; koordinat yok)
     exif: ExifSummary | None = None
     place: str | None = None
+    # Akış kartında yorum düğmesi ve son yorum önizlemesi
+    comment_count: int = 0
+    comments_off: bool = False
+    last_comment: CommentPreview | None = None
 
 
 class PhotoDetail(PhotoCard):

@@ -75,7 +75,13 @@ class User(Base):
     avatar_key: Mapped[str | None] = mapped_column(String(500))
     cover_key: Mapped[str | None] = mapped_column(String(500))
     notification_prefs: Mapped[dict] = mapped_column(JSON, default=dict)  # {"push": {"photo_liked": false}}
+    # Kayıt sonrası tanıtım (profilini tamamla): bitirince ya da kapatınca dolar; eski hesaplar dolu başlar
+    onboarding_done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = _created()
+
+    @property
+    def onboarding_done(self) -> bool:
+        return self.onboarding_done_at is not None
 
 
 class AuthIdentity(Base):

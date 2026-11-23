@@ -23,7 +23,7 @@ from app.schemas import (
 from app.services import giphy, storage
 from app.services.moderation import moderate
 from app.services.profile_images import ProfileImageError, process_news_image
-from app.services.notifications import push_direct
+from app.services.notifications import deliver as notify_deliver, notify, push_direct
 from app.services.ratelimit import rate_limit
 from app.services.realtime import hub
 
@@ -203,8 +203,16 @@ async def _send(db: AsyncSession, background: BackgroundTasks, c: Conversation, 
                                                   "message": out.model_dump(mode="json")})
     if deliver and notify_type:
         preview = text[:80] if text else ("📷" if body.photo_id or image else "GIF" if gif else "📍")
-        background.add_task(push_direct, other_id, notify_type, sender.display_name,
-                            {"conversation_id": str(c.id), "username": sender.username}, {"preview": preview})
+        if notify_type == "message_request":
+            # İstek bildirim listesine de yazılır (push kapalı/çalışmıyorsa da görülsün); push deliver() ile gider
+            n = await notify(db, user_id=other_id, type="message_request", actor_id=sender.id,
+                             data={"conversation_id": str(c.id), "preview": preview})
+            await db.commit()
+            if n:
+                background.add_task(notify_deliver, [n.id])
+        else:
+            background.add_task(push_direct, other_id, notify_type, sender.display_name,
+                                {"conversation_id": str(c.id), "username": sender.username}, {"preview": preview})
     return out
 
 

@@ -12,9 +12,9 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError, request_locale
 from app.core.messages import translate
-from app.models import Contest, ContestEntry, Follow, Like, Photo, PhotoExif, PhotoStatus, User
+from app.models import Comment, Contest, ContestEntry, Follow, Like, Photo, PhotoExif, PhotoStatus, User
 from app.schemas import (
-    ALLOWED_CONTENT_TYPES, AwardOut, ExifOut, ExifSummary, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
+    ALLOWED_CONTENT_TYPES, AwardOut, CommentPreview, ExifOut, ExifSummary, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
     PhotoUpdate, UploadUrlIn, UploadUrlOut, UserCard,
 )
 from app.services import storage
@@ -47,11 +47,28 @@ async def _cards(db: AsyncSession, photos: list[Photo], viewer: User | None) -> 
     counts, liked = await _like_stats(db, ids, viewer)
     # EXIF tek sorguda; çağıranların Photo.exif'i önceden yüklemesine gerek yok
     exifs = {e.photo_id: e for e in await db.scalars(select(PhotoExif).where(PhotoExif.photo_id.in_(ids)))} if ids else {}
+    ccounts, last = await _comment_stats(db, [p.id for p in photos if (p.comment_policy or "everyone") != "off"])
     return [PhotoCard(id=p.id, user=UserCard.model_validate(p.user), title=p.title, images=_images(p),
                       like_count=counts.get(p.id, 0), liked_by_me=p.id in liked, published_at=p.published_at,
                       exif=ExifSummary.model_validate(exifs[p.id]) if p.id in exifs else None,
-                      place=p.location_name if p.latitude is not None and p.longitude is not None else None)
+                      place=p.location_name if p.latitude is not None and p.longitude is not None else None,
+                      comment_count=ccounts.get(p.id, 0), comments_off=(p.comment_policy or "everyone") == "off",
+                      last_comment=last.get(p.id))
             for p in photos]
+
+
+async def _comment_stats(db: AsyncSession, ids: list[uuid.UUID]) -> tuple[dict, dict]:
+    """Akış kartları için: yorum sayısı ve en son üst düzey yorum (tek sorguda, kapalı olanlar hariç)."""
+    if not ids:
+        return {}, {}
+    live = (Comment.photo_id.in_(ids), Comment.deleted_at.is_(None), User.is_active.is_(True))
+    counts = dict((await db.execute(select(Comment.photo_id, func.count()).join(User, User.id == Comment.user_id)
+                                    .where(*live).group_by(Comment.photo_id))).all())
+    rn = func.row_number().over(partition_by=Comment.photo_id, order_by=Comment.created_at.desc()).label("rn")
+    sub = (select(Comment.photo_id, Comment.body, User.username, rn).join(User, User.id == Comment.user_id)
+           .where(*live, Comment.parent_id.is_(None)).subquery())
+    rows = (await db.execute(select(sub.c.photo_id, sub.c.body, sub.c.username).where(sub.c.rn == 1))).all()
+    return counts, {r.photo_id: CommentPreview(username=r.username, body=r.body[:140]) for r in rows}
 
 
 def _page(cards: list[PhotoCard], limit: int) -> PhotoPage:
@@ -153,7 +170,7 @@ async def _detail(db: AsyncSession, photo: Photo, viewer: User | None, locale: s
     from app.api.v1.comments import can_comment, comment_count
 
     return PhotoDetail(
-        **card.model_dump(exclude={"exif"}), description=photo.description, tags=photo.tags or [],
+        **card.model_dump(exclude={"exif", "comment_count"}), description=photo.description, tags=photo.tags or [],
         width=photo.width, height=photo.height, exif=ExifOut.model_validate(exif) if exif else None,
         location=location, status=photo.status, rejection=rejection, suggested_location=suggested,
         comment_policy=photo.comment_policy or "everyone",
