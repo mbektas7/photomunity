@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Aperture, Calculator, Moon, Timer } from "lucide-react";
+import { Aperture, Calculator, Moon, Telescope, Timer } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { AdSlot } from "@/components/AdSlot";
 import { Link } from "@/i18n/navigation";
@@ -14,7 +14,8 @@ export default function GuideHub() {
   const t = useTranslations("guide");
   const q = useQuery({ queryKey: ["guides"], queryFn: () => api<GuideCard[]>("guides") });
   const tools = [
-    { href: "/planner", icon: Moon, title: t("planner_title"), body: t("planner_body"), accent: true },
+    { href: "/sky", icon: Telescope, title: t("sky_title"), body: t("sky_body"), accent: true },
+    { href: "/planner", icon: Moon, title: t("planner_title"), body: t("planner_body") },
     { href: "/tools#npf", icon: Timer, title: t("npf_title"), body: t("npf_body") },
     { href: "/tools#dof", icon: Aperture, title: t("dof_title"), body: t("dof_body") },
     { href: "/tools#nd", icon: Calculator, title: t("nd_title"), body: t("nd_body") },
@@ -24,7 +25,7 @@ export default function GuideHub() {
       <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
       <p className="mt-3 max-w-[60ch] text-ink-muted">{t("lead")}</p>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {tools.map(({ href, icon: Icon, title, body, accent }) => (
           <Link key={href} href={href} className={accent ? "rounded-card bg-accent px-5 py-5 text-accent-ink hover:brightness-110" : "rounded-card bg-surface px-5 py-5 hover:bg-surface/80"}>
             <Icon className="h-6 w-6" strokeWidth={1.7} />

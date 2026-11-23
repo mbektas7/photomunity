@@ -7,7 +7,8 @@ import { useEffect, useRef } from "react";
 const LIGHT = process.env.NEXT_PUBLIC_MAP_STYLE_LIGHT || "https://tiles.openfreemap.org/styles/positron";
 const DARK = process.env.NEXT_PUBLIC_MAP_STYLE_DARK || "https://tiles.openfreemap.org/styles/dark";
 
-export type View = { bbox: string; zoom: number; lat: number; lng: number };
+/** user: hareket kullanıcıdan mı geldi (sürükleme, kaydırma), yoksa koddan mı (ilk yükleme, flyTo). */
+export type View = { bbox: string; zoom: number; lat: number; lng: number; user?: boolean };
 
 export type MarkerSpec = { key: string; lat: number; lng: number; element: () => HTMLElement; onClick?: () => void };
 
@@ -15,11 +16,13 @@ export type MarkerSpec = { key: string; lat: number; lng: number; element: () =>
  * İnce bir MapLibre sarmalayıcısı. İşaretçiler HTML öğesidir (avatar, küme rozeti, küçük resim);
  * kümeleme sunucuda yapıldığı için harita yalnızca gelenleri çizer.
  */
-export function MapView({ initial, markers, onView, flyTo }: {
+export function MapView({ initial, markers, onView, flyTo, noRotate }: {
   initial: { lat: number; lng: number; zoom: number };
   markers: MarkerSpec[];
   onView: (v: View) => void;
   flyTo?: { lat: number; lng: number; zoom: number; seq: number } | null;
+  /** Kuzey hep yukarıda kalsın (yön çizgileri harita üstüne çizildiğinde). */
+  noRotate?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
@@ -40,8 +43,19 @@ export function MapView({ initial, markers, onView, flyTo }: {
       renderWorldCopies: true,
     });
     m.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    if (noRotate) {
+      m.dragRotate.disable();
+      m.touchZoomRotate.disableRotation();
+      m.keyboard.disableRotation();
+      m.touchPitch.disable();
+      // Yakınlaştırma merkez etrafında: merkezdeki konum yerinde kalsın
+      m.scrollZoom.enable({ around: "center" });
+      m.touchZoomRotate.enable({ around: "center" });
+      m.touchZoomRotate.disableRotation();
+      m.doubleClickZoom.disable();
+    }
     map.current = m;
-    const emit = () => {
+    const emit = (e?: { originalEvent?: unknown }) => {
       const b = m.getBounds();
       const c = m.getCenter();
       // Dünya kopyalarında boylamı -180..180 aralığına sar
@@ -53,6 +67,7 @@ export function MapView({ initial, markers, onView, flyTo }: {
         zoom: Math.round(m.getZoom()),
         lat: c.lat,
         lng: wrap(c.lng),
+        user: !!e?.originalEvent,
       });
     };
     m.on("moveend", emit);

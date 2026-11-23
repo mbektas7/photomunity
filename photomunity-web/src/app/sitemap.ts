@@ -3,7 +3,7 @@ import { routing } from "@/i18n/routing";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://photomunity.com";
 const API = process.env.API_URL ?? "http://localhost:8000/api/v1";
-const STATIC = ["", "/explore", "/communities", "/contests", "/map", "/guide", "/tools", "/planner", "/pro"];
+const STATIC = ["", "/explore", "/communities", "/contests", "/map", "/guide", "/tools", "/planner", "/sky", "/sky/moon", "/sky/planner", "/sky/meteors", "/pro"];
 
 /** Herkese açık sayfalar, her dil için hreflang alternatifleriyle. Rehber senaryoları API'den gelir. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
