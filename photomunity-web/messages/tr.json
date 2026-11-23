@@ -178,7 +178,9 @@
     "more_from": "{name} diğer kareleri",
     "go_profile": "Profile git",
     "view_profile": "Profili gör",
-    "focal_short": "Odak"
+    "focal_short": "Odak",
+    "comments_count": "Yorumlar, {count} yorum",
+    "view_all_comments": "{count} yorumun tümünü gör"
   },
   "profile": {
     "follow": "Takip et",
@@ -354,7 +356,8 @@
   },
   "notifications": {
     "title": "Bildirimler",
-    "empty": "Henüz bildirimin yok. Biri seni takip ettiğinde ya da fotoğrafını beğendiğinde burada görünür."
+    "empty": "Henüz bildirimin yok. Biri seni takip ettiğinde ya da fotoğrafını beğendiğinde burada görünür.",
+    "view": "Gör"
   },
   "report": {
     "button": "Şikayet et",
@@ -711,7 +714,13 @@
     "reply": "Cevapla",
     "copy": "Kopyala",
     "report": "Şikâyet et",
-    "attach_my_photos": "Photomunity fotoğraflarım"
+    "attach_my_photos": "Photomunity fotoğraflarım",
+    "requests_banner_title": "{count} mesaj isteği",
+    "requests_banner_one": "{name} sana yazmak istiyor",
+    "requests_banner_many": "{name} ve {count} kişi daha sana yazmak istiyor",
+    "sending": "Gönderiliyor…",
+    "send_failed_retry": "Gönderilemedi · Tekrar dene",
+    "send_failed_delete": "Sil"
   },
   "guide": {
     "title": "Rehber",
@@ -1248,5 +1257,41 @@
     "policy_followers_hint": "Yalnızca seni takip edenler",
     "policy_off": "Kapalı",
     "policy_off_hint": "Yorum yapılamaz; varsa eski yorumlar gizlenir"
+  },
+  "onboarding": {
+    "step": "Adım {n}/{total}",
+    "skip": "Şimdilik geç",
+    "finish": "Bitir",
+    "continue": "Devam",
+    "avatar_title": "Önce bir yüz koyalım",
+    "avatar_body": "Profil fotoğrafı olan fotoğrafçılara daha çok mesaj ve takip geliyor.",
+    "avatar_hint": "JPEG, PNG, WebP ya da HEIC. Profilinde yuvarlak olarak görünür.",
+    "avatar_pick": "Fotoğraf seç",
+    "avatar_change": "Başka fotoğraf seç",
+    "uploading": "Yükleniyor…",
+    "upload_failed": "Fotoğraf yüklenemedi. Tekrar dene.",
+    "about_title": "Kendinden bahset",
+    "about_body": "Birkaç kelime yeter. İlgi alanların akışını ve önerileri şekillendirir.",
+    "bio": "Hakkında",
+    "bio_placeholder": "Nerede yaşıyorsun, en çok neyi çekmeyi seviyorsun?",
+    "specialties": "Ne çekiyorsun?",
+    "city": "Şehir",
+    "error": "Kaydedilemedi. Tekrar dene.",
+    "gear_title": "Hangi ekipmanla çekiyorsun?",
+    "gear_body": "Profilinde görünür; aynı ekipmanı kullananlar seni daha kolay bulur.",
+    "gear_add": "Ekipman ekle",
+    "photo_title": "İlk kareni paylaş",
+    "photo_body": "Topluluk seni fotoğraflarınla tanır. İstersen sonra da yükleyebilirsin.",
+    "photo_hint": "Kırpılmaz, olduğu gibi yayınlanır.",
+    "photo_go": "Yüklemeye geç",
+    "photo_done": "İlk fotoğrafın yayında. Güzel bir başlangıç!",
+    "card_title": "Profilini tamamla",
+    "card_progress": "{done}/{total} tamamlandı · tamamlanan profiller daha çok takip ediliyor",
+    "card_close": "Kapat",
+    "card_step_avatar": "Profil fotoğrafı ekle",
+    "card_step_about": "Kendinden bahset",
+    "card_step_gear": "Ekipmanını ekle",
+    "card_step_photo": "İlk fotoğrafını paylaş",
+    "card_done": "Tamamlandı"
   }
 }

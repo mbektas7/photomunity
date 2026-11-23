@@ -1,3 +1,6 @@
+/** Profil ve haritada kullanılan ilgi alanı anahtarları (çevirileri "specialties" altında). */
+export const SPECIALTIES = ["astro", "landscape", "street", "portrait", "wildlife", "sports", "architecture", "documentary", "wedding", "macro", "aerial", "travel"];
+
 export function countryName(code: string | null, locale: string) {
   if (!code) return null;
   try {

@@ -9,9 +9,10 @@ import type { Me } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { Notice } from "./ui";
 
-const TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+export const PROFILE_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
-async function uploadProfileImage(kind: "avatar" | "cover", file: File) {
+/** Profil görselini (avatar ya da kapak) yükler; güncel profil döner. Tanıtım sayfası da kullanır. */
+export async function uploadProfileImage(kind: "avatar" | "cover", file: File) {
   const contentType = file.type || "image/heic";
   const slot = await api<{ upload_url: string; fields: Record<string, string> }>("me/images/upload-url", {
     method: "POST",
@@ -37,7 +38,7 @@ export function ProfileImages({ me }: { me: Me }) {
   const pick = (kind: "avatar" | "cover") => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (file && TYPES.includes(file.type || "image/heic")) upload.mutate({ kind, file });
+    if (file && PROFILE_IMAGE_TYPES.includes(file.type || "image/heic")) upload.mutate({ kind, file });
   };
   const busy = (kind: string) => upload.isPending && upload.variables?.kind === kind;
 
@@ -89,8 +90,8 @@ export function ProfileImages({ me }: { me: Me }) {
         <Notice tone="error">{upload.error instanceof ApiError && upload.error.message ? upload.error.message : t("upload_failed")}</Notice>
       )}
       <p className="text-sm text-ink-muted">{t("images_hint")}</p>
-      <input ref={avatarInput} type="file" accept={TYPES.join(",")} className="sr-only" onChange={pick("avatar")} />
-      <input ref={coverInput} type="file" accept={TYPES.join(",")} className="sr-only" onChange={pick("cover")} />
+      <input ref={avatarInput} type="file" accept={PROFILE_IMAGE_TYPES.join(",")} className="sr-only" onChange={pick("avatar")} />
+      <input ref={coverInput} type="file" accept={PROFILE_IMAGE_TYPES.join(",")} className="sr-only" onChange={pick("cover")} />
     </div>
   );
 }

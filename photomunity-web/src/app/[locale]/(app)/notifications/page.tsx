@@ -8,11 +8,14 @@ import { useCallback, useEffect, useRef } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import { buttonClass } from "@/lib/button-class";
 import { useLoadMore, useMe } from "@/lib/hooks";
 import { relativeTime } from "@/lib/relative-time";
 import type { AppNotification, NotificationPage } from "@/lib/types";
 
 function target(n: AppNotification) {
+  // Mesaj isteği: istekler klasöründeki sohbete gider
+  if (n.type === "message_request" && n.data.conversation_id) return `/messages/${n.data.conversation_id}?folder=requests`;
   // Yönetim duyurusu kendi uygulama içi yolunu taşır
   if (typeof n.data.link === "string" && n.data.link.startsWith("/")) return n.data.link;
   if (n.data.contest_id) return `/contests/${n.data.contest_id}`;
@@ -77,8 +80,15 @@ export default function NotificationsPage() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] leading-snug">{n.text}</span>
+                {n.type === "message_request" && n.data.preview && (
+                  <span className="mt-0.5 block truncate text-[14px] text-ink-muted">“{n.data.preview}”</span>
+                )}
                 <span className="mt-0.5 block text-[13px] text-ink-muted">{relativeTime(n.created_at, locale)}</span>
               </span>
+              {n.type === "message_request" && n.data.conversation_id && (
+                // Satırın tamamı bağlantı; bu yalnızca görsel düğme
+                <span className={buttonClass("primary", "mr-3 h-9 min-h-9 shrink-0 px-4 text-[14px]")}>{t("view")}</span>
+              )}
               {n.photo?.thumb_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={n.photo.thumb_url} alt="" className="h-12 w-12 shrink-0 object-cover" />

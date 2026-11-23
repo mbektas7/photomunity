@@ -51,7 +51,7 @@ export function SocialButtons({ onError }: { onError: (message: string) => void 
     try {
       const res = await authAction<{ user: Me; is_new_user: boolean }>(provider, { ...body, locale });
       await qc.invalidateQueries({ queryKey: ["me"] });
-      router.push(res.is_new_user ? "/settings?welcome=1" : "/feed");
+      router.push(res.is_new_user ? "/welcome" : "/feed");
     } catch (e) {
       onError(e instanceof ApiError ? e.message : t("social_failed"));
     } finally {

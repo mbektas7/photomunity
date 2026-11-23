@@ -260,7 +260,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         controller: _bio,
         maxLines: 4,
         minLines: 3,
-        maxLength: 300,
+        maxLength: 500,
         decoration: InputDecoration(hintText: t('onb.bio_hint')),
       ),
       const SizedBox(height: 8),

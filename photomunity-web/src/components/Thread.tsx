@@ -1,13 +1,15 @@
 "use client";
 
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Aperture, ArrowLeft, Images, LocateFixed, MapPin, MoreHorizontal, Plus, SendHorizontal, Smile, SmilePlus, X } from "lucide-react";
+import { AlertCircle, Aperture, ArrowLeft, Clock3, Images, LocateFixed, MapPin, MoreHorizontal, Plus, SendHorizontal, Smile, SmilePlus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ApiError, api, uploadToStorage } from "@/lib/api";
-import { appendMessage, isRemoved, setMessageReactions } from "@/lib/chat-cache";
+import {
+  type PendingMessage, appendMessage, discardPending, isRemoved, pendingKey, retryPending, sendOptimistic, setMessageReactions, visiblePending,
+} from "@/lib/chat-cache";
 import type { ChatMessage, Conversation, Gif, MessagePageData, MessageQuote, Reaction, UserCard } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { GifPicker, MessageMenu, ReactionPills } from "./chat-extras";
@@ -47,7 +49,7 @@ function quoteOf(m: ChatMessage): Pick<MessageQuote, "kind" | "preview"> {
   return { kind, preview: m.body };
 }
 
-function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump }: {
+function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump, status, error, onRetry, onDiscard }: {
   m: ChatMessage;
   mine: boolean;
   meId: string;
@@ -55,6 +57,11 @@ function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump }: {
   onMenu?: (m: ChatMessage, rect: DOMRect) => void;
   onReact?: (m: ChatMessage, emoji: string) => void;
   onJump: (id: string) => void;
+  /** Yalnızca anında gönderilen (henüz sunucuya ulaşmamış) mesajlarda */
+  status?: PendingMessage["status"];
+  error?: string | null;
+  onRetry?: () => void;
+  onDiscard?: () => void;
 }) {
   const t = useTranslations("messages");
   const locale = useLocale();
@@ -66,12 +73,13 @@ function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump }: {
   const press = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const open = () => body.current && onMenu?.(m, body.current.getBoundingClientRect());
   const r = m.reply_to;
+  const failed = status === "failed";
 
   return (
     <div id={`m-${m.id}`} className={clsx("group flex items-center gap-1.5", mine ? "flex-row-reverse" : "flex-row")}>
       <div
         ref={body}
-        className={clsx("max-w-[78%] sm:max-w-[62%]", mine ? "items-end" : "items-start", "flex flex-col gap-1")}
+        className={clsx("max-w-[78%] sm:max-w-[62%]", mine ? "items-end" : "items-start", "flex flex-col gap-1", status === "sending" && "opacity-60")}
         onContextMenu={(e) => {
           if (!onMenu || removed) return;
           e.preventDefault();
@@ -95,7 +103,13 @@ function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump }: {
           <p className="rounded-[20px] border border-line px-4 py-2.5 text-[15px] italic text-ink-muted">{t("removed")}</p>
         ) : (
           <>
-            {m.image && (
+            {m.image && !m.image.url && (
+              // Önizlemesi tarayıcıda gösterilemeyen (HEIC) görsel yüklenirken
+              <span className="flex h-[140px] w-[180px] items-center justify-center rounded-[18px] bg-surface-2 text-ink-muted">
+                <Images className="h-7 w-7" strokeWidth={1.6} aria-label={t("kind_image")} />
+              </span>
+            )}
+            {m.image && m.image.url && (
               <a href={m.image.url} target="_blank" rel="noreferrer" className="block max-w-full">
                 {/* Galeriden gelen görsel kırpılmadan, kendi oranında */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -122,14 +136,36 @@ function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump }: {
               </a>
             )}
             {m.body && (
-              <p className={clsx("whitespace-pre-wrap break-words rounded-[20px] px-4 py-2.5 text-[15.5px] leading-[1.45]", mine ? "rounded-br-[6px] bg-accent text-accent-ink" : "rounded-bl-[6px] bg-surface")}>
+              <p className={clsx(
+                "whitespace-pre-wrap break-words rounded-[20px] px-4 py-2.5 text-[15.5px] leading-[1.45]",
+                failed ? "rounded-br-[6px] border-[1.5px] border-danger/50 bg-surface text-ink" : mine ? "rounded-br-[6px] bg-accent text-accent-ink" : "rounded-bl-[6px] bg-surface",
+              )}>
                 {m.body}
               </p>
             )}
           </>
         )}
         <ReactionPills reactions={m.reactions ?? []} meId={meId} mine={mine} onToggle={onReact && ((e) => onReact(m, e))} />
-        <span className="tnum px-1 text-[11px] text-ink-muted">{time}</span>
+        {status === "sending" ? (
+          <span className="flex items-center gap-1 px-1 text-[11.5px] text-ink-muted" aria-live="polite">
+            <Clock3 className="h-3 w-3" strokeWidth={2} aria-hidden /> {t("sending")}
+          </span>
+        ) : failed ? (
+          <span className="flex flex-col items-end gap-0.5 px-1" role="alert">
+            <span className="flex items-center gap-1">
+              <button type="button" onClick={onRetry} className="inline-flex min-h-8 items-center gap-1 rounded-pill text-[12px] font-bold text-danger hover:underline">
+                <AlertCircle className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> {t("send_failed_retry")}
+              </button>
+              <span aria-hidden className="text-[12px] text-ink-muted">·</span>
+              <button type="button" onClick={onDiscard} className="inline-flex min-h-8 items-center rounded-pill text-[12px] font-semibold text-ink-muted hover:text-ink hover:underline">
+                {t("send_failed_delete")}
+              </button>
+            </span>
+            {error && <span className="max-w-[36ch] text-right text-[11.5px] text-ink-muted">{error}</span>}
+          </span>
+        ) : (
+          <span className="tnum px-1 text-[11px] text-ink-muted">{time}</span>
+        )}
       </div>
       {onMenu && !removed && (
         <button type="button" onClick={open} aria-label={t("message_actions")}
@@ -178,6 +214,19 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
   const messages = q.data ? [...q.data.pages].reverse().flatMap((p) => p.items) : [];
   const lastId = messages.at(-1)?.id;
 
+  // Anında gönderilen, sunucu yanıtı beklenen ya da gönderilemeyen mesajlar (bkz. chat-cache)
+  const pendingQ = useQuery({
+    queryKey: pendingKey(cid ?? ""),
+    enabled: !!cid,
+    queryFn: () => qc.getQueryData<PendingMessage[]>(pendingKey(cid!)) ?? [],
+    initialData: [] as PendingMessage[],
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+  const pending = cid ? visiblePending(messages, pendingQ.data) : [];
+  const shown: (ChatMessage | PendingMessage)[] = [...messages, ...pending];
+  const shownLastId = shown.at(-1)?.id;
+
   const read = useMutation({ mutationFn: () => api(`conversations/${cid}/read`, { method: "POST" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["messages-unread"] }) });
   useEffect(() => {
     if (cid && lastId && messages.at(-1)?.sender_id !== meId) read.mutate();
@@ -187,7 +236,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
   useLayoutEffect(() => {
     const el = scroller.current;
     if (el && atBottom.current) el.scrollTop = el.scrollHeight;
-  }, [lastId, q.data?.pages.length]);
+  }, [shownLastId, q.data?.pages.length]);
 
   // Fotoğraflar sonradan yüklenip içeriği uzatır; kullanıcı en alttaysa en altta kalsın
   useEffect(() => {
@@ -200,6 +249,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
     return () => ro.disconnect();
   }, []);
 
+  /** Yeni sohbet: ilk mesaj sohbeti oluşturur; yanıt beklenir ve sohbet sayfasına geçilir. */
   const send = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
       if (!cid) {
@@ -249,25 +299,70 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
     react.mutate({ m, emoji: mineNow === emoji ? null : emoji });
   }
 
-  /** Cevap seçiliyse her gönderime eklenir. */
-  function sendWith(payload: Record<string, unknown>) {
-    send.mutate(replyTo && cid ? { ...payload, reply_to_id: replyTo.id } : payload);
+  /**
+   * Cevap seçiliyse her gönderime eklenir. Var olan sohbette mesaj anında (iyimser) eklenir, girdi hemen temizlenir;
+   * istek arka planda gider. `preview` ekranda gösterilecek geçici içeriktir; `prepare` gönderimden önce yapılacak iş (görsel yükleme).
+   */
+  function sendWith(payload: Record<string, unknown>, preview: Partial<ChatMessage> = {}, prepare?: () => Promise<Record<string, unknown>>) {
+    setPicker(false);
+    setGifs(false);
+    if (!cid) {
+      send.mutate(payload);
+      return;
+    }
+    const reply = replyTo;
+    const full = reply ? { ...payload, reply_to_id: reply.id } : payload;
+    setReplyTo(null);
+    atBottom.current = true;
+    sendOptimistic(
+      qc,
+      cid,
+      {
+        sender_id: meId,
+        body: typeof payload.body === "string" ? payload.body : null,
+        photo: null,
+        location: null,
+        image: null,
+        gif: null,
+        reactions: [],
+        reply_to: reply ? { id: reply.id, sender_id: reply.sender_id, ...quoteOf(reply) } : null,
+        ...preview,
+      },
+      async () => {
+        const extra = prepare ? await prepare() : {};
+        const m = await api<ChatMessage>(`conversations/${cid}/messages`, { method: "POST", body: { ...full, ...extra } });
+        qc.invalidateQueries({ queryKey: ["conversations"] });
+        qc.invalidateQueries({ queryKey: ["conversation", cid] });
+        return m;
+      },
+    );
   }
 
   function submit() {
     const body = text.trim();
-    if (body) sendWith({ body });
+    if (!body) return;
+    if (cid) setText("");
+    sendWith({ body });
   }
 
   function shareLocation() {
-    navigator.geolocation?.getCurrentPosition((p) =>
-      sendWith({ location: { latitude: +p.coords.latitude.toFixed(4), longitude: +p.coords.longitude.toFixed(4), name: null } }),
-    );
+    navigator.geolocation?.getCurrentPosition((p) => {
+      const location = { latitude: +p.coords.latitude.toFixed(4), longitude: +p.coords.longitude.toFixed(4), name: null };
+      sendWith({ location }, { location });
+    });
   }
 
   async function sendImage(file: File | undefined) {
+    if (fileInput.current) fileInput.current.value = "";
     if (!file) return;
     setUploadError(null);
+    if (cid) {
+      // Görsel anında yerel önizlemeyle eklenir; yükleme ve gönderim arka planda (hata olursa "Tekrar dene" ikisini de yineler)
+      const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+      const url = heic ? "" : URL.createObjectURL(file);
+      sendWith({}, { image: { url, width: 0, height: 0 } }, async () => ({ image_key: await uploadChatImage(file) }));
+      return;
+    }
     setUploading(true);
     try {
       const key = await uploadChatImage(file);
@@ -276,7 +371,6 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
       setUploadError(e instanceof ApiError && e.message ? e.message : t("upload_failed"));
     } finally {
       setUploading(false);
-      if (fileInput.current) fileInput.current.value = "";
     }
   }
 
@@ -298,7 +392,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
 
   const seenAt = conversation?.other_last_read_at ? new Date(conversation.other_last_read_at) : null;
   // "Görüldü" yalnızca en son mesaj bensem ve karşı taraf onu okuduysa
-  const last = messages.at(-1);
+  const last = messages.at(-1); // geçici mesajlar hariç
   const seen = !!(last && last.sender_id === meId && seenAt && seenAt >= new Date(last.created_at));
   const pendingMine = conversation?.status === "request" && !conversation.is_request_to_me;
 
@@ -338,14 +432,21 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
         <div ref={content}>
         {!cid && <p className="mx-auto mt-10 max-w-[44ch] text-center text-sm text-ink-muted">{t("new_hint", { name: other.display_name })}</p>}
         <div className="flex flex-col gap-2.5">
-          {messages.map((m, i) => {
-            const showDay = i === 0 || new Date(messages[i - 1]!.created_at).toDateString() !== new Date(m.created_at).toDateString();
+          {shown.map((m, i) => {
+            const showDay = i === 0 || new Date(shown[i - 1]!.created_at).toDateString() !== new Date(m.created_at).toDateString();
+            const status = "status" in m ? m.status : undefined;
             return (
               <div key={m.id} className="flex flex-col gap-2.5">
                 {showDay && <p className="my-2 text-center text-[13px] font-semibold text-ink-muted">{dayLabel(m.created_at, locale)}</p>}
-                <Bubble m={m} mine={m.sender_id === meId} meId={meId} otherName={other.display_name} onJump={jumpTo}
-                  onMenu={cid ? (msg, rect) => setMsgMenu({ m: msg, rect }) : undefined}
-                  onReact={cid ? toggleReaction : undefined} />
+                {status ? (
+                  <Bubble m={m} mine meId={meId} otherName={other.display_name} onJump={jumpTo}
+                    status={status} error={"error" in m ? m.error : null}
+                    onRetry={() => retryPending(qc, cid!, m.id)} onDiscard={() => discardPending(qc, cid!, m.id)} />
+                ) : (
+                  <Bubble m={m} mine={m.sender_id === meId} meId={meId} otherName={other.display_name} onJump={jumpTo}
+                    onMenu={cid ? (msg, rect) => setMsgMenu({ m: msg, rect }) : undefined}
+                    onReact={cid ? toggleReaction : undefined} />
+                )}
               </div>
             );
           })}
@@ -366,7 +467,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
         </div>
       ) : (
         <div className="relative px-3 py-3 sm:px-4">
-          {gifs && <GifPicker busy={send.isPending} onClose={() => setGifs(false)} onPick={(g: Gif) => sendWith({ gif: { id: g.id, kind: g.kind } })} />}
+          {gifs && <GifPicker busy={send.isPending} onClose={() => setGifs(false)} onPick={(g: Gif) => sendWith({ gif: { id: g.id, kind: g.kind } }, { gif: g })} />}
           {pendingMine && <p className="mb-2 text-xs text-ink-muted">{t("pending_hint")}</p>}
           {(send.error || uploadError) && (
             <div className="mb-2">
@@ -430,7 +531,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
               aria-label={t("placeholder")}
               className="max-h-40 min-h-11 flex-1 resize-none rounded-[22px] border border-transparent bg-surface px-4 py-2.5 text-[15px] leading-snug outline-none [field-sizing:content] focus:border-accent"
             />
-            <button type="submit" disabled={!text.trim() || send.isPending} aria-label={t("send")}
+            <button type="submit" disabled={!text.trim() || (!cid && send.isPending)} aria-label={t("send")}
               className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity disabled:opacity-40">
               <SendHorizontal className="h-[18px] w-[18px]" />
             </button>
@@ -452,7 +553,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
         />
       )}
       {reporting && <ReportDialog targetType="message" targetId={reporting} open onClose={() => setReporting(null)} />}
-      <MyPhotoPicker open={picker} onClose={() => setPicker(false)} title={t("attach_photo")} busy={send.isPending} onPick={(p) => sendWith({ photo_id: p.id })} />
+      <MyPhotoPicker open={picker} onClose={() => setPicker(false)} title={t("attach_photo")} busy={send.isPending} onPick={(p) => sendWith({ photo_id: p.id }, { photo: p })} />
     </div>
   );
 }

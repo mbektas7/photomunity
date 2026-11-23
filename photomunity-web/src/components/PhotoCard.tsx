@@ -1,5 +1,6 @@
 "use client";
 
+import { MessageCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { relativeTime } from "@/lib/relative-time";
@@ -14,7 +15,7 @@ import { ShareButton } from "./ShareButton";
 type CardPhoto = PhotoCardData & { user: PhotoCardData["user"] & { is_following?: boolean } };
 
 /**
- * Akıştaki tek fotoğraf: yazar, kırpılmamış kare, beğeni ve çekim bilgisi.
+ * Akıştaki tek fotoğraf: yazar, kırpılmamış kare, beğeni, yorum ve çekim bilgisi; varsa son yorum tek satır.
  * Kart surface, radius-card, iç boşluk space-3; gölge yok. Fotoğraf kendi oranında, radius-photo.
  */
 export function PhotoCard({ photo, meId }: { photo: CardPhoto; meId?: string }) {
@@ -50,10 +51,33 @@ export function PhotoCard({ photo, meId }: { photo: CardPhoto; meId?: string }) 
       </Link>
       <footer className="flex flex-wrap items-center gap-2 px-1 pb-0.5 pt-3">
         <LikeButton id={photo.id} liked={photo.liked_by_me} count={photo.like_count} />
+        {!photo.comments_off && (
+          <Link
+            href={`/p/${photo.id}#comments`}
+            aria-label={t("comments_count", { count: photo.comment_count ?? 0 })}
+            className="inline-flex h-[38px] items-center justify-center gap-1.5 rounded-pill bg-surface-2 px-3.5 text-[14.5px] font-semibold text-ink transition-colors hover:bg-line"
+          >
+            <MessageCircle className="h-[19px] w-[19px]" strokeWidth={1.9} aria-hidden />
+            <span className="tnum">{photo.comment_count ?? 0}</span>
+          </Link>
+        )}
         <ShareButton url={`/${locale}/p/${photo.id}`} title={photo.title ?? undefined} />
         <span className="flex-1" />
         <ExifChips exif={photo.exif} locale={locale} />
       </footer>
+      {!photo.comments_off && photo.last_comment && (
+        <div className="px-1 pb-0.5 pt-2.5 text-[14.5px] leading-[20px]">
+          <Link href={`/p/${photo.id}#comments`} className="block truncate">
+            <span className="font-semibold">{photo.last_comment.username}</span>{" "}
+            <span>{photo.last_comment.body}</span>
+          </Link>
+          {photo.comment_count > 1 && (
+            <Link href={`/p/${photo.id}#comments`} className="mt-0.5 inline-block text-ink-muted hover:text-ink">
+              {t("view_all_comments", { count: photo.comment_count })}
+            </Link>
+          )}
+        </div>
+      )}
     </article>
   );
 }

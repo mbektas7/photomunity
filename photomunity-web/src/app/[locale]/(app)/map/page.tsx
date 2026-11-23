@@ -12,12 +12,11 @@ import type { MarkerSpec, View } from "@/components/MapView";
 import { buttonClass } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import { countryName, initials } from "@/lib/format";
+import { SPECIALTIES, countryName, initials } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
 import type { MapCluster, MapPhotographer, MapPhotoPoint, PhotoMapData, PhotographerMapData } from "@/lib/types";
 
 const MapView = dynamic(() => import("@/components/MapView").then((m) => m.MapView), { ssr: false });
-const SPECIALTIES = ["astro", "landscape", "street", "portrait", "wildlife", "sports", "architecture", "documentary", "wedding", "macro", "aerial", "travel"];
 
 function clusterEl(c: MapCluster) {
   const el = document.createElement("div");

@@ -7,6 +7,7 @@ import { AdSlot } from "@/components/AdSlot";
 import { useShortRemaining } from "@/components/Countdown";
 import { ContestMini } from "@/components/community";
 import { HomeBanner } from "@/components/HomeBanner";
+import { ProfileCompleteCard } from "@/components/Onboarding";
 import { PhotoCard } from "@/components/PhotoCard";
 import { Sidebar } from "@/components/Shell";
 import { StoryRing } from "@/components/StoryRing";
@@ -95,6 +96,7 @@ export default function FeedPage() {
       <div className="flex min-w-0 max-w-[660px] flex-[999_1_560px] flex-col gap-[18px]">
         <h1 className="sr-only">{t("title")}</h1>
         <Stories contests={contests} />
+        {me && !me.onboarding_done && <ProfileCompleteCard me={me} />}
         <HomeBanner />
         {feed.isSuccess && items.length === 0 && (
           <div className="rounded-card bg-surface px-6 py-12">

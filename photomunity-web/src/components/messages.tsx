@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -86,5 +86,41 @@ export function ConversationList({ folder, meId, activeId }: { folder: "inbox" |
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Gelen kutusunun üstünde: okunmamış mesaj isteği varsa isteklere götüren bant. */
+export function RequestsBanner({ unreadRequests }: { unreadRequests: number }) {
+  const t = useTranslations("messages");
+  const q = useQuery({
+    queryKey: ["conversations", "requests"],
+    enabled: unreadRequests > 0,
+    queryFn: () => api<Conversation[]>("conversations?folder=requests"),
+    refetchInterval: 30_000,
+  });
+  const list = q.data ?? [];
+  if (unreadRequests <= 0 || list.length === 0) return null;
+  const first = list[0]!.other.display_name;
+  const others = list.length - 1;
+  return (
+    <Link
+      href="/messages?folder=requests"
+      className="mx-3 mb-2 flex items-center gap-3 rounded-card bg-surface px-3.5 py-3 transition-colors hover:bg-surface-2 lg:bg-surface-2 lg:hover:bg-line"
+    >
+      <span className="flex shrink-0">
+        {list.slice(0, 2).map((c, i) => (
+          <span key={c.id} className={clsx("rounded-full ring-2 ring-surface lg:ring-surface-2", i > 0 && "-ml-3")}>
+            <Avatar name={c.other.display_name} url={c.other.avatar_url} size={38} />
+          </span>
+        ))}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-bold">{t("requests_banner_title", { count: list.length })}</span>
+        <span className="block truncate text-[13px] text-ink-muted">
+          {others > 0 ? t("requests_banner_many", { name: first, count: others }) : t("requests_banner_one", { name: first })}
+        </span>
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-ink-muted" aria-hidden />
+    </Link>
   );
 }

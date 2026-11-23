@@ -178,7 +178,9 @@
     "more_from": "More from {name}",
     "go_profile": "Go to profile",
     "view_profile": "View profile",
-    "focal_short": "Focal"
+    "focal_short": "Focal",
+    "comments_count": "{count, plural, one {Comments, # comment} other {Comments, # comments}}",
+    "view_all_comments": "{count, plural, one {View # comment} other {View all # comments}}"
   },
   "profile": {
     "follow": "Follow",
@@ -354,7 +356,8 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No notifications yet. They show up here when someone follows you or likes your photo."
+    "empty": "No notifications yet. They show up here when someone follows you or likes your photo.",
+    "view": "View"
   },
   "report": {
     "button": "Report",
@@ -711,7 +714,13 @@
     "reply": "Reply",
     "copy": "Copy",
     "report": "Report",
-    "attach_my_photos": "My Photomunity photos"
+    "attach_my_photos": "My Photomunity photos",
+    "requests_banner_title": "{count, plural, one {# message request} other {# message requests}}",
+    "requests_banner_one": "{name} wants to message you",
+    "requests_banner_many": "{count, plural, one {{name} and # other want to message you} other {{name} and # others want to message you}}",
+    "sending": "Sending…",
+    "send_failed_retry": "Not sent · Try again",
+    "send_failed_delete": "Delete"
   },
   "guide": {
     "title": "Guide",
@@ -1248,5 +1257,41 @@
     "policy_followers_hint": "Only people who follow you",
     "policy_off": "Off",
     "policy_off_hint": "No one can comment; existing comments are hidden"
+  },
+  "onboarding": {
+    "step": "Step {n} of {total}",
+    "skip": "Skip for now",
+    "finish": "Finish",
+    "continue": "Continue",
+    "avatar_title": "Let's put a face to your name",
+    "avatar_body": "Photographers with a profile photo get more messages and follows.",
+    "avatar_hint": "JPEG, PNG, WebP or HEIC. Shown as a circle on your profile.",
+    "avatar_pick": "Choose a photo",
+    "avatar_change": "Choose another photo",
+    "uploading": "Uploading…",
+    "upload_failed": "The photo couldn't be uploaded. Try again.",
+    "about_title": "Tell us about yourself",
+    "about_body": "A few words is enough. Your interests shape your feed and suggestions.",
+    "bio": "About",
+    "bio_placeholder": "Where are you based, and what do you love to shoot?",
+    "specialties": "What do you shoot?",
+    "city": "City",
+    "error": "Couldn't save. Try again.",
+    "gear_title": "What do you shoot with?",
+    "gear_body": "Shown on your profile, so people with the same gear can find you more easily.",
+    "gear_add": "Add gear",
+    "photo_title": "Share your first shot",
+    "photo_body": "The community gets to know you through your photos. You can also upload later.",
+    "photo_hint": "Never cropped; published exactly as it is.",
+    "photo_go": "Go to upload",
+    "photo_done": "Your first photo is live. Great start!",
+    "card_title": "Complete your profile",
+    "card_progress": "{done}/{total} done · complete profiles get more follows",
+    "card_close": "Dismiss",
+    "card_step_avatar": "Add a profile photo",
+    "card_step_about": "Tell us about yourself",
+    "card_step_gear": "Add your gear",
+    "card_step_photo": "Share your first photo",
+    "card_done": "Done"
   }
 }

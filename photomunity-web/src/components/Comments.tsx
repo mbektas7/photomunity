@@ -98,8 +98,16 @@ export function Comments({ photo }: { photo: PhotoDetail }) {
 
   const actions = { onReply: startReply, onQuote: startQuote, onDeleted: refresh, canAct: photo.can_comment };
 
+  // Akış kartındaki yorum düğmesi /p/{id}#comments ile gelir: bölüme kaydır, yazılabiliyorsa kutuya odaklan
+  const section = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (window.location.hash !== "#comments") return;
+    section.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    input.current?.focus({ preventScroll: true });
+  }, []);
+
   return (
-    <section aria-labelledby="comments" className="flex flex-col gap-3 border-t border-line pt-4">
+    <section ref={section} aria-labelledby="comments" className="flex scroll-mt-24 flex-col gap-3 border-t border-line pt-4">
       <h2 id="comments" className="text-[17px] font-bold tracking-[-0.01em]">
         {t("title")}
         {!off && total > 0 && <span className="tnum ml-1.5 font-semibold text-ink-muted">{total}</span>}

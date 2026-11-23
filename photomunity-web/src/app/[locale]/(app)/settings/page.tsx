@@ -10,10 +10,10 @@ import { NotificationSettingsForm, ProfileImages } from "@/components/ProfileIma
 import { Button, Notice, TextArea, TextField, Toggle } from "@/components/ui";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
+import { SPECIALTIES } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
 import type { Equipment, EquipmentType, Me } from "@/lib/types";
 
-const SPECIALTIES = ["astro", "landscape", "street", "portrait", "wildlife", "sports", "architecture", "documentary", "wedding", "macro", "aerial", "travel"];
 const EQUIPMENT_TYPES: EquipmentType[] = ["body", "lens", "tripod", "filter", "flash", "drone", "other"];
 
 export default function SettingsPage() {

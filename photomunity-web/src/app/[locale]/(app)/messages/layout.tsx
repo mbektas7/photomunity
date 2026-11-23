@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useTranslations } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { ConversationList, useMessageUnread } from "@/components/messages";
+import { ConversationList, RequestsBanner, useMessageUnread } from "@/components/messages";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useMe } from "@/lib/hooks";
 
@@ -52,7 +52,10 @@ function Shell({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">{me && <ConversationList folder={folder} meId={me.id} activeId={params.id} />}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {me && folder === "inbox" && <RequestsBanner unreadRequests={unread.data?.requests ?? 0} />}
+          {me && <ConversationList folder={folder} meId={me.id} activeId={params.id} />}
+        </div>
       </aside>
       <section className={clsx("min-h-0 overflow-hidden bg-bg lg:rounded-card", atRoot && "hidden lg:block")}>{children}</section>
     </div>

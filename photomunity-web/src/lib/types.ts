@@ -26,6 +26,10 @@ export type Me = UserCard & {
   longitude: number | null;
   created_at: string;
   equipment: Equipment[];
+  /** Kayıt sonrası tanıtım bitti ya da kapatıldı; yalnızca yeni hesaplarda false */
+  onboarding_done: boolean;
+  /** En az bir yayınlanmış fotoğrafı var (tanıtımdaki son adım) */
+  has_photos: boolean;
 };
 
 export type Profile = UserCard & {
@@ -59,6 +63,10 @@ export type PhotoCard = {
   exif?: ExifSummary | null;
   /** Sahibin eklediği konumun adı (koordinat yok). */
   place?: string | null;
+  /** Akış kartında yorum düğmesi ve son yorum önizlemesi */
+  comment_count: number;
+  comments_off: boolean;
+  last_comment: { username: string; body: string } | null;
 };
 
 export type ExifSummary = Pick<Exif, "aperture" | "shutter_display" | "iso" | "focal_length_mm">;
@@ -92,7 +100,6 @@ export type PhotoDetail = PhotoCard & {
   rejection: { code: string; message: string }[] | null;
   suggested_location: Location | null;
   comment_policy: CommentPolicy;
-  comment_count: number;
   /** Bakan kişi şu an yorum yazabilir mi */
   can_comment: boolean;
 };

@@ -96,7 +96,8 @@ export function RegisterForm() {
         locale,
       });
       await qc.invalidateQueries({ queryKey: ["me"] });
-      router.push(next || "/settings?welcome=1");
+      // Yeni hesap önce tanıtımdan geçer; davet gibi bir dönüş adresi varsa tanıtım bitince oraya gider
+      router.push(next ? `/welcome?next=${encodeURIComponent(next)}` : "/welcome");
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError(0, "unknown", t("generic_error")));
       setBusy(false);
