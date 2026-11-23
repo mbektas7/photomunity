@@ -20,7 +20,6 @@ class ExploreScreen extends ConsumerWidget {
     final t = L10n.of(context);
     final p = context.palette;
     final pages = ref.watch(photoPagesProvider('explore'));
-    final me = ref.watch(authProvider).asData?.value;
     final ctrl = ref.read(photoPagesProvider('explore').notifier);
     final judging = ref.watch(contestsProvider('judging')).asData?.value ?? const <ContestCard>[];
     final open = ref.watch(contestsProvider('open')).asData?.value ?? const <ContestCard>[];
@@ -71,8 +70,8 @@ class ExploreScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
                       for (final (i, (icon, label, route)) in [
-                        (LucideIcons.moon, t('planner.title'), '/planner'),
-                        (LucideIcons.scan, t('explore.tool_ar'), arRoute(me?.latitude, me?.longitude)),
+                        (LucideIcons.moon, t('sky.title'), '/sky'),
+                        (LucideIcons.scan, t('explore.tool_ar'), '/sky/ar'),
                         (LucideIcons.map, t('map.title'), '/map'),
                         (LucideIcons.calculator, t('tools.title'), '/tools'),
                         (LucideIcons.bookOpen, t('guide.title'), '/guide'),

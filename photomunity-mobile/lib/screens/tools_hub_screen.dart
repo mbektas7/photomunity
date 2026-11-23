@@ -5,8 +5,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/l10n.dart';
 import '../core/theme.dart';
-import '../state/providers.dart';
-import '../widgets/design.dart';
 import 'feed_screen.dart' show navClearance;
 
 /// Alt menünün ortasındaki logo: fotoğrafçılık araçları. Yeni modüller buraya eklenir.
@@ -17,10 +15,9 @@ class ToolsHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = L10n.of(context);
     final p = context.palette;
-    final me = ref.watch(authProvider).asData?.value;
     // Her araç kendi konusunu anlatan bir fotoğrafın üzerinde
     final tiles = <(String, String, String, String)>[
-      ('sunset', t('hub.ar'), t('hub.ar_sub'), arRoute(me?.latitude, me?.longitude)),
+      ('sunset', t('sky.night_ar'), t('sky.night_ar_sub'), '/sky/ar'),
       ('fog', t('tools.title'), t('hub.tools_sub'), '/tools'),
       ('forest', t('guide.title'), t('hub.guide_sub'), '/guide'),
     ];
@@ -45,14 +42,14 @@ class ToolsHubScreen extends ConsumerWidget {
             // Öne çıkan modül: gökyüzü planlayıcı (her iki temada gece rengi)
             Semantics(
               button: true,
-              label: t('planner.title'),
+              label: t('sky.title'),
               excludeSemantics: true,
               child: Material(
                 color: const Color(0xFF0E1224),
                 borderRadius: BorderRadius.circular(24),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  onTap: () => context.push('/planner'),
+                  onTap: () => context.push('/sky'),
                   child: SizedBox(
                     height: 210,
                     child: Stack(
@@ -74,10 +71,10 @@ class ToolsHubScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(t('planner.title'),
+                              Text(t('sky.title'),
                                   style: font(24, weight: 700, spacing: -0.6, color: const Color(0xFFF3F4F7))),
                               const SizedBox(height: 2),
-                              Text(t('hub.planner_sub'), style: font(14, color: const Color(0xFFD6DBF0))),
+                              Text(t('sky.hub_sub'), style: font(14, color: const Color(0xFFD6DBF0))),
                             ],
                           ),
                         ),

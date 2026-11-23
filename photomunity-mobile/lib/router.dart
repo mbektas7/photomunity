@@ -27,6 +27,11 @@ import 'screens/search_screen.dart';
 import 'screens/tools_hub_screen.dart';
 import 'screens/comments_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/sky/moon_calendar_screen.dart';
+import 'screens/sky/night_tools_screen.dart';
+import 'screens/sky/sky_common.dart';
+import 'screens/sky/sky_hub_screen.dart';
+import 'screens/sky/sun_moon_screen.dart';
 import 'screens/upload_screen.dart';
 import 'state/providers.dart';
 
@@ -218,6 +223,46 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/tools',
         parentNavigatorKey: _rootKey,
         builder: (_, s) => ToolsScreen(focus: s.uri.queryParameters['c']),
+      ),
+      GoRoute(
+        path: '/sky',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const SkyHubScreen(),
+      ),
+      GoRoute(
+        path: '/sky/moon',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const MoonCalendarScreen(),
+      ),
+      GoRoute(
+        path: '/sky/planner',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) {
+          final ms = int.tryParse(s.uri.queryParameters['date'] ?? '');
+          return SunMoonPlannerScreen(date: ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms));
+        },
+      ),
+      GoRoute(
+        path: '/sky/tools',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => NightToolsScreen(key: ValueKey(s.uri.toString()), tab: s.uri.queryParameters['tab']),
+      ),
+      GoRoute(
+        path: '/sky/ar',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) {
+          final ms = int.tryParse(s.uri.queryParameters['date'] ?? '');
+          return Consumer(
+            builder: (_, ref, _) {
+              final place = ref.read(skyPlaceProvider);
+              return ArSkyScreen(
+                lat: place.lat,
+                lng: place.lng,
+                date: ms == null ? DateTime.now() : DateTime.fromMillisecondsSinceEpoch(ms),
+              );
+            },
+          );
+        },
       ),
       GoRoute(
         path: '/planner',

@@ -9,7 +9,10 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../core/ar_math.dart';
 import '../core/astro.dart';
 import '../core/l10n.dart';
+import '../core/sky.dart';
 import '../core/theme.dart';
+import 'sky/ar_widgets.dart';
+import 'sky/sky_common.dart';
 
 /// Telefonu gökyüzüne tut: kamera görüntüsü üzerinde Samanyolu çekirdeğinin ve Ay'ın bu gecelik yolu.
 ///
@@ -43,6 +46,7 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
   late final List<Sample> _nightPath = _pathSamples();
   DateTime _time = DateTime.now();
   Timer? _clock;
+  final Set<String> _layers = {'mw', 'moon'}; // mw | moon | sun | grid
 
   List<Sample> _pathSamples() {
     // Gece boyunca (gün batımı → gün doğumu) 15 dakikada bir
@@ -75,8 +79,8 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
             });
     // Planlanan gece bugün değilse çekirdeğin doruk anını göster
     final today = DateTime.now();
-    if (!DateUtils.isSameDay(widget.date, today) && _plan.coreTransit != null) {
-      _time = _plan.coreTransit!.t;
+    if (!DateUtils.isSameDay(widget.date, today) && nightCoreHighest(_plan) != null) {
+      _time = nightCoreHighest(_plan)!.t;
     }
     _clock = Timer.periodic(const Duration(seconds: 30), (_) {
       if (DateUtils.isSameDay(widget.date, DateTime.now())) {
@@ -137,6 +141,71 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
     _update();
   }
 
+  /// Pusula ve görüş açısı ayarı (alt sayfa).
+  void _calibrationSheet() {
+    final t = L10n.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => StatefulBuilder(
+        builder: (c, set) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(t('ar.calibrate'), style: font(19, weight: 700)),
+                const SizedBox(height: 6),
+                Text(t('ar.hint'), style: font(13.5, height: 1.4)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(t('ar.fov')),
+                    Expanded(
+                      child: Slider(
+                        value: _vfov,
+                        min: 35,
+                        max: 90,
+                        onChanged: (v) {
+                          set(() {});
+                          setState(() => _vfov = v);
+                        },
+                      ),
+                    ),
+                    Text('${_vfov.round()}°'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.pop(c);
+                          _alignToMoon();
+                        },
+                        child: Text(t('ar.align_moon')),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () {
+                        setState(() => _headingOffset = 0);
+                        _update();
+                        Navigator.pop(c);
+                      },
+                      child: Text(t('ar.reset')),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _accSub?.cancel();
@@ -185,6 +254,7 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
                 _vfov,
                 locale,
                 p.accent,
+                _layers,
               ),
             )
           else
@@ -194,112 +264,120 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
                 style: font(15, color: Colors.white),
               ),
             ),
-          // Üst çubuk
+          // Üst çubuk: başlık, yön, Ay durumu ve katmanlar
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 12, 0),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(LucideIcons.x, color: Colors.white),
+                  Row(
+                    children: [
+                      ArGlassButton(
+                        icon: LucideIcons.chevronLeft,
+                        label: t('ui.back'),
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ArGlass(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: 'Night AR', style: font(13.5, weight: 700, color: Colors.white)),
+                                TextSpan(
+                                  text: o == null
+                                      ? ''
+                                      : ' · ${compassPoint(o.pointing.az, locale)} ${o.pointing.az.round()}° · ${o.pointing.alt.round()}°',
+                                  style: font(13.5, color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ArGlass(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MoonGlyph(
+                              phase: _plan.phase,
+                              fraction: _plan.illumination,
+                              size: 16,
+                              dark: const Color(0xFF333A55),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '%${(_plan.illumination * 100).round()}',
+                              style: font(13, weight: 600, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Text(
-                      o == null
-                          ? ''
-                          : '${compassPoint(o.pointing.az, locale)} ${o.pointing.az.round()}° · ${o.pointing.alt.round()}°',
-                      style: font(15, weight: 600, color: Colors.white),
-                    ),
-                  ),
-                  Text(
-                    DateFormat.Hm(locale).format(_time),
-                    style: font(15, weight: 600, color: Colors.white),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      for (final (k, label) in [
+                        ('mw', t('ar.layer_mw')),
+                        ('moon', t('ar.layer_moon')),
+                        ('sun', t('ar.layer_sun')),
+                        ('grid', t('ar.layer_grid')),
+                      ])
+                        Semantics(
+                          button: true,
+                          toggled: _layers.contains(k),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _layers.contains(k) ? _layers.remove(k) : _layers.add(k)),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: _layers.contains(k) ? p.accent : Colors.black.withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(label, style: font(12.5, weight: 700, color: Colors.white)),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          // Alt panel: kalibrasyon
+          // Sağ: kalibrasyon
+          Positioned(
+            right: 16,
+            bottom: 210 + MediaQuery.paddingOf(context).bottom,
+            child: Column(
+              children: [
+                ArGlassButton(icon: LucideIcons.moon, label: t('ar.align_moon'), onTap: _alignToMoon),
+                const SizedBox(height: 8),
+                ArGlassButton(icon: LucideIcons.slidersHorizontal, label: t('ar.calibrate'), onTap: _calibrationSheet),
+              ],
+            ),
+          ),
+          // Alt panel: zaman ve çekim penceresi
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              color: Colors.black.withValues(alpha: 0.6),
-              padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                12 + MediaQuery.paddingOf(context).bottom,
+              margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + MediaQuery.paddingOf(context).bottom),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              decoration: BoxDecoration(
+                color: const Color(0xD90C0E1C),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    t('ar.hint'),
-                    style: font(12.5, height: 1.4, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.transparent,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          onPressed: _alignToMoon,
-                          child: Text(t('ar.align_moon')),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white70,
-                        ),
-                        onPressed: () => setState(() {
-                          _headingOffset = 0;
-                          _update();
-                        }),
-                        child: Text(t('ar.reset')),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        t('ar.fov'),
-                        style: font(12.5, color: Colors.white70),
-                      ),
-                      Expanded(
-                        child: Slider(
-                          value: _vfov,
-                          min: 35,
-                          max: 90,
-                          onChanged: (v) => setState(() => _vfov = v),
-                        ),
-                      ),
-                      Text(
-                        '${_vfov.round()}°',
-                        style: font(12.5, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: _time.millisecondsSinceEpoch.toDouble().clamp(
-                      _plan.samples.first.t.toDouble(),
-                      _plan.samples.last.t.toDouble(),
-                    ),
-                    min: _plan.samples.first.t.toDouble(),
-                    max: _plan.samples.last.t.toDouble(),
-                    onChanged: (v) => setState(
-                      () => _time = DateTime.fromMillisecondsSinceEpoch(
-                        v.round(),
-                      ),
-                    ),
-                  ),
-                ],
+              child: ArTimePanel(
+                plan: _plan,
+                time: _time,
+                locale: locale,
+                onChanged: (v) => setState(() => _time = v),
+                onNow: () => setState(() => _time = DateTime.now()),
               ),
             ),
           ),
@@ -319,7 +397,9 @@ class _SkyOverlay extends CustomPainter {
     this.vfov,
     this.locale,
     this.accent,
+    this.layers,
   );
+  final Set<String> layers;
   final DeviceAttitude o;
   final List<Sample> path;
   final DateTime time;
@@ -402,6 +482,89 @@ class _SkyOverlay extends CustomPainter {
       }
     }
 
+    final ms0 = time.millisecondsSinceEpoch;
+
+    Path curve(Iterable<AltAz> points, double minAlt) {
+      final path = Path();
+      var open = false;
+      for (final a in points) {
+        final q = a.alt > minAlt ? pt(a.az, a.alt) : null;
+        if (q == null) {
+          open = false;
+          continue;
+        }
+        if (open) {
+          path.lineTo(q.dx, q.dy);
+        } else {
+          path.moveTo(q.dx, q.dy);
+        }
+        open = true;
+      }
+      return path;
+    }
+
+    // Yükseklik / azimut ızgarası
+    if (layers.contains('grid')) {
+      final g = Paint()
+        ..color = Colors.white24
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke;
+      for (final alt in [15.0, 30.0, 45.0, 60.0, 75.0]) {
+        canvas.drawPath(curve([for (var az = 0.0; az <= 360; az += 3) AltAz(az, alt)], -1), g);
+        final lq = pt(o.pointing.az, alt);
+        if (lq != null) _label(canvas, lq + const Offset(18, -8), '${alt.round()}°', Colors.white60, size: 10);
+      }
+      for (var az = 0.0; az < 360; az += 30) {
+        canvas.drawPath(curve([for (var alt = 0.0; alt <= 88; alt += 3) AltAz(az, alt)], -1), g);
+      }
+    }
+
+    // Samanyolu bandı: galaktik düzlem (b = 0) ve kenarları (b = ±10°)
+    if (layers.contains('mw')) {
+      Path band(double b) => curve(galacticBand(ms0, lat, lng, b: b, stepDeg: 3).map((e) => e.pos), -8);
+      final degPx = size.height / vfov;
+      canvas.drawPath(
+        band(0),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 16 * degPx
+          ..strokeCap = StrokeCap.round
+          ..color = const Color(0xFFB8A8FF).withValues(alpha: 0.18)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * degPx),
+      );
+      final edge = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = const Color(0xFFCFC4FF).withValues(alpha: 0.35);
+      canvas.drawPath(band(10), edge);
+      canvas.drawPath(band(-10), edge);
+    }
+
+    // Güneşin gündüz yolu ve şu anki yeri
+    if (layers.contains('sun')) {
+      final day = DateTime.fromMillisecondsSinceEpoch(ms0);
+      final base = DateTime(day.year, day.month, day.day).millisecondsSinceEpoch;
+      final pts = [for (var m = 0; m <= 24 * 60; m += 10) sunPosition(base + m * 60000, lat, lng)];
+      canvas.drawPath(
+        curve(pts, -10),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = const Color(0xFFFFB35A).withValues(alpha: 0.8),
+      );
+      for (var h = 0; h < 24; h += 2) {
+        final sp = pts[h * 6];
+        final q = sp.alt > -2 ? pt(sp.az, sp.alt) : null;
+        if (q != null) _label(canvas, q + const Offset(0, -12), '$h', const Color(0xFFFFCF6B), size: 10);
+      }
+      final sp = sunPosition(ms0, lat, lng);
+      final sq = pt(sp.az, sp.alt);
+      if (sq != null) {
+        canvas.drawCircle(sq, 12, Paint()..color = const Color(0xFFFFD27A));
+        _label(canvas, sq + const Offset(0, 24), locale == 'tr' ? 'Güneş' : 'Sun', Colors.white, bold: true);
+      }
+    }
+
     // Gece boyunca çekirdeğin ve Ay'ın yolu (saat etiketleriyle)
     void track(AltAz Function(Sample) get, Color color, double width) {
       final pathLine = Path();
@@ -440,13 +603,13 @@ class _SkyOverlay extends CustomPainter {
       );
     }
 
-    track((s) => s.core, accent, 3);
-    track((s) => s.moon, Colors.white70, 2);
+    if (layers.contains('mw')) track((s) => s.core, const Color(0xFFFFCF6B), 2.5);
+    if (layers.contains('moon')) track((s) => s.moon, Colors.white70, 2);
 
     // Şu anki (ya da seçilen) konumlar
     final ms = time.millisecondsSinceEpoch;
     final core = corePosition(ms, lat, lng), moon = moonPosition(ms, lat, lng);
-    final cq = pt(core.az, core.alt);
+    final cq = layers.contains('mw') ? pt(core.az, core.alt) : null;
     if (cq != null) {
       // Çekirdek, Samanyolu bandının en parlak bölgesi: yumuşak bir hale ile göster
       canvas.drawCircle(
@@ -464,12 +627,12 @@ class _SkyOverlay extends CustomPainter {
       _label(
         canvas,
         cq + const Offset(0, 22),
-        locale == 'tr' ? 'Samanyolu çekirdeği' : 'Milky Way core',
+        '${locale == 'tr' ? 'Galaktik çekirdek' : 'Galactic core'} · ${core.alt.round()}°',
         Colors.white,
         bold: true,
       );
     }
-    final mq = pt(moon.az, moon.alt);
+    final mq = layers.contains('moon') ? pt(moon.az, moon.alt) : null;
     if (mq != null) {
       canvas.drawCircle(mq, 11, Paint()..color = Colors.white);
       _label(
