@@ -75,6 +75,8 @@ class Me extends UserCard {
     this.latitude,
     this.longitude,
     required this.equipment,
+    this.onboardingDone = true,
+    this.hasPhotos = false,
   });
 
   final String email;
@@ -89,6 +91,18 @@ class Me extends UserCard {
   final double? latitude;
   final double? longitude;
   final List<Equipment> equipment;
+
+  /// Kayıt sonrası tanıtım bitti ya da kapatıldı (eski hesaplar için hep true).
+  final bool onboardingDone;
+  final bool hasPhotos;
+
+  /// "Profilini tamamla" adımları: profil fotoğrafı, hakkında, ekipman, ilk fotoğraf.
+  List<bool> get onboardingSteps => [
+    avatarUrl != null,
+    (bio?.isNotEmpty ?? false) || specialties.isNotEmpty,
+    equipment.isNotEmpty,
+    hasPhotos,
+  ];
 
   factory Me.fromJson(Map<String, dynamic> j) {
     final card = UserCard.fromJson(j);
@@ -113,6 +127,8 @@ class Me extends UserCard {
       equipment: ((j['equipment'] as List?) ?? const [])
           .map((e) => Equipment.fromJson(e as Map<String, dynamic>))
           .toList(),
+      onboardingDone: j['onboarding_done'] as bool? ?? true,
+      hasPhotos: j['has_photos'] as bool? ?? false,
     );
   }
 }
@@ -204,6 +220,9 @@ class PhotoCard {
     this.publishedAt,
     this.exif,
     this.place,
+    this.commentCount = 0,
+    this.commentsOff = false,
+    this.lastComment,
   });
   final String id;
   final UserCard user;
@@ -218,6 +237,11 @@ class PhotoCard {
 
   /// Sahibin eklediği konumun adı.
   final String? place;
+
+  /// Akış kartında yorum düğmesi ve son yorum önizlemesi.
+  final int commentCount;
+  final bool commentsOff;
+  final ({String username, String body})? lastComment;
 
   ImageVariant? get thumb => images['thumb'] ?? images['feed'];
   ImageVariant? get feed => images['feed'] ?? images['full'];
@@ -246,6 +270,14 @@ class PhotoCard {
         ? null
         : Exif.fromJson(j['exif'] as Map<String, dynamic>),
     place: _opt(j['place']),
+    commentCount: j['comment_count'] as int? ?? 0,
+    commentsOff: j['comments_off'] as bool? ?? false,
+    lastComment: j['last_comment'] is Map
+        ? (
+            username: (j['last_comment'] as Map)['username'] as String,
+            body: (j['last_comment'] as Map)['body'] as String,
+          )
+        : null,
   );
 }
 
@@ -342,7 +374,6 @@ class PhotoDetail extends PhotoCard {
           .map((r) => (r as Map)['message'] as String)
           .toList(),
       commentPolicy = j['comment_policy'] as String? ?? 'everyone',
-      commentCount = j['comment_count'] as int? ?? 0,
       canComment = j['can_comment'] as bool? ?? false,
       super(
         id: j['id'] as String,
@@ -358,6 +389,7 @@ class PhotoDetail extends PhotoCard {
             ? null
             : Exif.fromJson(j['exif'] as Map<String, dynamic>),
         place: _opt(j['place']),
+        commentCount: j['comment_count'] as int? ?? 0,
       );
 
   final String? description;
@@ -369,7 +401,6 @@ class PhotoDetail extends PhotoCard {
   final String status; // pending | processing | published | rejected
   final List<String> rejection;
   final String commentPolicy; // everyone | followers | off
-  final int commentCount;
   final bool canComment;
 
   bool get isProcessing => status == 'processing' || status == 'pending';
@@ -692,6 +723,7 @@ class MapPhotoPoint {
 }
 
 class MessageQuote {
+  MessageQuote({required this.id, required this.senderId, this.kind = 'text', this.preview});
   MessageQuote.fromJson(Map<String, dynamic> j)
     : id = j['id'] as String,
       senderId = j['sender_id'] as String,
@@ -751,10 +783,30 @@ class ChatMessage {
       reactions = ((j['reactions'] as List?) ?? const [])
           .map((e) => Reaction.fromJson(e as Map<String, dynamic>))
           .toList(),
-      createdAt = _dt(j['created_at']);
+      createdAt = _dt(j['created_at']),
+      sendState = null,
+      payload = null;
 
-  ChatMessage._copy(ChatMessage m, this.reactions)
-    : id = m.id,
+  /// Gönder'e basınca hemen sohbete düşen yerel mesaj; sunucu yanıtı gelince gerçeğiyle değişir.
+  ChatMessage.pending({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required Map<String, dynamic> this.payload,
+    this.body,
+    this.gif,
+    this.replyTo,
+  }) : photo = null,
+       location = null,
+       image = null,
+       reactions = const [],
+       createdAt = DateTime.now(),
+       sendState = 'sending';
+
+  ChatMessage._copy(ChatMessage m, this.reactions, {String? state, bool keepState = true})
+    : sendState = keepState ? m.sendState : state,
+      payload = m.payload,
+      id = m.id,
       conversationId = m.conversationId,
       senderId = m.senderId,
       body = m.body,
@@ -766,6 +818,14 @@ class ChatMessage {
       createdAt = m.createdAt;
 
   ChatMessage withReactions(List<Reaction> r) => ChatMessage._copy(this, r);
+  ChatMessage withSendState(String? state) => ChatMessage._copy(this, reactions, state: state, keepState: false);
+
+  /// null: gönderildi · 'sending': gidiyor · 'failed': gidemedi (yeniden denenebilir)
+  final String? sendState;
+
+  /// Yerel mesajın yeniden denemede kullanılacak gövdesi.
+  final Map<String, dynamic>? payload;
+  bool get isLocal => sendState != null;
 
   final String id;
   final String conversationId;

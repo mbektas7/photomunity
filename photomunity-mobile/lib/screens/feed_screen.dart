@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/l10n.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import 'onboarding_screen.dart';
 import '../widgets/common.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/design.dart';
@@ -82,6 +83,7 @@ class FeedScreen extends ConsumerWidget {
             slivers: [
               const SliverToBoxAdapter(child: _Stories()),
               const SliverToBoxAdapter(child: _HomeBanner()),
+              const SliverToBoxAdapter(child: OnboardingCard()),
               if (pages.initialLoading)
                 const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),

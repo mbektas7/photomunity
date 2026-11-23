@@ -12,7 +12,7 @@ import '../state/providers.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/common.dart';
 
-const _specialties = [
+const specialtyKeys = [
   'astro',
   'landscape',
   'street',
@@ -26,7 +26,7 @@ const _specialties = [
   'aerial',
   'travel',
 ];
-const _equipmentTypes = [
+const equipmentTypeKeys = [
   'body',
   'lens',
   'tripod',
@@ -358,7 +358,7 @@ class _ProfileSectionState extends ConsumerState<_ProfileSection> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final s in _specialties)
+            for (final s in specialtyKeys)
               FilterChip(
                 label: Text(t('specialties.$s')),
                 selected: _specs.contains(s),
@@ -495,7 +495,7 @@ class _EquipmentSectionState extends ConsumerState<_EquipmentSection> {
                         underline: const SizedBox.shrink(),
                         style: font(15, weight: 600, color: p.ink),
                         items: [
-                          for (final ty in _equipmentTypes)
+                          for (final ty in equipmentTypeKeys)
                             DropdownMenuItem(
                               value: ty,
                               child: Text(t('equipment.$ty')),

@@ -126,6 +126,17 @@ class _Tile extends StatelessWidget {
                 ],
               ),
             ),
+            if (n.type == 'message_request') ...[
+              const SizedBox(width: 12),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                onPressed: () => context.push(n.route),
+                child: Text(L10n.of(context)('messages.view')),
+              ),
+            ],
             if (n.photoThumb != null) ...[
               const SizedBox(width: 12),
               SizedBox(

@@ -19,6 +19,7 @@ import 'screens/manage_screens.dart';
 import 'screens/map_screen.dart';
 import 'screens/messages_screens.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/photo_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/communities_hub_screen.dart';
@@ -74,7 +75,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/welcome';
       }
       if (signedIn && publicPaths.contains(path)) {
-        if (ref.read(authProvider.notifier).welcomePending) return '/settings?welcome=1';
+        if (ref.read(authProvider.notifier).welcomePending) return '/onboarding';
         final next = afterLogin;
         afterLogin = null;
         return next ?? '/feed';
@@ -84,6 +85,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomeScreen()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (_, s) => OnboardingScreen(key: ValueKey(s.uri.toString()), step: int.tryParse(s.uri.queryParameters['step'] ?? '') ?? 0),
+      ),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(

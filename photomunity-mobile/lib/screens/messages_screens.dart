@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../core/api_client.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
@@ -30,7 +31,11 @@ class MessagesButton extends ConsumerWidget {
     final count = (u?.inbox ?? 0) + (u?.requests ?? 0);
     return IconButton(
       style: filled
-          ? IconButton.styleFrom(backgroundColor: p.surface, fixedSize: const Size(44, 44), minimumSize: const Size(44, 44))
+          ? IconButton.styleFrom(
+              backgroundColor: p.surface,
+              fixedSize: const Size(44, 44),
+              minimumSize: const Size(44, 44),
+            )
           : null,
       tooltip: L10n.of(context)('messages.title'),
       onPressed: () => context.push('/messages'),
@@ -52,8 +57,7 @@ class ConversationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = L10n.of(context);
     final p = context.palette;
-    final requests =
-        ref.watch(messageUnreadProvider).asData?.value.requests ?? 0;
+    final requests = ref.watch(messageUnreadProvider).asData?.value.requests ?? 0;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -73,11 +77,7 @@ class ConversationsScreen extends ConsumerWidget {
                     Text(t('messages.requests')),
                     if (requests > 0) ...[
                       const SizedBox(width: 6),
-                      Badge(
-                        backgroundColor: p.accent,
-                        textColor: p.accentInk,
-                        label: Text('$requests'),
-                      ),
+                      Badge(backgroundColor: p.accent, textColor: p.accentInk, label: Text('$requests')),
                     ],
                   ],
                 ),
@@ -90,6 +90,76 @@ class ConversationsScreen extends ConsumerWidget {
             _List(folder: 'inbox'),
             _List(folder: 'requests'),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Gelen kutusunun üstünde: bekleyen mesaj istekleri ("2 mesaj isteği · Ayşe ve 1 kişi daha…").
+class _RequestsBanner extends ConsumerWidget {
+  const _RequestsBanner({required this.padding});
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reqs = ref.watch(conversationsProvider('requests')).asData?.value ?? const [];
+    if (reqs.isEmpty) return const SizedBox.shrink();
+    final t = L10n.of(context);
+    final p = context.palette;
+    final first = reqs.first.other.displayName;
+    return Padding(
+      padding: padding,
+      child: Material(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => DefaultTabController.of(context).animateTo(1),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: reqs.length > 1 ? 64 : 40,
+                  height: 40,
+                  child: Stack(
+                    children: [
+                      for (final (i, c) in reqs.take(2).indexed)
+                        Positioned(
+                          left: i * 24.0,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: p.surface, width: 2),
+                            ),
+                            child: Avatar(name: c.other.displayName, url: c.other.avatarUrl, size: 36),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(t('messages.requests_banner', {'count': reqs.length}), style: font(15, weight: 700)),
+                      Text(
+                        reqs.length == 1
+                            ? t('messages.requests_one', {'name': first})
+                            : t('messages.requests_many', {'name': first, 'n': reqs.length - 1}),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: font(13, color: p.inkMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(LucideIcons.chevronRight, size: 20, color: p.inkSubtle),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -113,34 +183,37 @@ class _List extends ConsumerWidget {
         AsyncData(:final value) when value.isEmpty => ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            if (folder == 'inbox') const _RequestsBanner(padding: EdgeInsets.only(bottom: 16)),
             Text(
-              folder == 'requests'
-                  ? t('messages.no_requests')
-                  : t('messages.empty'),
+              folder == 'requests' ? t('messages.no_requests') : t('messages.empty'),
               style: font(15, height: 1.5, color: p.inkMuted),
             ),
           ],
         ),
         AsyncData(:final value) => ListView.separated(
-          itemCount: value.length,
-          separatorBuilder: (_, _) => Divider(color: p.line, indent: 76),
+          itemCount: value.length + (folder == 'inbox' ? 1 : 0),
+          separatorBuilder: (_, i) =>
+              folder == 'inbox' && i == 0 ? const SizedBox.shrink() : Divider(color: p.line, indent: 76),
           itemBuilder: (context, i) {
+            if (folder == 'inbox') {
+              if (i == 0) return const _RequestsBanner(padding: EdgeInsets.fromLTRB(16, 12, 16, 4));
+              i -= 1;
+            }
             final c = value[i];
             final m = c.lastMessage;
             final preview = m == null
                 ? ''
-                : '${m.senderId == me?.id ? '${t('messages.you')}: ' : ''}${m.body ?? (m.photo != null || m.image != null ? '📷 ${t('messages.photo')}' : m.gif != null ? 'GIF' : m.location != null ? '📍 ${t('messages.location')}' : t('messages.removed'))}';
+                : '${m.senderId == me?.id ? '${t('messages.you')}: ' : ''}${m.body ?? (m.photo != null || m.image != null
+                          ? '📷 ${t('messages.photo')}'
+                          : m.gif != null
+                          ? 'GIF'
+                          : m.location != null
+                          ? '📍 ${t('messages.location')}'
+                          : t('messages.removed'))}';
             return ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 4,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               onTap: () => context.push('/messages/${c.id}'),
-              leading: Avatar(
-                name: c.other.displayName,
-                url: c.other.avatarUrl,
-                size: 48,
-              ),
+              leading: Avatar(name: c.other.displayName, url: c.other.avatarUrl, size: 48),
               title: Row(
                 children: [
                   Expanded(
@@ -148,17 +221,10 @@ class _List extends ConsumerWidget {
                       c.other.displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: font(
-                        15.5,
-                        weight: c.unread > 0 ? 700 : 500,
-                        color: p.ink,
-                      ),
+                      style: font(15.5, weight: c.unread > 0 ? 700 : 500, color: p.ink),
                     ),
                   ),
-                  Text(
-                    relativeTime(c.lastMessageAt, locale),
-                    style: font(12, color: p.inkMuted),
-                  ),
+                  Text(relativeTime(c.lastMessageAt, locale), style: font(12, color: p.inkMuted)),
                 ],
               ),
               subtitle: Row(
@@ -172,11 +238,7 @@ class _List extends ConsumerWidget {
                     ),
                   ),
                   if (c.unread > 0)
-                    Badge(
-                      backgroundColor: p.accent,
-                      textColor: p.accentInk,
-                      label: Text('${c.unread}'),
-                    ),
+                    Badge(backgroundColor: p.accent, textColor: p.accentInk, label: Text('${c.unread}')),
                 ],
               ),
             );
@@ -218,8 +280,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.addListener(() {
       // Liste ters çevrili: en üste yaklaşınca eski mesajları yükle
       final cid = widget.conversationId;
-      if (cid != null &&
-          _scroll.position.pixels > _scroll.position.maxScrollExtent - 300) {
+      if (cid != null && _scroll.position.pixels > _scroll.position.maxScrollExtent - 300) {
         ref.read(messagesProvider(cid).notifier).loadOlder();
       }
     });
@@ -230,9 +291,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final u = widget.username;
     if (widget.conversationId != null || u == null) return;
     try {
-      final res = await ref
-          .read(apiProvider)
-          .get<Map<String, dynamic>?>('/conversations/with/$u');
+      final res = await ref.read(apiProvider).get<Map<String, dynamic>?>('/conversations/with/$u');
       if (res != null && mounted) {
         context.pushReplacement('/messages/${res['id']}');
       }
@@ -247,7 +306,96 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
-  Future<void> _send(Map<String, dynamic> payload) async {
+  /// Metin ve GIF: anında sohbete düşer, istek arka planda gider (Instagram gibi).
+  /// Gidemezse baloncukta "Gönderilemedi · Tekrar dene" görünür.
+  void _sendInstant(String cid, Map<String, dynamic> payload, {GifItem? gif}) {
+    final me = ref.read(authProvider).asData?.value;
+    if (me == null) return;
+    final reply = _replyTo;
+    if (reply != null) payload = {...payload, 'reply_to_id': reply.id};
+    final local = ChatMessage.pending(
+      id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+      conversationId: cid,
+      senderId: me.id,
+      payload: payload,
+      body: payload['body'] as String?,
+      gif: gif,
+      replyTo: reply == null
+          ? null
+          : MessageQuote(
+              id: reply.id,
+              senderId: reply.senderId,
+              kind: reply.body != null
+                  ? 'text'
+                  : reply.gif != null
+                  ? 'gif'
+                  : reply.image != null
+                  ? 'image'
+                  : reply.photo != null
+                  ? 'photo'
+                  : 'location',
+              preview: reply.body,
+            ),
+    );
+    if (payload.containsKey('body')) _text.clear();
+    setState(() => _replyTo = null);
+    ref.read(messagesProvider(cid).notifier).addLocal(local);
+    _deliver(cid, local);
+  }
+
+  Future<void> _deliver(String cid, ChatMessage local) async {
+    final ctrl = ref.read(messagesProvider(cid).notifier);
+    final api = ref.read(apiProvider);
+    try {
+      final m = await api.post<Map<String, dynamic>>('/conversations/$cid/messages', local.payload);
+      ctrl.resolveLocal(local.id, ChatMessage.fromJson(m));
+      if (mounted) {
+        ref.invalidate(conversationsProvider);
+        ref.invalidate(conversationProvider(cid));
+      }
+    } catch (e) {
+      ctrl.setLocalState(local.id, 'failed');
+      // Sınır ya da engel gibi kalıcı hatalarda sebebi göster; ağ hatası baloncuktan anlaşılır
+      if (mounted && e is ApiException && e.status >= 400 && e.status < 500) toast(context, errorText(context, e));
+    }
+  }
+
+  /// Gidemeyen mesaja dokununca: tekrar dene ya da sil.
+  Future<void> _failedMenu(String cid, ChatMessage m) async {
+    final t = L10n.of(context);
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.rotateCw),
+              title: Text(t('common.retry')),
+              onTap: () => Navigator.pop(c, 'retry'),
+            ),
+            ListTile(
+              leading: Icon(LucideIcons.trash2, color: context.palette.danger),
+              title: Text(t('messages.failed_delete'), style: TextStyle(color: context.palette.danger)),
+              onTap: () => Navigator.pop(c, 'delete'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    final ctrl = ref.read(messagesProvider(cid).notifier);
+    if (choice == 'delete') return ctrl.removeLocal(m.id);
+    ctrl.setLocalState(m.id, 'sending');
+    _deliver(cid, m.withSendState('sending'));
+  }
+
+  Future<void> _send(Map<String, dynamic> payload, {GifItem? gif}) async {
+    final cid0 = widget.conversationId;
+    if (cid0 != null && (payload.containsKey('body') || gif != null)) {
+      return _sendInstant(cid0, payload, gif: gif);
+    }
     // Çift dokunma ya da klavyenin gönder tuşu aynı mesajı iki kez göndermesin
     if (_sending) return;
     final draft = _text.text;
@@ -261,18 +409,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       final cid = widget.conversationId;
       if (cid == null) {
-        final c = await api.post<Map<String, dynamic>>('/conversations', {
-          'username': widget.username,
-          ...payload,
-        });
+        final c = await api.post<Map<String, dynamic>>('/conversations', {'username': widget.username, ...payload});
         ref.invalidate(conversationsProvider);
         if (mounted) context.pushReplacement('/messages/${c['id']}');
         return;
       }
-      final m = await api.post<Map<String, dynamic>>(
-        '/conversations/$cid/messages',
-        payload,
-      );
+      final m = await api.post<Map<String, dynamic>>('/conversations/$cid/messages', payload);
       ref.read(messagesProvider(cid).notifier).receive(ChatMessage.fromJson(m));
       ref.invalidate(conversationsProvider);
       ref.invalidate(conversationProvider(cid));
@@ -371,11 +513,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _sharePhoto() async {
-    final photo = await pickMyPhoto(
-      context,
-      ref,
-      L10n.of(context)('messages.attach_photo'),
-    );
+    final photo = await pickMyPhoto(context, ref, L10n.of(context)('messages.attach_photo'));
     if (photo != null) await _send({'photo_id': photo.id});
   }
 
@@ -384,8 +522,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
     }
-    if (perm == LocationPermission.denied ||
-        perm == LocationPermission.deniedForever) {
+    if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
       return;
     }
     final pos = await Geolocator.getCurrentPosition();
@@ -406,18 +543,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final ok = await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
-          content: Text(
-            t('messages.block_confirm', {'name': other.displayName}),
-          ),
+          content: Text(t('messages.block_confirm', {'name': other.displayName})),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: Text(t('common.cancel')),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(t('messages.block')),
-            ),
+            TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('common.cancel'))),
+            TextButton(onPressed: () => Navigator.pop(c, true), child: Text(t('messages.block'))),
           ],
         ),
       );
@@ -440,9 +569,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _markRead(String cid, List<ChatMessage> items, String? meId) {
-    if (items.isEmpty ||
-        items.last.senderId == meId ||
-        _lastReadFor == items.last.id) {
+    if (items.isEmpty || items.last.senderId == meId || _lastReadFor == items.last.id) {
       return;
     }
     _lastReadFor = items.last.id;
@@ -480,18 +607,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (c == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _markRead(cid, msgs.items, me?.id),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markRead(cid, msgs.items, me?.id));
     return _scaffold(context, c, c.other, msgs.items);
   }
 
-  Widget _scaffold(
-    BuildContext context,
-    Conversation? c,
-    UserCard other,
-    List<ChatMessage> items,
-  ) {
+  Widget _scaffold(BuildContext context, Conversation? c, UserCard other, List<ChatMessage> items) {
     final t = L10n.of(context);
     final p = context.palette;
     final me = ref.watch(authProvider).asData?.value;
@@ -539,10 +659,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'block',
-                  child: Text(
-                    t('messages.block'),
-                    style: font(15, color: p.danger),
-                  ),
+                  child: Text(t('messages.block'), style: font(15, color: p.danger)),
                 ),
               ],
             ),
@@ -581,26 +698,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       final idx = items.length - 1 - (i - (seen ? 1 : 0));
                       final m = items[idx];
                       final prev = idx > 0 ? items[idx - 1] : null;
-                      final newDay =
-                          prev == null ||
-                          !DateUtils.isSameDay(prev.createdAt, m.createdAt);
+                      final newDay = prev == null || !DateUtils.isSameDay(prev.createdAt, m.createdAt);
                       return Column(
                         children: [
                           if (newDay)
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: Text(
-                                _day(m.createdAt, locale),
-                                style: font(13, weight: 600, color: p.inkMuted),
-                              ),
+                              child: Text(_day(m.createdAt, locale), style: font(13, weight: 600, color: p.inkMuted)),
                             ),
                           _Swipe(
-                            onReply: () => _startReply(m),
+                            onReply: m.isLocal ? null : () => _startReply(m),
                             child: GestureDetector(
-                              onLongPress: m.removed ? null : () {
-                                HapticFeedback.mediumImpact();
-                                _messageMenu(m, me?.id, other);
-                              },
+                              onTap: m.sendState == 'failed' && widget.conversationId != null
+                                  ? () => _failedMenu(widget.conversationId!, m)
+                                  : null,
+                              onLongPress: m.removed || m.isLocal
+                                  ? null
+                                  : () {
+                                      HapticFeedback.mediumImpact();
+                                      _messageMenu(m, me?.id, other);
+                                    },
                               child: _Bubble(
                                 m: m,
                                 mine: m.senderId == me?.id,
@@ -619,30 +736,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Container(
               margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + MediaQuery.paddingOf(context).bottom),
               padding: const EdgeInsets.all(Space.s4),
-              decoration: BoxDecoration(
-                color: p.surface,
-                borderRadius: BorderRadius.circular(Radii.card),
-              ),
+              decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.card)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    t('messages.request_from', {'name': other.displayName}),
-                    style: font(15, color: p.ink),
-                  ),
+                  Text(t('messages.request_from', {'name': other.displayName}), style: font(15, color: p.ink)),
                   const SizedBox(height: 4),
-                  Text(
-                    t('messages.request_hint'),
-                    style: font(13, height: 1.4, color: p.inkMuted),
-                  ),
+                  Text(t('messages.request_hint'), style: font(13, height: 1.4, color: p.inkMuted)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
-                        child: FilledButton(
-                          onPressed: () => _act('accept', other),
-                          child: Text(t('messages.accept')),
-                        ),
+                        child: FilledButton(onPressed: () => _act('accept', other), child: Text(t('messages.accept'))),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -669,17 +774,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     if (c != null && c.status == 'request' && !c.isRequestToMe)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(12, 0, 0, 6),
-                        child: Text(
-                          t('messages.pending_hint'),
-                          style: font(12, color: p.inkMuted),
-                        ),
+                        child: Text(t('messages.pending_hint'), style: font(12, color: p.inkMuted)),
                       ),
                     if (_replyTo != null)
                       ReplyChip(
                         title: t('messages.replying_to', {
                           'name': _replyTo!.senderId == me?.id ? t('messages.you') : other.displayName,
                         }),
-                        text: _replyTo!.body ??
+                        text:
+                            _replyTo!.body ??
                             (_replyTo!.gif != null
                                 ? 'GIF'
                                 : _replyTo!.location != null
@@ -725,11 +828,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               suffixIcon: IconButton(
                                 tooltip: t('messages.emoji_gif'),
                                 onPressed: _sending ? null : _toggleGifs,
-                                icon: Icon(
-                                  _gifOpen ? LucideIcons.keyboard : LucideIcons.smile,
-                                  size: 22,
-                                  color: p.ink,
-                                ),
+                                icon: Icon(_gifOpen ? LucideIcons.keyboard : LucideIcons.smile, size: 22, color: p.ink),
                               ),
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -753,9 +852,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           valueListenable: _text,
                           builder: (_, v, _) => IconButton.filled(
                             tooltip: t('messages.send'),
-                            onPressed: v.text.trim().isEmpty || _sending
-                                ? null
-                                : () => _send({'body': v.text.trim()}),
+                            onPressed: v.text.trim().isEmpty || _sending ? null : () => _send({'body': v.text.trim()}),
                             style: IconButton.styleFrom(
                               backgroundColor: p.accent,
                               foregroundColor: p.accentInk,
@@ -780,7 +877,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   setState(() => _gifOpen = false);
                   _send({
                     'gif': {'id': g.id, 'kind': g.kind},
-                  });
+                  }, gif: g);
                 },
               ),
             ),
@@ -803,7 +900,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 class _Swipe extends StatefulWidget {
   const _Swipe({required this.child, required this.onReply});
   final Widget child;
-  final VoidCallback onReply;
+  final VoidCallback? onReply; // null: kaydırarak cevap kapalı (henüz gitmemiş mesaj)
 
   @override
   State<_Swipe> createState() => _SwipeState();
@@ -816,6 +913,7 @@ class _SwipeState extends State<_Swipe> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    if (widget.onReply == null) return widget.child;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragUpdate: (d) {
@@ -824,7 +922,7 @@ class _SwipeState extends State<_Swipe> {
         setState(() => _dx = next);
       },
       onHorizontalDragEnd: (_) {
-        if (_dx >= _trigger) widget.onReply();
+        if (_dx >= _trigger) widget.onReply?.call();
         setState(() => _dx = 0);
       },
       onHorizontalDragCancel: () => setState(() => _dx = 0),
@@ -870,8 +968,17 @@ class _Bubble extends StatelessWidget {
     final p = context.palette;
     final t = L10n.of(context);
     final time = DateFormat.Hm(t.locale.languageCode).format(m.createdAt);
-    final bg = mine ? p.accent : p.surface;
-    final fg = mine ? p.accentInk : p.ink;
+    final failed = m.sendState == 'failed';
+    final bg = failed
+        ? p.surface
+        : mine
+        ? p.accent
+        : p.surface;
+    final fg = failed
+        ? p.ink
+        : mine
+        ? p.accentInk
+        : p.ink;
     final img = m.photo?.feed;
     final width = MediaQuery.sizeOf(context).width;
     final q = m.replyTo;
@@ -897,133 +1004,153 @@ class _Bubble extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: width * 0.78),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            children: [
-              if (m.removed)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: p.line),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    t('messages.removed'),
-                    style: font(14.5, color: p.inkMuted).copyWith(fontStyle: FontStyle.italic),
-                  ),
-                ),
-              if (quoteAboveMedia)
-                ConstrainedBox(constraints: BoxConstraints(maxWidth: width * 0.66), child: quote),
-              if (m.image != null)
-                GestureDetector(
-                  onTap: compact ? null : () => _openImage(context, m.image!.url),
-                  child: media(
-                    AspectRatio(
-                      aspectRatio: m.image!.ratio,
-                      child: NetPhoto(url: m.image!.url),
-                    ),
-                    maxH: 340,
-                  ),
-                ),
-              if (m.gif != null)
-                media(
-                  AspectRatio(
-                    aspectRatio: m.gif!.ratio,
-                    child: Image.network(
-                      m.gif!.url,
-                      fit: BoxFit.contain,
-                      gaplessPlayback: true,
-                      errorBuilder: (_, _, _) => Container(color: p.surface2),
-                    ),
-                  ),
-                  maxH: m.gif!.kind == 'sticker' ? 160 : 240,
-                ),
-              if (m.photo != null && img != null)
-                GestureDetector(
-                  onTap: compact ? null : () => context.push('/p/${m.photo!.id}'),
-                  child: Container(
-                    padding: const EdgeInsets.all(Space.s3),
-                    margin: const EdgeInsets.only(bottom: 4),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: m.sendState == 'sending' ? 0.6 : 1,
+            child: Column(
+              crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (m.removed)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: p.surface,
-                      borderRadius: BorderRadius.circular(Radii.card),
+                      border: Border.all(color: p.line),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      t('messages.removed'),
+                      style: font(14.5, color: p.inkMuted).copyWith(fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                if (quoteAboveMedia)
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: width * 0.66),
+                    child: quote,
+                  ),
+                if (m.image != null)
+                  GestureDetector(
+                    onTap: compact ? null : () => _openImage(context, m.image!.url),
+                    child: media(
+                      AspectRatio(
+                        aspectRatio: m.image!.ratio,
+                        child: NetPhoto(url: m.image!.url),
+                      ),
+                      maxH: 340,
+                    ),
+                  ),
+                if (m.gif != null)
+                  media(
+                    AspectRatio(
+                      aspectRatio: m.gif!.ratio,
+                      child: Image.network(
+                        m.gif!.url,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, _, _) => Container(color: p.surface2),
+                      ),
+                    ),
+                    maxH: m.gif!.kind == 'sticker' ? 160 : 240,
+                  ),
+                if (m.photo != null && img != null)
+                  GestureDetector(
+                    onTap: compact ? null : () => context.push('/p/${m.photo!.id}'),
+                    child: Container(
+                      padding: const EdgeInsets.all(Space.s3),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(Radii.card)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(Radii.photo),
+                              child: AspectRatio(
+                                aspectRatio: img.ratio,
+                                child: NetPhoto(url: img.url),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
+                            child: Text(
+                              m.photo!.title ?? m.photo!.user.displayName,
+                              style: font(15, weight: 600, color: p.ink),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (m.location != null)
+                  GestureDetector(
+                    onTap: compact
+                        ? null
+                        : () => context.push('/map?lat=${m.location!.latitude}&lng=${m.location!.longitude}&photos=1'),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.mapPin, size: 20, color: fg),
+                          const SizedBox(width: 8),
+                          Text(
+                            m.location!.name ?? t('messages.shared_location'),
+                            style: font(16, weight: 600, color: fg),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (m.body != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: failed ? Border.all(color: p.danger.withValues(alpha: 0.45), width: 1.5) : null,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 300),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(Radii.photo),
-                            child: AspectRatio(
-                              aspectRatio: img.ratio,
-                              child: NetPhoto(url: img.url),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
-                          child: Text(
-                            m.photo!.title ?? m.photo!.user.displayName,
-                            style: font(15, weight: 600, color: p.ink),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              if (m.location != null)
-                GestureDetector(
-                  onTap: compact
-                      ? null
-                      : () => context.push(
-                          '/map?lat=${m.location!.latitude}&lng=${m.location!.longitude}&photos=1',
-                        ),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.mapPin, size: 20, color: fg),
-                        const SizedBox(width: 8),
-                        Text(
-                          m.location!.name ?? t('messages.shared_location'),
-                          style: font(16, weight: 600, color: fg),
-                        ),
+                        ?(quoteAboveMedia ? null : quote),
+                        Text(m.body!, style: font(15.5, height: 1.4, color: fg)),
                       ],
                     ),
                   ),
-                ),
-              if (m.body != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ?(quoteAboveMedia ? null : quote),
-                      Text(m.body!, style: font(15.5, height: 1.4, color: fg)),
-                    ],
+                if (m.reactions.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(left: mine ? 0 : 10, right: mine ? 10 : 0, top: 2),
+                    child: ReactionPills(reactions: m.reactions, meId: meId, onTap: onReact ?? (_) {}),
                   ),
-                ),
-              if (m.reactions.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.only(left: mine ? 0 : 10, right: mine ? 10 : 0, top: 2),
-                  child: ReactionPills(
-                    reactions: m.reactions,
-                    meId: meId,
-                    onTap: onReact ?? (_) {},
+                if (!compact)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(4, m.reactions.isNotEmpty ? 0 : 3, 4, 0),
+                    child: switch (m.sendState) {
+                      'sending' => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.clock3, size: 12, color: p.inkMuted),
+                          const SizedBox(width: 4),
+                          Text(t('messages.sending'), style: font(12, color: p.inkMuted)),
+                        ],
+                      ),
+                      'failed' => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.circleAlert, size: 14, color: p.danger),
+                          const SizedBox(width: 4),
+                          Text(t('messages.failed'), style: font(12.5, weight: 700, color: p.danger)),
+                        ],
+                      ),
+                      _ => Text(time, style: font(12, color: p.inkMuted, tabular: true)),
+                    },
                   ),
-                ),
-              if (!compact)
-                Padding(
-                  padding: EdgeInsets.fromLTRB(4, m.reactions.isNotEmpty ? 0 : 3, 4, 0),
-                  child: Text(time, style: font(12, color: p.inkMuted, tabular: true)),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1036,10 +1163,7 @@ class _Bubble extends StatelessWidget {
         fullscreenDialog: true,
         builder: (c) => Scaffold(
           backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-          ),
+          appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
           body: Center(
             child: InteractiveViewer(
               maxScale: 5,

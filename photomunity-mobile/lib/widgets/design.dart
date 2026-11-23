@@ -687,17 +687,92 @@ class PhotoCardView extends StatelessWidget {
             child: Row(
               children: [
                 LikePill(photo: photo),
+                if (!photo.commentsOff) ...[
+                  const SizedBox(width: Space.s2),
+                  CommentPill(photo: photo),
+                ],
                 const SizedBox(width: Space.s2),
                 ShareButton(path: '/p/${photo.id}', title: photo.title),
                 const Spacer(),
-                for (final (i, c) in chips.indexed) ...[
+                // Yorum düğmesiyle dar ekranda taşmasın diye en fazla 2 çip
+                for (final (i, c) in chips.take(photo.commentsOff ? 3 : 2).indexed) ...[
                   if (i > 0) const SizedBox(width: 6),
                   ExifChip(c),
                 ],
               ],
             ),
           ),
+          if (photo.lastComment case final c? when !photo.commentsOff)
+            InkWell(
+              borderRadius: BorderRadius.circular(Radii.box),
+              onTap: () => context.push('/p/${photo.id}/comments'),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 8, 6, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: '${c.username} ', style: font(14, weight: 700, color: p.ink)),
+                          TextSpan(text: c.body, style: font(14, color: p.ink)),
+                        ],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (photo.commentCount > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          L10n.of(context)('comments.view_all', {'count': photo.commentCount}),
+                          style: font(13.5, color: p.inkMuted),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Akış kartında yorum düğmesi: sayıyı gösterir, yorumlar ekranını açar.
+class CommentPill extends StatelessWidget {
+  const CommentPill({super.key, required this.photo});
+  final PhotoCard photo;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final t = L10n.of(context);
+    return Semantics(
+      button: true,
+      label: t('comments.count_label', {'count': photo.commentCount}),
+      excludeSemantics: true,
+      child: Material(
+        color: p.surface2,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: () => context.push('/p/${photo.id}/comments'),
+          child: SizedBox(
+            height: 38,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.messageCircle, size: 19, color: p.ink),
+                  const SizedBox(width: 7),
+                  Text('${photo.commentCount}', style: font(14, weight: 600, color: p.ink, tabular: true)),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

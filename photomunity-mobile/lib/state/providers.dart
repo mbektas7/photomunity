@@ -788,13 +788,41 @@ class MessagesController extends Notifier<MessagesState> {
   }
 
   /// WebSocket ya da kendi gönderdiğimiz mesaj; tekrar eklenmez.
+  /// Kendi mesajımızın yankısı yanıt gelmeden düşerse bekleyen yerel kopyanın yerine geçer.
   void receive(ChatMessage m) {
-    if (state.items.any((x) => x.id == m.id)) return;
-    state = MessagesState(
-      items: [...state.items, m],
-      cursor: state.cursor,
-      done: state.done,
-    );
+    if (!ref.mounted || state.items.any((x) => x.id == m.id)) return;
+    final i = state.items.indexWhere((x) =>
+        x.sendState == 'sending' && x.senderId == m.senderId && x.body == m.body && x.gif?.id == m.gif?.id);
+    _set(i < 0 ? [...state.items, m] : [...state.items]..[i] = m);
+  }
+
+  void _set(List<ChatMessage> items) => state = MessagesState(
+    items: items,
+    cursor: state.cursor,
+    loading: state.loading,
+    done: state.done,
+  );
+
+  void addLocal(ChatMessage m) => _set([...state.items, m]);
+
+  /// Sunucu yanıtı: yerel kopya gerçek mesajla değişir (yankı önce geldiyse yerel kopya silinir).
+  void resolveLocal(String localId, ChatMessage real) {
+    if (!ref.mounted) return;
+    final hasReal = state.items.any((x) => x.id == real.id);
+    _set([
+      for (final x in state.items)
+        if (x.id == localId) ...[if (!hasReal) real] else x,
+    ]);
+  }
+
+  void setLocalState(String localId, String? sendState) {
+    if (!ref.mounted) return;
+    _set([for (final x in state.items) x.id == localId ? x.withSendState(sendState) : x]);
+  }
+
+  void removeLocal(String localId) {
+    if (!ref.mounted) return;
+    _set([for (final x in state.items) if (x.id != localId) x]);
   }
 }
 
