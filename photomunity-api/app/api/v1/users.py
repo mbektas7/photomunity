@@ -118,6 +118,8 @@ async def get_profile(username: str, viewer: User | None = Depends(get_optional_
     following = await db.scalar(select(func.count()).select_from(Follow).where(Follow.follower_id == user.id))
     photos = await db.scalar(select(func.count()).select_from(Photo)
                              .where(Photo.user_id == user.id, Photo.status == PhotoStatus.published, Photo.hidden.is_(False)))
+    from app.api.v1.themes import theme_win_count
+
     return ProfileOut(
         **UserCard.model_validate(user).model_dump(),
         bio=user.bio, cover_url=user.cover_url, website=user.website, specialties=user.specialties or [],
@@ -126,6 +128,7 @@ async def get_profile(username: str, viewer: User | None = Depends(get_optional_
         is_following=bool(viewer) and await is_following(db, viewer.id, user.id),
         is_me=bool(viewer) and viewer.id == user.id,
         can_view_photos=await can_view_photos(db, viewer, user),
+        theme_wins=await theme_win_count(db, user.id),
     )
 
 

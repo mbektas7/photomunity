@@ -30,6 +30,13 @@ PUSH_DEFAULTS: dict[str, bool] = {
     "message_request": True,
     "photo_comment": True,
     "comment_reply": True,
+    "theme_won": True,
+    "critique_new": True,
+    "event_new": True,
+    "event_reminder": True,
+    "event_cancelled": True,
+    "plan_reminder": True,
+    "plan_weather": True,
 }
 
 TEXT: dict[str, dict[str, str]] = {
@@ -50,6 +57,14 @@ TEXT: dict[str, dict[str, str]] = {
     "message_request": {"tr": "{actor} sana mesaj göndermek istiyor.", "en": "{actor} wants to send you a message."},
     "photo_comment": {"tr": "{actor} fotoğrafına yorum yaptı: {preview}", "en": "{actor} commented on your photo: {preview}"},
     "comment_reply": {"tr": "{actor} yorumuna cevap verdi: {preview}", "en": "{actor} replied to your comment: {preview}"},
+    # Revizyon 7 ({theme} ve {plan} bildirimin verisindeki theme_tr/theme_en, plan_tr/plan_en alanlarından dile göre seçilir)
+    "theme_won": {"tr": "Tebrikler! #{number} {theme} temasını en çok beğenilen karenle kazandın.", "en": "Congratulations! Your photo won weekly theme #{number}: {theme}."},
+    "critique_new": {"tr": "{actor} fotoğrafını eleştirdi.", "en": "{actor} left a critique on your photo."},
+    "event_new": {"tr": "{community} yeni bir etkinlik düzenliyor: {event}", "en": "{community} is hosting a new event: {event}"},
+    "event_reminder": {"tr": "Yarın: {event} ({community})", "en": "Tomorrow: {event} ({community})"},
+    "event_cancelled": {"tr": "{event} etkinliği iptal edildi.", "en": "{event} was cancelled."},
+    "plan_reminder": {"tr": "Hatırlatma: {plan} çekimine {hours} saat kaldı.", "en": "Reminder: {hours} hours until your {plan} shoot."},
+    "plan_weather": {"tr": "Hava bozuluyor: {plan} için bulut oranı %{cloud} bekleniyor.", "en": "Weather alert: {cloud}% cloud cover expected for {plan}."},
 }
 
 
@@ -60,6 +75,11 @@ def render(n: Notification, locale: str) -> str:
         return f"{d.get(f'title_{lang}', '')}: {d.get(f'body_{lang}', '')}"
     template = TEXT.get(n.type, {}).get(locale) or TEXT.get(n.type, {}).get("en") or n.type
     params = {"actor": n.actor.display_name if n.actor else "", **{k: str(v) for k, v in (n.data or {}).items()}}
+    # Dile göre metin: {"theme_tr": "...", "theme_en": "..."} → {theme}
+    lang = "tr" if locale == "tr" else "en"
+    for k, v in (n.data or {}).items():
+        if k.endswith(f"_{lang}"):
+            params[k[:-3]] = str(v)
     try:
         return template.format(**params)
     except KeyError:
@@ -116,7 +136,8 @@ async def deliver(notification_ids: list[uuid.UUID]) -> None:
                 data["photo_id"] = str(n.photo_id)
             if n.actor:
                 data["username"] = n.actor.username
-            for k in ("community_slug", "contest_id", "comment_id", "conversation_id"):
+            for k in ("community_slug", "contest_id", "comment_id", "conversation_id", "theme_id", "critique_id",
+                      "event_id", "plan_id"):
                 if k in (n.data or {}):
                     data[k] = str(n.data[k])
             if fcm is None:

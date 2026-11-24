@@ -39,6 +39,41 @@ async def contest_tick(ctx):
     await deliver([n.id for n in created])
 
 
+async def theme_tick(ctx):
+    """Her 5 dakikada: bitiş zamanı geçen haftalık temaların kazananını belirler."""
+    from app.models import WeeklyTheme
+    from app.services.themes import finalize_theme
+
+    now = utcnow()
+    async with database.SessionLocal() as db:
+        created = []
+        for t in await db.scalars(select(WeeklyTheme).where(WeeklyTheme.finalized_at.is_(None), WeeklyTheme.ends_at <= now)):
+            created += await finalize_theme(db, t)
+        await db.commit()
+    await deliver([n.id for n in created])
+
+
+async def reminder_tick(ctx):
+    """Her 5 dakikada: etkinlik (24 sa önce) ve çekim planı (24 sa ve 2 sa önce) hatırlatmaları. Bayraklarla tek sefer."""
+    from app.api.v1.events import send_event_reminders
+    from app.services.plans import send_plan_reminders
+
+    async with database.SessionLocal() as db:
+        created = await send_event_reminders(db) + await send_plan_reminders(db)
+        await db.commit()
+    await deliver([n.id for n in created])
+
+
+async def plan_weather_tick(ctx):
+    """Saatte bir: 48 saat içindeki, hava uyarısı açık planlar için Open-Meteo bulut kontrolü."""
+    from app.services.plans import check_plan_weather
+
+    async with database.SessionLocal() as db:
+        created = await check_plan_weather(db)
+        await db.commit()
+    await deliver([n.id for n in created])
+
+
 async def subscription_tick(ctx):
     """Saatte bir: dönemi bitmiş ama webhook'u gelmemiş abonelikleri kapatır, Pro durumunu yeniden hesaplar."""
     from app.services.billing import recompute_pro
@@ -58,6 +93,9 @@ class WorkerSettings:
     cron_jobs = [
         cron(contest_tick, minute=set(range(0, 60, 5)), run_at_startup=True),
         cron(subscription_tick, minute={17}),
+        cron(theme_tick, minute=set(range(1, 60, 5))),
+        cron(reminder_tick, minute=set(range(2, 60, 5))),
+        cron(plan_weather_tick, minute={23}),
     ]
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
     max_jobs = 4

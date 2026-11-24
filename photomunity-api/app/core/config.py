@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     revenuecat_entitlement: str = "pro"
     pro_upload_limit_per_hour: int = 200
 
+    # Çekim planı hava uyarısı (Open-Meteo, anahtarsız)
+    open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
+    weather_timeout_seconds: float = 5.0
+    weather_cloud_alert_percent: int = 40  # hedef saatte bulut bu oranı geçerse bir kez uyarı gider
+
     @model_validator(mode="after")
     def _production_guard(self) -> "Settings":
         """Üretimde geliştirme varsayılanlarıyla açılmayı engeller."""

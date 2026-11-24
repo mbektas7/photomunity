@@ -60,6 +60,24 @@ MESSAGES: dict[str, dict[str, str]] = {
     "already_pro": {"tr": "Zaten Pro üyesin.", "en": "You're already Pro."},
     "no_web_subscription": {"tr": "Web üzerinden alınmış bir aboneliğin yok; aboneliğini satın aldığın mağazadan yönetebilirsin.", "en": "You don't have a web subscription; manage it in the store where you bought it."},
     "storage_missing": {"tr": "Yüklenen dosya bulunamadı, tekrar yükleyin.", "en": "Uploaded file not found, please upload again."},
+    # Revizyon 7
+    "theme_not_active": {"tr": "Bu tema şu anda katılıma açık değil.", "en": "This theme isn't open for entries right now."},
+    "theme_already_entered": {"tr": "Bu temaya zaten bir fotoğrafla katıldın. Değiştirmek için önce geri çek.", "en": "You've already entered this theme. Withdraw first to change your photo."},
+    "theme_overlap": {"tr": "Bu tarihlerde başka bir tema var.", "en": "Another theme overlaps these dates."},
+    "theme_started": {"tr": "Başlamış bir tema silinemez.", "en": "A theme that has started can't be deleted."},
+    "invalid_theme_dates": {"tr": "Bitiş başlangıçtan sonra ve ileri bir tarihte olmalı.", "en": "The end must be after the start and in the future."},
+    "critique_not_requested": {"tr": "Bu fotoğrafın sahibi eleştiri istemiyor.", "en": "The owner hasn't asked for critique on this photo."},
+    "cannot_critique_own": {"tr": "Kendi fotoğrafını eleştiremezsin.", "en": "You can't critique your own photo."},
+    "cannot_mark_own": {"tr": "Kendi eleştirini faydalı olarak işaretleyemezsin.", "en": "You can't mark your own critique as helpful."},
+    "collection_limit": {"tr": "En fazla 50 koleksiyon oluşturabilirsin.", "en": "You can have at most 50 collections."},
+    "collection_full": {"tr": "Bir koleksiyonda en fazla 200 fotoğraf olabilir.", "en": "A collection can hold at most 200 photos."},
+    "invalid_event_dates": {"tr": "Etkinlik ileri bir tarihte başlamalı; bitiş başlangıçtan sonra olmalı.", "en": "The event must start in the future and end after it starts."},
+    "event_full": {"tr": "Etkinliğin kontenjanı doldu.", "en": "This event is full."},
+    "event_closed": {"tr": "Bu etkinlik iptal edildi ya da sona erdi.", "en": "This event was cancelled or has ended."},
+    "capacity_too_low": {"tr": "Kontenjan, katılacağını bildiren kişi sayısından az olamaz.", "en": "Capacity can't be lower than the number of attendees."},
+    "invalid_plan_date": {"tr": "Plan tarihi ileri bir tarih olmalı.", "en": "The plan date must be in the future."},
+    "plan_limit": {"tr": "En fazla 100 yaklaşan çekim planın olabilir.", "en": "You can have at most 100 upcoming plans."},
+    "gear_required": {"tr": "Bir kamera ya da lens seç.", "en": "Pick a camera or a lens."},
 }
 
 

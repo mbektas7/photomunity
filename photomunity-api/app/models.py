@@ -77,6 +77,9 @@ class User(Base):
     notification_prefs: Mapped[dict] = mapped_column(JSON, default=dict)  # {"push": {"photo_liked": false}}
     # Kayıt sonrası tanıtım (profilini tamamla): bitirince ya da kapatınca dolar; eski hesaplar dolu başlar
     onboarding_done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Yükleme varsayılanları (istemci göndermezse yeni fotoğrafa uygulanır)
+    default_license: Mapped[str] = mapped_column(String(12), default="all_rights", server_default="all_rights")
+    default_downloads_disabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = _created()
 
     @property
@@ -155,9 +158,16 @@ class Photo(Base):
     hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)  # moderasyon nedeniyle gizli
     # Kim yorum yapabilir: everyone | followers | off ("off" iken eski yorumlar gizlenir, silinmez)
     comment_policy: Mapped[str] = mapped_column(String(10), default="everyone", server_default="everyone")
+    # Eleştiri modu: sahibi yapılandırılmış geri bildirim ister
+    critique_requested: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), index=True)
+    critique_question: Mapped[str | None] = mapped_column(String(300))
+    # Kullanım hakları: all_rights | cc_by | cc_by_nc | contact
+    license: Mapped[str] = mapped_column(String(12), default="all_rights", server_default="all_rights")
+    downloads_disabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
 
     user: Mapped[User] = relationship(lazy="raise")
-    exif: Mapped["PhotoExif | None"] = relationship(lazy="raise", uselist=False)
+    # Silmede yüklü EXIF satırı da silinir (cascade yokken SQLAlchemy photo_id'yi boşaltmaya çalışıp hata veriyordu)
+    exif: Mapped["PhotoExif | None"] = relationship(lazy="raise", uselist=False, cascade="all, delete-orphan")
 
 
 class Comment(Base):
@@ -611,3 +621,141 @@ class Announcement(Base):
     recipient_count: Mapped[int] = mapped_column(Integer, default=0)
     banner_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), index=True)
+
+
+# =====================================================================  Revizyon 7
+
+
+class WeeklyTheme(Base):
+    """Platform geneli haftalık tema: jüri yok, beğeniye göre sıralanır."""
+
+    __tablename__ = "weekly_themes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    number: Mapped[int] = mapped_column(Integer, unique=True)
+    title_tr: Mapped[str] = mapped_column(String(100))
+    title_en: Mapped[str] = mapped_column(String(100))
+    description_tr: Mapped[str | None] = mapped_column(String(1000))
+    description_en: Mapped[str | None] = mapped_column(String(1000))
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    winner_entry_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)  # theme_entries.id (FK döngüsünü önlemek için düz kolon)
+    created_at: Mapped[datetime] = _created()
+
+
+class ThemeEntry(Base):
+    __tablename__ = "theme_entries"
+    __table_args__ = (UniqueConstraint("theme_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    theme_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("weekly_themes.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = _created()
+
+
+class Critique(Base):
+    """Puanlı, yapılandırılmış eleştiri. Kişi başına fotoğraf başına bir eleştiri."""
+
+    __tablename__ = "critiques"
+    __table_args__ = (UniqueConstraint("photo_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    composition: Mapped[int] = mapped_column(Integer)
+    light: Mapped[int] = mapped_column(Integer)
+    focus: Mapped[int] = mapped_column(Integer)
+    editing: Mapped[int] = mapped_column(Integer)
+    good: Mapped[str | None] = mapped_column(Text)
+    improve: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = _created()
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), onupdate=_now)
+
+    user: Mapped[User] = relationship(lazy="raise")
+
+
+class CritiqueHelpful(Base):
+    __tablename__ = "critique_helpful"
+
+    critique_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("critiques.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True)
+    created_at: Mapped[datetime] = _created()
+
+
+class Collection(Base):
+    """Profildeki seri / koleksiyon: sahibinin kendi karelerinden sıralı bir seçki."""
+
+    __tablename__ = "collections"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(String(500))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = _created()
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), onupdate=_now)
+
+
+class CollectionItem(Base):
+    __tablename__ = "collection_items"
+
+    collection_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("collections.id", ondelete="CASCADE"), primary_key=True)
+    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"), primary_key=True, index=True)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class CommunityEvent(Base):
+    """Topluluk etkinliği (foto yürüyüşü / buluşma)."""
+
+    __tablename__ = "community_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    community_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("communities.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(150))
+    description: Mapped[str | None] = mapped_column(Text)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    location_name: Mapped[str] = mapped_column(String(200))
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
+    capacity: Mapped[int | None] = mapped_column(Integer)
+    bring: Mapped[str | None] = mapped_column(String(500))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = _created()
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+
+
+class EventAttendee(Base):
+    __tablename__ = "event_attendees"
+
+    event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("community_events.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True)
+    created_at: Mapped[datetime] = _created()
+
+
+class ShootPlan(Base):
+    """Kişisel çekim planı: hatırlatma ve hava (bulut) uyarısı."""
+
+    __tablename__ = "shoot_plans"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(12))  # milkyway | golden | blue | moonrise | meteor | other
+    title: Mapped[str | None] = mapped_column(String(120))
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    place_name: Mapped[str | None] = mapped_column(String(200))
+    target_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    remind: Mapped[bool] = mapped_column(Boolean, default=True)
+    weather_alert: Mapped[bool] = mapped_column(Boolean, default=False)
+    notes: Mapped[str | None] = mapped_column(String(1000))
+    created_at: Mapped[datetime] = _created()
+    reminded_day_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reminded_hour_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    weather_alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    weather_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_cloud_cover: Mapped[int | None] = mapped_column(Integer)  # son kontrolde hedef saatteki bulut oranı (%)

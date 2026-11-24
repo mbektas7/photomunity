@@ -12,7 +12,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError, request_locale
 from app.core.messages import translate
-from app.models import Comment, Contest, ContestEntry, Follow, Like, Photo, PhotoExif, PhotoStatus, User
+from app.models import Comment, Contest, ContestEntry, Critique, Follow, Like, Photo, PhotoExif, PhotoStatus, User
 from app.schemas import (
     ALLOWED_CONTENT_TYPES, AwardOut, CommentPreview, ExifOut, ExifSummary, ImageVariant, LocationIn, PhotoCard, PhotoDetail, PhotoMetaIn, PhotoPage,
     PhotoUpdate, UploadUrlIn, UploadUrlOut, UserCard,
@@ -48,13 +48,22 @@ async def _cards(db: AsyncSession, photos: list[Photo], viewer: User | None) -> 
     # EXIF tek sorguda; çağıranların Photo.exif'i önceden yüklemesine gerek yok
     exifs = {e.photo_id: e for e in await db.scalars(select(PhotoExif).where(PhotoExif.photo_id.in_(ids)))} if ids else {}
     ccounts, last = await _comment_stats(db, [p.id for p in photos if (p.comment_policy or "everyone") != "off"])
+    crit = await critique_counts(db, ids)
     return [PhotoCard(id=p.id, user=UserCard.model_validate(p.user), title=p.title, images=_images(p),
                       like_count=counts.get(p.id, 0), liked_by_me=p.id in liked, published_at=p.published_at,
                       exif=ExifSummary.model_validate(exifs[p.id]) if p.id in exifs else None,
                       place=p.location_name if p.latitude is not None and p.longitude is not None else None,
                       comment_count=ccounts.get(p.id, 0), comments_off=(p.comment_policy or "everyone") == "off",
-                      last_comment=last.get(p.id))
+                      last_comment=last.get(p.id), critique_requested=bool(p.critique_requested),
+                      critique_question=p.critique_question, critique_count=crit.get(p.id, 0))
             for p in photos]
+
+
+async def critique_counts(db: AsyncSession, ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    if not ids:
+        return {}
+    return dict((await db.execute(select(Critique.photo_id, func.count()).join(User, User.id == Critique.user_id).where(
+        Critique.photo_id.in_(ids), User.is_active.is_(True)).group_by(Critique.photo_id))).all())
 
 
 async def _comment_stats(db: AsyncSession, ids: list[uuid.UUID]) -> tuple[dict, dict]:
@@ -114,7 +123,8 @@ async def create_upload_url(body: UploadUrlIn, user: User = Depends(get_current_
     photo_id = uuid.uuid4()
     key = f"originals/{user.id}/{photo_id}/original{ext}"
     db.add(Photo(id=photo_id, user_id=user.id, original_key=key, content_type=body.content_type.lower(),
-                 status=PhotoStatus.pending, tags=[], variants={}, rejection_codes=[], quality={}))
+                 status=PhotoStatus.pending, tags=[], variants={}, rejection_codes=[], quality={},
+                 license=user.default_license or "all_rights", downloads_disabled=bool(user.default_downloads_disabled)))
     await db.commit()
     signed = await run_in_threadpool(storage.presigned_upload, key, body.content_type.lower(), s.max_file_bytes)
     return UploadUrlOut(photo_id=photo_id, upload_url=signed["url"], fields=signed["fields"],
@@ -133,6 +143,11 @@ async def complete_upload(photo_id: uuid.UUID, body: PhotoMetaIn, request: Reque
     _apply_meta(photo, body.title, body.description, body.tags, body.location)
     if body.comment_policy:
         photo.comment_policy = body.comment_policy
+    _apply_rev7(photo, body)
+    if body.license is None:
+        photo.license = user.default_license or "all_rights"
+    if body.downloads_disabled is None:
+        photo.downloads_disabled = bool(user.default_downloads_disabled)
     photo.status = PhotoStatus.processing
     await db.commit()
 
@@ -142,6 +157,18 @@ async def complete_upload(photo_id: uuid.UUID, body: PhotoMetaIn, request: Reque
     else:  # Redis yoksa (geliştirme/test) aynı süreçte işle
         background.add_task(process_photo, photo.id)
     return await _detail(db, photo, user, request_locale(request))
+
+
+def _apply_rev7(photo: Photo, body) -> None:
+    """Eleştiri modu ve kullanım hakları (yükleme ve düzenlemede ortak)."""
+    if body.critique_requested is not None:
+        photo.critique_requested = body.critique_requested
+    if body.critique_question is not None:
+        photo.critique_question = body.critique_question.strip() or None
+    if body.license is not None:
+        photo.license = body.license
+    if body.downloads_disabled is not None:
+        photo.downloads_disabled = body.downloads_disabled
 
 
 def _apply_meta(photo: Photo, title, description, tags, location: LocationIn | None):
@@ -176,6 +203,7 @@ async def _detail(db: AsyncSession, photo: Photo, viewer: User | None, locale: s
         comment_policy=photo.comment_policy or "everyone",
         comment_count=await comment_count(db, photo) if (photo.comment_policy or "everyone") != "off" else 0,
         can_comment=await can_comment(db, photo, viewer),
+        license=photo.license or "all_rights", downloads_disabled=bool(photo.downloads_disabled),
     )
 
 
@@ -198,6 +226,7 @@ async def update_photo(photo_id: uuid.UUID, body: PhotoUpdate, request: Request,
         photo.latitude = photo.longitude = photo.location_name = None
     if body.comment_policy:
         photo.comment_policy = body.comment_policy
+    _apply_rev7(photo, body)
     await db.commit()
     return await _detail(db, await _load(db, photo_id), user, request_locale(request))
 

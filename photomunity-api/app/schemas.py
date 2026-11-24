@@ -9,6 +9,7 @@ from app.models import EquipmentType, PhotoStatus
 
 USERNAME_RE = re.compile(r"^[a-z0-9_.]{3,30}$")
 Locale = Literal["tr", "en"]
+License = Literal["all_rights", "cc_by", "cc_by_nc", "contact"]
 
 
 class ORM(BaseModel):
@@ -115,6 +116,8 @@ class MeOut(ORM):
     is_pro: bool
     is_admin: bool = False
     onboarding_done: bool = True
+    default_license: str = "all_rights"
+    default_downloads_disabled: bool = False
     created_at: datetime
 
 
@@ -142,6 +145,8 @@ class MeUpdate(BaseModel):
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
     onboarding_done: bool | None = None  # true: tanıtım bitti ya da kapatıldı
+    default_license: License | None = None
+    default_downloads_disabled: bool | None = None
 
     @field_validator("username")
     @classmethod
@@ -169,6 +174,7 @@ class ProfileOut(BaseModel):
     is_following: bool
     is_me: bool
     can_view_photos: bool
+    theme_wins: int = 0  # kazanılan haftalık tema sayısı (profil rozeti)
 
 
 class UserPage(BaseModel):
@@ -213,6 +219,10 @@ class PhotoMetaIn(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=15)
     location: LocationIn | None = None
     comment_policy: CommentPolicy | None = None
+    critique_requested: bool | None = None
+    critique_question: str | None = Field(default=None, max_length=300)
+    license: License | None = None  # gönderilmezse kullanıcının default_license değeri
+    downloads_disabled: bool | None = None  # gönderilmezse default_downloads_disabled
 
 
 class PhotoUpdate(BaseModel):
@@ -222,6 +232,10 @@ class PhotoUpdate(BaseModel):
     location: LocationIn | None = None
     clear_location: bool = False
     comment_policy: CommentPolicy | None = None
+    critique_requested: bool | None = None
+    critique_question: str | None = Field(default=None, max_length=300)  # "" gönderilirse soru silinir
+    license: License | None = None
+    downloads_disabled: bool | None = None
 
 
 class ImageVariant(BaseModel):
@@ -272,6 +286,10 @@ class PhotoCard(BaseModel):
     comment_count: int = 0
     comments_off: bool = False
     last_comment: CommentPreview | None = None
+    # Eleştiri modu
+    critique_requested: bool = False
+    critique_question: str | None = None
+    critique_count: int = 0
 
 
 class PhotoDetail(PhotoCard):
@@ -287,6 +305,8 @@ class PhotoDetail(PhotoCard):
     comment_policy: str = "everyone"
     comment_count: int = 0
     can_comment: bool = False  # bakan kişi şu an yorum yazabilir mi
+    license: str = "all_rights"
+    downloads_disabled: bool = False
 
 
 class CommentIn(BaseModel):
@@ -778,6 +798,308 @@ class BillingStatus(BaseModel):
 
 class CheckoutIn(BaseModel):
     plan: Literal["monthly", "yearly"]
+
+
+# =====================================================================  Revizyon 7
+# ---------- Haftalık tema
+class ThemeIn(BaseModel):
+    title_tr: str = Field(min_length=1, max_length=100)
+    title_en: str = Field(min_length=1, max_length=100)
+    description_tr: str | None = Field(default=None, max_length=1000)
+    description_en: str | None = Field(default=None, max_length=1000)
+    starts_at: datetime
+    ends_at: datetime
+
+
+class ThemeUpdate(BaseModel):
+    title_tr: str | None = Field(default=None, min_length=1, max_length=100)
+    title_en: str | None = Field(default=None, min_length=1, max_length=100)
+    description_tr: str | None = Field(default=None, max_length=1000)
+    description_en: str | None = Field(default=None, max_length=1000)
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+
+
+class ThemeEntryOut(BaseModel):
+    id: uuid.UUID
+    theme_id: uuid.UUID
+    created_at: datetime
+    rank: int | None = None  # yalnızca sort=top listesinde ve kazananda
+    photo: PhotoCard
+
+
+class ThemeEntryPage(BaseModel):
+    items: list[ThemeEntryOut]
+    next_cursor: str | None
+
+
+class ThemeOut(BaseModel):
+    id: uuid.UUID
+    number: int
+    title: str        # isteğin diline göre (Accept-Language)
+    description: str | None
+    starts_at: datetime
+    ends_at: datetime
+    status: str       # scheduled | active | ended (sonuç işleniyor) | finished
+    entry_count: int
+    my_entry: ThemeEntryOut | None = None
+    winner: ThemeEntryOut | None = None
+    finalized_at: datetime | None = None
+
+
+class ThemePage(BaseModel):
+    items: list[ThemeOut]
+    next_cursor: str | None
+
+
+class ThemeAdminOut(BaseModel):
+    id: uuid.UUID
+    number: int
+    title_tr: str
+    title_en: str
+    description_tr: str | None
+    description_en: str | None
+    starts_at: datetime
+    ends_at: datetime
+    status: str
+    entry_count: int
+    winner_entry_id: uuid.UUID | None
+    finalized_at: datetime | None
+    created_at: datetime
+
+
+class ThemeWinOut(BaseModel):
+    theme_id: uuid.UUID
+    number: int
+    title: str
+    won_at: datetime | None
+    like_count: int
+    photo: PhotoCard
+
+
+# ---------- Eleştiri
+class CritiqueIn(BaseModel):
+    composition: int = Field(ge=1, le=5)
+    light: int = Field(ge=1, le=5)
+    focus: int = Field(ge=1, le=5)
+    editing: int = Field(ge=1, le=5)
+    good: str | None = Field(default=None, max_length=1000)
+    improve: str | None = Field(default=None, max_length=1000)
+
+
+class CritiqueOut(BaseModel):
+    id: uuid.UUID
+    photo_id: uuid.UUID
+    user: UserCard
+    author_specialties: list[str]  # alt başlık için (ör. ["landscape", "astro"]); deneyim yılı alanı yok
+    composition: int
+    light: int
+    focus: int
+    editing: int
+    average: float
+    good: str | None
+    improve: str | None
+    helpful_count: int
+    helpful_by_me: bool
+    mine: bool
+    can_delete: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class CritiqueAverages(BaseModel):
+    composition: float | None
+    light: float | None
+    focus: float | None
+    editing: float | None
+    overall: float | None
+
+
+class CritiqueList(BaseModel):
+    count: int
+    averages: CritiqueAverages
+    items: list[CritiqueOut]
+    my_critique: CritiqueOut | None
+    can_critique: bool
+    critique_requested: bool
+    critique_question: str | None
+
+
+# ---------- Koleksiyonlar
+class CollectionIn(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=500)
+    photo_ids: list[uuid.UUID] = Field(default_factory=list, max_length=200)
+
+
+class CollectionUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=500)
+
+
+class CollectionPhotosIn(BaseModel):
+    photo_ids: list[uuid.UUID] = Field(max_length=200)
+
+
+class CollectionPhotoIn(BaseModel):
+    photo_id: uuid.UUID
+
+
+class CollectionOrderIn(BaseModel):
+    collection_ids: list[uuid.UUID] = Field(max_length=50)
+
+
+class CollectionCard(BaseModel):
+    id: uuid.UUID
+    title: str
+    description: str | None
+    photo_count: int
+    covers: list[dict[str, ImageVariant]]  # ilk en fazla 3 karenin görsel türevleri (thumb/feed/full)
+    position: int
+    updated_at: datetime
+    contains_photo: bool | None = None  # yalnızca GET /me/collections?photo_id=... ile
+
+
+class CollectionOut(CollectionCard):
+    owner: UserCard
+    is_mine: bool
+    photos: list[PhotoCard]
+    created_at: datetime
+
+
+# ---------- Topluluk etkinlikleri
+class EventIn(BaseModel):
+    title: str = Field(min_length=1, max_length=150)
+    description: str | None = Field(default=None, max_length=3000)
+    starts_at: datetime
+    ends_at: datetime | None = None
+    location_name: str = Field(min_length=1, max_length=200)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    capacity: int | None = Field(default=None, ge=1, le=10000)
+    bring: str | None = Field(default=None, max_length=500)
+
+
+class EventUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=150)
+    description: str | None = Field(default=None, max_length=3000)
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    location_name: str | None = Field(default=None, min_length=1, max_length=200)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    capacity: int | None = Field(default=None, ge=1, le=10000)
+    bring: str | None = Field(default=None, max_length=500)
+
+
+class EventCard(BaseModel):
+    id: uuid.UUID
+    community: CommunityCard
+    title: str
+    starts_at: datetime
+    ends_at: datetime | None
+    location_name: str
+    latitude: float | None
+    longitude: float | None
+    capacity: int | None
+    attendee_count: int
+    attending: bool
+    status: str  # upcoming | ongoing | past | cancelled
+    cancelled_at: datetime | None
+
+
+class EventOut(EventCard):
+    description: str | None
+    bring: str | None
+    created_by: UserCard | None
+    created_at: datetime
+    attendees_preview: list[UserCard]  # en fazla 8
+    my_role: str | None  # topluluktaki rolüm: owner | admin | member | None
+    can_manage: bool
+    conversation_id: uuid.UUID | None = None  # toplulukların grup sohbeti yok; şimdilik hep null
+
+
+class EventList(BaseModel):
+    upcoming: list[EventCard]  # yaklaşan ve süren, en yakın önce
+    past: list[EventCard]      # geçmiş, en yeni önce
+
+
+# ---------- Çekim planları
+PlanKind = Literal["milkyway", "golden", "blue", "moonrise", "meteor", "other"]
+
+
+class PlanIn(BaseModel):
+    kind: PlanKind
+    title: str | None = Field(default=None, max_length=120)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    place_name: str | None = Field(default=None, max_length=200)
+    target_at: datetime
+    remind: bool = True
+    weather_alert: bool = False
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class PlanUpdate(BaseModel):
+    kind: PlanKind | None = None
+    title: str | None = Field(default=None, max_length=120)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    place_name: str | None = Field(default=None, max_length=200)
+    target_at: datetime | None = None
+    remind: bool | None = None
+    weather_alert: bool | None = None
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class PlanOut(ORM):
+    id: uuid.UUID
+    kind: str
+    title: str | None
+    latitude: float
+    longitude: float
+    place_name: str | None
+    target_at: datetime
+    remind: bool
+    weather_alert: bool
+    notes: str | None
+    created_at: datetime
+    reminded_day_at: datetime | None
+    reminded_hour_at: datetime | None
+    weather_alerted_at: datetime | None
+    weather_checked_at: datetime | None
+    last_cloud_cover: int | None
+    status: str = "upcoming"  # upcoming | past
+
+
+class PlanPage(BaseModel):
+    items: list[PlanOut]
+    next_cursor: str | None
+
+
+# ---------- Ekipman keşfi
+class GearSettings(BaseModel):
+    median_shutter_seconds: float | None
+    median_shutter_display: str | None
+    median_aperture: float | None
+    median_iso: int | None
+    median_focal_length_mm: float | None
+    sample_size: int
+
+
+class GearStats(BaseModel):
+    camera: str | None
+    lens: str | None
+    photo_count: int
+    photographer_count: int
+    top_photographers: list[UserCard]
+    common_settings: GearSettings
+
+
+class GearName(BaseModel):
+    kind: str  # camera | lens
+    name: str
+    photo_count: int
 
 
 MessageOut.model_rebuild()
