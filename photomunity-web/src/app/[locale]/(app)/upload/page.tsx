@@ -5,11 +5,13 @@ import { ImagePlus, LocateFixed, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { CommentPolicyField } from "@/components/Comments";
+import { CritiqueFields } from "@/components/critique";
+import { LicenseFields } from "@/components/license";
 import { Button, Notice, TextArea, TextField } from "@/components/ui";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, api, uploadToStorage } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
-import type { CommentPolicy, Location } from "@/lib/types";
+import type { CommentPolicy, License, Location } from "@/lib/types";
 
 // Backend varsayılanlarıyla aynı; sunucu yine de kesin kontrolü yapar.
 const MIN_BYTES = 0;
@@ -52,6 +54,10 @@ export default function UploadPage() {
   const [tags, setTags] = useState("");
   const [location, setLocation] = useState<Location | null>(null);
   const [commentPolicy, setCommentPolicy] = useState<CommentPolicy>("everyone");
+  const [critique, setCritique] = useState({ requested: false, question: "" });
+  // Kullanım hakları: kullanıcının varsayılanlarıyla başlar (Ayarlar → Kullanım hakları)
+  const [rights, setRights] = useState<{ license: License; downloadsDisabled: boolean } | null>(null);
+  const effectiveRights = rights ?? { license: me?.default_license ?? "all_rights", downloadsDisabled: !!me?.default_downloads_disabled };
   const [locating, setLocating] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +110,10 @@ export default function UploadPage() {
           tags: tags.split(",").map((s) => s.trim()).filter(Boolean),
           location: location ? { ...location, name: location.name || null } : null,
           comment_policy: commentPolicy,
+          critique_requested: critique.requested,
+          critique_question: critique.requested ? critique.question.trim() || null : null,
+          license: effectiveRights.license,
+          downloads_disabled: effectiveRights.downloadsDisabled,
         },
       });
       router.push(`/p/${slot.photo_id}`);
@@ -229,6 +239,19 @@ export default function UploadPage() {
           <div className="border-t border-line pt-5">
             <CommentPolicyField value={commentPolicy} onChange={setCommentPolicy} />
           </div>
+
+          <div className="border-t border-line pt-5">
+            <CritiqueFields requested={critique.requested} question={critique.question} onChange={setCritique} />
+          </div>
+
+          <details className="border-t border-line pt-5">
+            <summary className="cursor-pointer text-sm font-medium">
+              {t("rights")}
+            </summary>
+            <div className="mt-4">
+              <LicenseFields license={effectiveRights.license} downloadsDisabled={effectiveRights.downloadsDisabled} onChange={setRights} name="upload-license" />
+            </div>
+          </details>
 
           {error && <Notice tone="error">{error}</Notice>}
 

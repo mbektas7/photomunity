@@ -12,7 +12,8 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { SPECIALTIES } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
-import type { Equipment, EquipmentType, Me } from "@/lib/types";
+import { LicenseFields } from "@/components/license";
+import type { Equipment, EquipmentType, License, Me } from "@/lib/types";
 
 const EQUIPMENT_TYPES: EquipmentType[] = ["body", "lens", "tripod", "filter", "flash", "drone", "other"];
 
@@ -46,11 +47,40 @@ function Settings() {
       {!me.email_verified && <VerifyBanner />}
       <ProfileSection me={me} />
       <EquipmentSection initial={me.equipment} />
+      <RightsSection me={me} />
       <Section title={t("notifications")} lead={t("notifications_lead")}>
         <NotificationSettingsForm />
       </Section>
       <AccountSection />
     </div>
+  );
+}
+
+/** Yeni yüklemeler için varsayılan lisans ve indirme ayarı. */
+function RightsSection({ me }: { me: Me }) {
+  const t = useTranslations("license");
+  const qc = useQueryClient();
+  const [v, setV] = useState<{ license: License; downloadsDisabled: boolean }>({
+    license: me.default_license ?? "all_rights",
+    downloadsDisabled: !!me.default_downloads_disabled,
+  });
+  const [saved, setSaved] = useState(false);
+  const save = useMutation({
+    mutationFn: () => api<Me>("me", { method: "PATCH", body: { default_license: v.license, default_downloads_disabled: v.downloadsDisabled } }),
+    onSuccess: (data) => {
+      qc.setQueryData(["me"], data);
+      setSaved(true);
+    },
+  });
+  return (
+    <Section title={t("settings_title")} lead={t("settings_lead")}>
+      <div className="flex flex-col gap-5">
+        <LicenseFields license={v.license} downloadsDisabled={v.downloadsDisabled} onChange={(x) => (setV(x), setSaved(false))} name="default-license" />
+        {save.error && <Notice tone="error">{save.error instanceof ApiError && save.error.message ? save.error.message : t("save_error")}</Notice>}
+        {saved && <Notice tone="success">{t("saved")}</Notice>}
+        <Button type="button" className="self-start" busy={save.isPending} onClick={() => save.mutate()}>{t("save")}</Button>
+      </div>
+    </Section>
   );
 }
 

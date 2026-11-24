@@ -30,6 +30,9 @@ export type Me = UserCard & {
   onboarding_done: boolean;
   /** En az bir yayınlanmış fotoğrafı var (tanıtımdaki son adım) */
   has_photos: boolean;
+  /** Yeni yüklemelerde kullanılan varsayılan lisans ve indirme ayarı */
+  default_license?: License;
+  default_downloads_disabled?: boolean;
 };
 
 export type Profile = UserCard & {
@@ -46,6 +49,8 @@ export type Profile = UserCard & {
   is_following: boolean;
   is_me: boolean;
   can_view_photos: boolean;
+  /** Kazanılan haftalık tema sayısı (profil rozeti) */
+  theme_wins?: number;
 };
 
 export type ImageVariant = { url: string; width: number; height: number };
@@ -67,6 +72,10 @@ export type PhotoCard = {
   comment_count: number;
   comments_off: boolean;
   last_comment: { username: string; body: string } | null;
+  /** Eleştiri modu: fotoğrafçı puanlı geri bildirim istiyor */
+  critique_requested?: boolean;
+  critique_question?: string | null;
+  critique_count?: number;
 };
 
 export type ExifSummary = Pick<Exif, "aperture" | "shutter_display" | "iso" | "focal_length_mm">;
@@ -102,7 +111,11 @@ export type PhotoDetail = PhotoCard & {
   comment_policy: CommentPolicy;
   /** Bakan kişi şu an yorum yazabilir mi */
   can_comment: boolean;
+  license?: License;
+  downloads_disabled?: boolean;
 };
+
+export type License = "all_rights" | "cc_by" | "cc_by_nc" | "contact";
 
 export type CommentPolicy = "everyone" | "followers" | "off";
 
@@ -294,3 +307,154 @@ export type BillingStatus = {
   can_manage_on_web: boolean;
   prices: { monthly: string; yearly: string };
 };
+
+// ---------- Revizyon 7
+export type ThemeStatus = "scheduled" | "active" | "ended" | "finished";
+
+export type ThemeEntry = { id: string; theme_id: string; created_at: string; rank: number | null; photo: PhotoCard };
+
+export type Theme = {
+  id: string;
+  number: number;
+  /** İsteğin diline göre */
+  title: string;
+  description: string | null;
+  starts_at: string;
+  ends_at: string;
+  status: ThemeStatus;
+  entry_count: number;
+  my_entry: ThemeEntry | null;
+  winner: ThemeEntry | null;
+  finalized_at: string | null;
+};
+
+export type ThemeAdmin = {
+  id: string;
+  number: number;
+  title_tr: string;
+  title_en: string;
+  description_tr: string | null;
+  description_en: string | null;
+  starts_at: string;
+  ends_at: string;
+  status: ThemeStatus;
+  entry_count: number;
+  winner_entry_id: string | null;
+  finalized_at: string | null;
+  created_at: string;
+};
+
+export type ThemeWin = { theme_id: string; number: number; title: string; won_at: string | null; like_count: number; photo: PhotoCard };
+
+export const CRITERIA = ["composition", "light", "focus", "editing"] as const;
+export type Criterion = (typeof CRITERIA)[number];
+
+export type Critique = Record<Criterion, number> & {
+  id: string;
+  photo_id: string;
+  user: UserCard;
+  author_specialties: string[];
+  average: number;
+  good: string | null;
+  improve: string | null;
+  helpful_count: number;
+  helpful_by_me: boolean;
+  mine: boolean;
+  can_delete: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CritiqueList = {
+  count: number;
+  averages: Record<Criterion | "overall", number | null>;
+  items: Critique[];
+  my_critique: Critique | null;
+  can_critique: boolean;
+  critique_requested: boolean;
+  critique_question: string | null;
+};
+
+export type CollectionCard = {
+  id: string;
+  title: string;
+  description: string | null;
+  photo_count: number;
+  /** İlk en fazla 3 karenin görsel türevleri */
+  covers: Variants[];
+  position: number;
+  updated_at: string;
+  contains_photo?: boolean | null;
+};
+
+export type Collection = CollectionCard & { owner: UserCard; is_mine: boolean; photos: PhotoCard[]; created_at: string };
+
+export type EventStatus = "upcoming" | "ongoing" | "past" | "cancelled";
+
+export type EventCard = {
+  id: string;
+  community: CommunityCard;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  location_name: string;
+  latitude: number | null;
+  longitude: number | null;
+  capacity: number | null;
+  attendee_count: number;
+  attending: boolean;
+  status: EventStatus;
+  cancelled_at: string | null;
+};
+
+export type CommunityEvent = EventCard & {
+  description: string | null;
+  bring: string | null;
+  created_by: UserCard | null;
+  created_at: string;
+  attendees_preview: UserCard[];
+  my_role: CommunityRole | null;
+  can_manage: boolean;
+  /** Toplulukların grup sohbeti yok; hep null */
+  conversation_id: string | null;
+};
+
+export type EventList = { upcoming: EventCard[]; past: EventCard[] };
+
+export const PLAN_KINDS = ["milkyway", "golden", "blue", "moonrise", "meteor", "other"] as const;
+export type PlanKind = (typeof PLAN_KINDS)[number];
+
+export type Plan = {
+  id: string;
+  kind: PlanKind;
+  title: string | null;
+  latitude: number;
+  longitude: number;
+  place_name: string | null;
+  target_at: string;
+  remind: boolean;
+  weather_alert: boolean;
+  notes: string | null;
+  created_at: string;
+  last_cloud_cover: number | null;
+  weather_checked_at: string | null;
+  status: "upcoming" | "past";
+};
+
+export type GearStats = {
+  camera: string | null;
+  lens: string | null;
+  photo_count: number;
+  photographer_count: number;
+  top_photographers: UserCard[];
+  common_settings: {
+    median_shutter_seconds: number | null;
+    median_shutter_display: string | null;
+    median_aperture: number | null;
+    median_iso: number | null;
+    median_focal_length_mm: number | null;
+    sample_size: number;
+  };
+};
+
+export type GearName = { kind: "camera" | "lens"; name: string; photo_count: number };

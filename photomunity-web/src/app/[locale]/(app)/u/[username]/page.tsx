@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import clsx from "clsx";
 import { Lock, MapPin, MessageCircle, MoreVertical } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Avatar } from "@/components/Avatar";
 import { ExifChip } from "@/components/ExifChip";
@@ -13,8 +14,10 @@ import { JustifiedWall } from "@/components/JustifiedWall";
 import { ReportButton } from "@/components/ReportDialog";
 import { ProBadge } from "@/components/AdSlot";
 import { BlockButton } from "@/components/BlockButton";
+import { ProfileCollections } from "@/components/collections";
+import { ThemeWinsBadge } from "@/components/themes";
 import { Notice, buttonClass } from "@/components/ui";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { countryName } from "@/lib/format";
 import { useLoadMore, usePhotoPages } from "@/lib/hooks";
@@ -30,6 +33,9 @@ export default function ProfilePage() {
   const tu = useTranslations("ui");
   const locale = useLocale();
 
+  const tc = useTranslations("collections");
+  const pathname = usePathname();
+  const tab = useSearchParams().get("tab") === "collections" ? "collections" : "photos";
   const profile = useQuery({ queryKey: ["profile", username], queryFn: () => api<Profile>(`users/${username}`) });
   const canView = !!profile.data?.can_view_photos;
   const photos = usePhotoPages(["photos", "user", username], `users/${username}/photos`, canView);
@@ -71,6 +77,7 @@ export default function ProfilePage() {
               {p.display_name}
               {p.is_pro && <ProBadge />}
             </h1>
+            {!!p.theme_wins && <ThemeWinsBadge username={p.username} count={p.theme_wins} />}
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-ink-muted">
               <span>@{p.username}</span>
               {!p.is_public && (
@@ -160,12 +167,33 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <section aria-labelledby="photos-tab" className="mt-6">
-        <h2 id="photos-tab" className="mb-4 inline-flex h-[42px] items-center gap-2 rounded-pill bg-ink px-4 text-[15px] font-semibold text-bg">
-          {t("photos")}
-          <span className="tnum text-[13px] opacity-70">{p.photos_count}</span>
-        </h2>
-        {!canView ? (
+      <section aria-label={t("photos")} className="mt-6">
+        <nav className="mb-4 flex gap-2" aria-label={t("sections")}>
+          {([["photos", t("photos"), p.photos_count], ["collections", tc("title"), null]] as const).map(([key, label, n]) => (
+            <Link
+              key={key}
+              href={key === "photos" ? pathname : `${pathname}?tab=collections`}
+              scroll={false}
+              aria-current={tab === key ? "page" : undefined}
+              className={clsx(
+                "inline-flex h-[42px] items-center gap-2 rounded-pill px-4 text-[15px] font-semibold",
+                tab === key ? "bg-ink text-bg" : "bg-surface text-ink hover:bg-surface-2",
+              )}
+            >
+              {label}
+              {n != null && <span className="tnum text-[13px] opacity-70">{n}</span>}
+            </Link>
+          ))}
+        </nav>
+        {tab === "collections" ? (
+          canView ? <ProfileCollections username={p.username} isMe={p.is_me} /> : (
+            <div className="rounded-card bg-surface px-6 py-14">
+              <Lock className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+              <h3 className="mt-4 text-heading">{t("private_title")}</h3>
+              <p className="mt-1.5 text-ink-muted">{t("private_body")}</p>
+            </div>
+          )
+        ) : !canView ? (
           <div className="rounded-card bg-surface px-6 py-14">
             <Lock className="h-6 w-6" strokeWidth={1.8} aria-hidden />
             <h3 className="mt-4 text-heading">{t("private_title")}</h3>
@@ -183,7 +211,7 @@ export default function ProfilePage() {
         ) : (
           <JustifiedWall photos={items} target={360} />
         )}
-        <div ref={sentinel} className="h-px" />
+        {tab === "photos" && <div ref={sentinel} className="h-px" />}
       </section>
     </div>
   );

@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, LocateFixed, RotateCcw } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { View } from "@/components/MapView";
 import { LocationLine, MoonShape, type SkyLoc, fmtTime, isoDate, parseIsoDate, useMounted, useSkyLocation } from "@/components/sky";
 import { Button } from "@/components/ui";
@@ -119,6 +119,16 @@ function Planner() {
   const moon = useMemo(() => moonIllumination(new Date(day.getFullYear(), day.getMonth(), day.getDate(), 22).getTime()), [day]);
   const shift = (n: number) => setDate(new Date(day.getFullYear(), day.getMonth(), day.getDate() + n));
   const onPick = useCallback((lat: number, lng: number) => setCustom({ lat, lng }), [setCustom]);
+  // ?lat=&lng= ile gelindiyse (ör. fotoğraftaki "Bu kareyi tekrar çek") o konumu bir kez uygula
+  const applied = useRef(false);
+  useEffect(() => {
+    if (applied.current) return;
+    applied.current = true;
+    const a = Number(params.get("lat")), b = Number(params.get("lng"));
+    if (params.get("lat") && params.get("lng") && Number.isFinite(a) && Number.isFinite(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180) {
+      setCustom({ lat: +a.toFixed(4), lng: +b.toFixed(4) });
+    }
+  }, [params, setCustom]);
 
   function locate() {
     navigator.geolocation?.getCurrentPosition((p) => setCustom({ lat: +p.coords.latitude.toFixed(4), lng: +p.coords.longitude.toFixed(4) }));

@@ -11,6 +11,7 @@ import { ProfileCompleteCard } from "@/components/Onboarding";
 import { PhotoCard } from "@/components/PhotoCard";
 import { Sidebar } from "@/components/Shell";
 import { StoryRing } from "@/components/StoryRing";
+import { ThemeBanner } from "@/components/themes";
 import { buttonClass } from "@/components/ui";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -98,6 +99,7 @@ export default function FeedPage() {
         <Stories contests={contests} />
         {me && !me.onboarding_done && <ProfileCompleteCard me={me} />}
         <HomeBanner />
+        <ThemeBanner />
         {feed.isSuccess && items.length === 0 && (
           <div className="rounded-card bg-surface px-6 py-12">
             <h2 className="text-title">{t("empty_title")}</h2>

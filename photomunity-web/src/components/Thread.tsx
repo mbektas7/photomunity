@@ -178,7 +178,7 @@ function Bubble({ m, mine, meId, otherName, onMenu, onReact, onJump, status, err
 }
 
 /** Tek sohbet. `conversation` yoksa yeni sohbet: ilk mesaj gönderilince oluşturulur. */
-export function Thread({ conversation, other, meId }: { conversation: Conversation | null; other: UserCard; meId: string }) {
+export function Thread({ conversation, other, meId, initialText = "" }: { conversation: Conversation | null; other: UserCard; meId: string; /** Yazma alanına önceden konan metin (ör. lisans isteği) */ initialText?: string }) {
   const t = useTranslations("messages");
   const locale = useLocale();
   const router = useRouter();
@@ -187,7 +187,7 @@ export function Thread({ conversation, other, meId }: { conversation: Conversati
   const scroller = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [picker, setPicker] = useState(false);
   const [menu, setMenu] = useState(false);
   const [plus, setPlus] = useState(false);

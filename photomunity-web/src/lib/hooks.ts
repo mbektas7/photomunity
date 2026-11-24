@@ -20,13 +20,14 @@ export function useMe() {
   });
 }
 
-export function usePhotoPages(key: unknown[], path: string, enabled = true) {
+/** cursorParam: eski listeler `before`, Revizyon 7 listeleri opak `cursor` alır. */
+export function usePhotoPages(key: unknown[], path: string, enabled = true, cursorParam: "before" | "cursor" = "before") {
   return useInfiniteQuery({
     queryKey: key,
     enabled,
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }) =>
-      api<Page<PhotoCard>>(pageParam ? `${path}${path.includes("?") ? "&" : "?"}before=${encodeURIComponent(pageParam)}` : path),
+      api<Page<PhotoCard>>(pageParam ? `${path}${path.includes("?") ? "&" : "?"}${cursorParam}=${encodeURIComponent(pageParam)}` : path),
     getNextPageParam: (last) => last.next_cursor,
   });
 }

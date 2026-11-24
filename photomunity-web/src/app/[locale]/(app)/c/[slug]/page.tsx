@@ -8,6 +8,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { CommunityLogo, ContestRow, MyPhotoPicker } from "@/components/community";
+import { EventsTab } from "@/components/events";
 import { PhotoPrint } from "@/components/PhotoPrint";
 import { Button, Notice, TextArea, TextField, buttonClass } from "@/components/ui";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -17,7 +18,7 @@ import { useLoadMore, useMe } from "@/lib/hooks";
 import { relativeTime } from "@/lib/relative-time";
 import type { Community, CommunityPost, ContestCard, Member, NewsImage } from "@/lib/types";
 
-const TABS = ["feed", "contests", "members"] as const;
+const TABS = ["feed", "contests", "events", "members"] as const;
 
 export default function CommunityPage() {
   return (
@@ -108,6 +109,7 @@ function CommunityView() {
       <div className="mx-auto max-w-[1100px] px-0 pt-6 sm:px-6">
         {tab === "feed" && <FeedTab c={c} isAdmin={isAdmin} />}
         {tab === "contests" && <ContestsTab c={c} isAdmin={isAdmin} />}
+        {tab === "events" && <EventsTab c={c} isAdmin={isAdmin} />}
         {tab === "members" && <MembersTab c={c} />}
       </div>
     </div>

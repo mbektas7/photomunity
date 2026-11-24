@@ -40,3 +40,6 @@ export function genitive(name: string, locale: string) {
   const endsVowel = /[aıoueiöü]$/.test(lower);
   return `${name}'${endsVowel ? "n" : ""}${v}n`;
 }
+
+/** Yüzde: Türkçede işaret önde (%12), İngilizcede sonda (12%). */
+export const pct = (n: number, locale: string) => (locale === "tr" ? `%${Math.round(n)}` : `${Math.round(n)}%`);

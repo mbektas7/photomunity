@@ -1,11 +1,17 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, MapPin } from "lucide-react";
+import clsx from "clsx";
+import { Aperture, Camera, Maximize2, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { AddToCollection } from "@/components/collections";
+import { CritiqueFields, CritiqueSection } from "@/components/critique";
+import { LicenseFields, LicenseInfo } from "@/components/license";
+import { RedoCard } from "@/components/redo";
+import { ZoomViewer } from "@/components/ZoomViewer";
 import { CommentPolicyField, Comments } from "@/components/Comments";
 import { LikeButton } from "@/components/LikeButton";
 import { ReportButton } from "@/components/ReportDialog";
@@ -19,7 +25,7 @@ import { ApiError, api } from "@/lib/api";
 import { formatDateTime } from "@/lib/dates";
 import { cameraName, countryName, genitive } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
-import type { CommentPolicy, Location, Page, PhotoCard as PhotoCardData, PhotoDetail, Profile } from "@/lib/types";
+import type { CommentPolicy, License, Location, Page, PhotoCard as PhotoCardData, PhotoDetail, Profile } from "@/lib/types";
 
 function mapUrl(loc: Location) {
   return `/map?layer=photos&lat=${loc.latitude}&lng=${loc.longitude}&z=13`;
@@ -33,6 +39,7 @@ export default function PhotoPage() {
   const qc = useQueryClient();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [zoom, setZoom] = useState(false);
 
   const q = useQuery({
     queryKey: ["photo", id],
@@ -58,6 +65,7 @@ export default function PhotoPage() {
     onSuccess: (data) => {
       qc.setQueryData(["photo", id], data);
       qc.invalidateQueries({ queryKey: ["comments", id] });
+      qc.invalidateQueries({ queryKey: ["critiques", id] });
       setEditing(false);
     },
   });
@@ -148,7 +156,9 @@ export default function PhotoPage() {
 
   const place = profile.data?.city ?? countryName(profile.data?.country ?? null, locale);
   const authorMeta = [place, profile.data ? t("followers_count", { count: profile.data.followers_count }) : null].filter(Boolean).join(", ");
-  const camera = photo.exif ? [cameraName(photo.exif.camera_make, photo.exif.camera_model), photo.exif.lens].filter(Boolean).join(", ") : "";
+  const cameraLabel = photo.exif ? cameraName(photo.exif.camera_make, photo.exif.camera_model) : "";
+  // İndirme kapalıysa sahibi dışındakiler için sağ tık ve sürükleme engellenir (caydırıcı)
+  const protect = !!photo.downloads_disabled && !isOwner;
   const when = photo.exif?.taken_at ?? photo.published_at;
   const firstName = photo.user.display_name.split(/\s+/)[0];
 
@@ -158,14 +168,27 @@ export default function PhotoPage() {
         {/* Fotoğraf kendi oranında; asla kırpılmaz */}
         <div className="flex justify-center">
           {img && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={img.url}
-              alt={photo.title ?? ""}
-              width={img.width}
-              height={img.height}
-              className="fade-in print-placeholder block h-auto max-h-[calc(100dvh-7rem)] w-auto max-w-full object-contain sm:rounded-card"
-            />
+            <button
+              type="button"
+              onClick={() => setZoom(true)}
+              aria-label={t("open_zoom")}
+              className="group relative block cursor-zoom-in sm:rounded-card"
+              onContextMenu={protect ? (e) => e.preventDefault() : undefined}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img.url}
+                alt={photo.title ?? ""}
+                width={img.width}
+                height={img.height}
+                draggable={!protect}
+                onDragStart={protect ? (e) => e.preventDefault() : undefined}
+                className={clsx("fade-in print-placeholder block h-auto max-h-[calc(100dvh-7rem)] w-auto max-w-full object-contain sm:rounded-card", protect && "select-none [-webkit-touch-callout:none] [-webkit-user-drag:none]")}
+              />
+              <span className="pointer-events-none absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-black/55 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden>
+                <Maximize2 className="h-[18px] w-[18px]" />
+              </span>
+            </button>
           )}
         </div>
 
@@ -206,12 +229,29 @@ export default function PhotoPage() {
                   labels={{ shutter: t("shutter"), aperture: t("aperture"), iso: "ISO", focal: t("focal") }}
                 />
               )}
-              {camera && (
-                <p className="flex items-center gap-2.5 text-[14px] text-ink-muted">
-                  <Camera className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} aria-hidden />
-                  {camera}
-                </p>
+              {(cameraLabel || photo.exif?.lens) && (
+                <div className="flex flex-col gap-1.5 text-[14px] text-ink-muted">
+                  {cameraLabel && (
+                    <p className="flex items-center gap-2.5">
+                      <Camera className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} aria-hidden />
+                      {photo.exif?.camera_model ? (
+                        <Link href={`/gear?camera=${encodeURIComponent(photo.exif.camera_model.trim())}`} className="hover:text-ink hover:underline" title={t("gear_link")}>
+                          {cameraLabel}
+                        </Link>
+                      ) : cameraLabel}
+                    </p>
+                  )}
+                  {photo.exif?.lens && (
+                    <p className="flex items-center gap-2.5">
+                      <Aperture className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} aria-hidden />
+                      <Link href={`/gear?lens=${encodeURIComponent(photo.exif.lens.trim())}`} className="hover:text-ink hover:underline" title={t("gear_link")}>
+                        {photo.exif.lens}
+                      </Link>
+                    </p>
+                  )}
+                </div>
               )}
+              <LicenseInfo photo={photo} isOwner={isOwner} loggedIn={!!me} />
               {photo.location && (
                 <div className="flex items-center gap-3 rounded-box bg-surface-2 p-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-accent-tint text-accent-text">
@@ -225,6 +265,7 @@ export default function PhotoPage() {
                   </Link>
                 </div>
               )}
+              <RedoCard photo={photo} />
               {isOwner && photo.suggested_location && (
                 <Notice>
                   {t("suggested_location")}{" "}
@@ -247,6 +288,7 @@ export default function PhotoPage() {
                   {me && !isOwner && <ReportButton targetType="photo" targetId={photo.id} />}
                   {isOwner && (
                     <>
+                      <AddToCollection photoId={photo.id} />
                       <Button variant="secondary" onClick={() => setEditing(true)}>
                         {t("edit")}
                       </Button>
@@ -257,11 +299,14 @@ export default function PhotoPage() {
                   )}
                 </div>
               )}
+              <CritiqueSection photo={photo} />
               <Comments photo={photo} />
             </>
           )}
         </aside>
       </div>
+
+      <ZoomViewer photo={photo} open={zoom} onClose={() => setZoom(false)} protect={protect} />
 
       {more.length > 0 && (
         <section aria-labelledby="more" className="mt-10 px-3 sm:px-0">
@@ -287,19 +332,31 @@ function EditForm({ photo, busy, onCancel, onSave }: { photo: PhotoDetail; busy:
   const [description, setDescription] = useState(photo.description ?? "");
   const [tags, setTags] = useState(photo.tags.join(", "));
   const [policy, setPolicy] = useState<CommentPolicy>(photo.comment_policy ?? "everyone");
+  const [critique, setCritique] = useState({ requested: !!photo.critique_requested, question: photo.critique_question ?? "" });
+  const [rights, setRights] = useState<{ license: License; downloadsDisabled: boolean }>({ license: photo.license ?? "all_rights", downloadsDisabled: !!photo.downloads_disabled });
 
   return (
     <form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave({ title, description, tags: tags.split(",").map((s) => s.trim()).filter(Boolean), comment_policy: policy });
+        onSave({
+          title, description, tags: tags.split(",").map((s) => s.trim()).filter(Boolean), comment_policy: policy,
+          critique_requested: critique.requested, critique_question: critique.requested ? critique.question.trim() : "",
+          license: rights.license, downloads_disabled: rights.downloadsDisabled,
+        });
       }}
     >
       <TextField label={tu("title")} name="title" value={title} maxLength={150} onChange={(e) => setTitle(e.target.value)} />
       <TextArea label={tu("description")} name="description" value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
       <TextField label={tu("tags")} hint={tu("tags_hint")} name="tags" value={tags} onChange={(e) => setTags(e.target.value)} />
       <CommentPolicyField value={policy} onChange={setPolicy} />
+      <div className="border-t border-line pt-5">
+        <CritiqueFields requested={critique.requested} question={critique.question} onChange={setCritique} />
+      </div>
+      <div className="border-t border-line pt-5">
+        <LicenseFields license={rights.license} downloadsDisabled={rights.downloadsDisabled} onChange={setRights} name="edit-license" />
+      </div>
       {photo.location && (
         <Button type="button" variant="secondary" className="self-start" onClick={() => onSave({ clear_location: true })}>
           {t("remove_location")}

@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import {
-  Bell, CreditCard, Flag, Globe, Home, Image as ImageIcon, LogOut, Search, Shield, Trophy, Users,
+  Bell, CreditCard, Flag, Globe, Home, Image as ImageIcon, LogOut, Search, Shield, Sparkles, Trophy, Users,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -22,6 +22,7 @@ export const NAV = [
   { href: "/admin/photos", key: "nav_photos", icon: ImageIcon },
   { href: "/admin/communities", key: "nav_communities", icon: Globe },
   { href: "/admin/contests", key: "nav_contests", icon: Trophy },
+  { href: "/admin/themes", key: "nav_themes", icon: Sparkles },
   { href: "/admin/subscriptions", key: "nav_subscriptions", icon: CreditCard },
   { href: "/admin/announcements", key: "nav_announcements", icon: Bell },
   { href: "/admin/team", key: "nav_team", icon: Shield },

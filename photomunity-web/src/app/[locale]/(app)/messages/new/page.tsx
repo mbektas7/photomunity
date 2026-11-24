@@ -21,17 +21,23 @@ export default function NewMessagePage() {
 
 function NewMessage() {
   const t = useTranslations("messages");
-  const to = useSearchParams().get("to") ?? "";
+  const params = useSearchParams();
+  const to = params.get("to") ?? "";
+  // ?license=<fotoğraf id>: "Lisans iste" — ilk mesaj taslağı hazır gelir
+  const license = params.get("license");
+  const draft = license ? licenseDraft(t("license_request", { url: `${typeof window === "undefined" ? "" : window.location.origin}/p/${license}` })) : "";
   const router = useRouter();
   const { data: me } = useMe();
   const profile = useQuery({ queryKey: ["profile", to], enabled: !!to, queryFn: () => api<Profile>(`users/${to}`) });
   const existing = useQuery({ queryKey: ["conversation-with", to], enabled: !!to && !!me, queryFn: () => api<Conversation | null>(`conversations/with/${to}`) });
 
   useEffect(() => {
-    if (existing.data) router.replace(`/messages/${existing.data.id}`);
-  }, [existing.data, router]);
+    if (existing.data) router.replace(license ? `/messages/${existing.data.id}?license=${encodeURIComponent(license)}` : `/messages/${existing.data.id}`);
+  }, [existing.data, router, license]);
 
   if (!me || !profile.data || existing.isLoading || existing.data) return <div className="h-full" aria-busy />;
   if (!profile.data.is_public) return <div className="p-6"><Notice>{t("private_cannot")}</Notice></div>;
-  return <Thread conversation={null} other={profile.data} meId={me.id} />;
+  return <Thread conversation={null} other={profile.data} meId={me.id} initialText={draft} />;
 }
+
+const licenseDraft = (s: string) => s.slice(0, 2000);

@@ -1,12 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import clsx from "clsx";
 import { useTranslations } from "next-intl";
-import { useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback } from "react";
 import { Map as MapIcon } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { ContestMini } from "@/components/community";
 import { JustifiedWall } from "@/components/JustifiedWall";
+import { ThemeBanner } from "@/components/themes";
 import { buttonClass } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -14,9 +17,19 @@ import { useLoadMore, usePhotoPages } from "@/lib/hooks";
 import type { ContestCard } from "@/lib/types";
 
 export default function ExplorePage() {
+  return (
+    <Suspense>
+      <Explore />
+    </Suspense>
+  );
+}
+
+function Explore() {
   const t = useTranslations("explore");
   const tf = useTranslations("feed");
-  const q = usePhotoPages(["explore"], "explore");
+  // ?tab=critique: "Eleştiri bekleyenler" akışı (Revizyon 7)
+  const tab = useSearchParams().get("tab") === "critique" ? "critique" : "for_you";
+  const q = usePhotoPages(tab === "critique" ? ["critique-requests"] : ["explore"], tab === "critique" ? "critiques/requests" : "explore", true, tab === "critique" ? "cursor" : "before");
   const live = useQuery({
     queryKey: ["contests", "live"],
     queryFn: async () => {
@@ -47,6 +60,8 @@ export default function ExplorePage() {
         </Link>
       </div>
 
+      <ThemeBanner className="mb-8" />
+
       {contests.length > 0 && (
         <section aria-labelledby="live" className="pb-8">
           <div className="mb-3 flex items-center justify-between">
@@ -65,9 +80,22 @@ export default function ExplorePage() {
         </section>
       )}
 
-      <section aria-labelledby="for-you">
-        <h2 id="for-you" className="mb-3 text-heading">{t("for_you")}</h2>
-        {q.isSuccess && items.length === 0 ? <p className="py-16 text-ink-muted">{t("empty")}</p> : <JustifiedWall photos={items} />}
+      <section aria-label={tab === "critique" ? t("critique_tab") : t("for_you")}>
+        <nav className="mb-4 flex gap-2" aria-label={t("tabs")}>
+          {(["for_you", "critique"] as const).map((k) => (
+            <Link
+              key={k}
+              href={k === "for_you" ? "/explore" : "/explore?tab=critique"}
+              scroll={false}
+              aria-current={tab === k ? "page" : undefined}
+              className={clsx("inline-flex h-10 items-center rounded-pill px-4 text-[15px] font-semibold", tab === k ? "bg-ink text-bg" : "bg-surface hover:bg-surface-2")}
+            >
+              {k === "for_you" ? t("for_you") : t("critique_tab")}
+            </Link>
+          ))}
+        </nav>
+        {tab === "critique" && <p className="mb-4 max-w-[60ch] text-sm text-ink-muted">{t("critique_lead")}</p>}
+        {q.isSuccess && items.length === 0 ? <p className="py-16 text-ink-muted">{tab === "critique" ? t("critique_empty") : t("empty")}</p> : <JustifiedWall photos={items} />}
       </section>
       <div className="mt-6"><AdSlot kind="banner" /></div>
       <div ref={sentinel} className="h-px" />
