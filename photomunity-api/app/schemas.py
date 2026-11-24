@@ -562,11 +562,15 @@ class EntryOut(BaseModel):
     images: dict[str, ImageVariant]
     user: UserCard | None  # anonim değerlendirmede gizli
     disqualified: bool = False
+    disqualify_reason: str | None = None  # yalnızca yönetici listesinde
+    number: int | None = None  # kalıcı başvuru numarası (#N), katılım sırası
     rank: int | None = None
     score: float | None = None
     prize: str | None = None
     my_stars: int | None = None
     my_score: int | None = None
+    my_note: str | None = None
+    exif: ExifOut | None = None  # jüri ve seçmen için çekim bilgisi (konum içermez)
     mine: bool = False  # anonim değerlendirmede de kişi kendi karesini tanır (kendine oy veremez)
 
 
@@ -581,6 +585,9 @@ class ContestOut(ContestCard):
     is_judge: bool  # rolden bağımsız: yönetici aynı zamanda jüri olabilir
     my_entry: EntryOut | None
     share_url: str
+    # Sonuç duyurusu için (yalnızca sonuçlanınca dolar)
+    judge_count: int = 0
+    vote_count: int = 0
 
 
 class EntryIn(BaseModel):
@@ -612,6 +619,7 @@ class JudgeOut(BaseModel):
 
 class ScoreIn(BaseModel):
     score: int = Field(ge=1, le=10)
+    note: str | None = Field(default=None, max_length=1000)
 
 
 class StarsIn(BaseModel):
@@ -635,6 +643,7 @@ class ResultRow(BaseModel):
     count: int  # jüride puan veren üye sayısı, halkta oy sayısı
     prize: str | None
     entry: EntryOut
+    scores: list[int] | None = None  # jüri üyelerinin tek tek puanları (yalnızca yöneticiye)
 
 
 class ContestSummary(BaseModel):

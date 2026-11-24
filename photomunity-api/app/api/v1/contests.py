@@ -17,7 +17,7 @@ from app.models import (
     PublicVote, PublicVoter, User, VoteCode,
 )
 from app.schemas import (
-    ContestCard, ContestIn, ContestOut, ContestSummary, ContestUpdate, DisqualifyIn, EntryIn, EntryOut, ImageVariant,
+    ContestCard, ContestIn, ContestOut, ContestSummary, ContestUpdate, DisqualifyIn, EntryIn, EntryOut, ExifOut, ImageVariant,
     JudgeIn, JudgeOut, JudgeUpdate, PrizeOut, ResultRow, ScoreIn, StarsIn, TokenIn, UserCard, VoteCodeIn, VoteVerifyIn,
 )
 from app.services import storage
@@ -72,13 +72,22 @@ def _images(photo: Photo) -> dict[str, ImageVariant]:
 
 
 def entry_out(e: ContestEntry, reveal: bool, **extra) -> EntryOut:
+    exif = e.photo.exif
     return EntryOut(id=e.id, photo_id=e.photo_id, title=e.photo.title, images=_images(e.photo),
-                    user=UserCard.model_validate(e.user) if reveal else None, disqualified=e.disqualified, **extra)
+                    user=UserCard.model_validate(e.user) if reveal else None, disqualified=e.disqualified,
+                    exif=ExifOut.model_validate(exif) if exif else None, **extra)
+
+
+async def _numbers(db: AsyncSession, contest_id: uuid.UUID) -> dict[uuid.UUID, int]:
+    """Kalıcı başvuru numarası (#N): katılım sırası. Jüri, seçmen ve organizatör aynı numarayı görür."""
+    ids = await db.scalars(select(ContestEntry.id).where(ContestEntry.contest_id == contest_id)
+                           .order_by(ContestEntry.created_at, ContestEntry.id))
+    return {i: n for n, i in enumerate(ids, start=1)}
 
 
 def _entries_query(contest_id: uuid.UUID, include_disqualified: bool = False):
     q = (select(ContestEntry).where(ContestEntry.contest_id == contest_id)
-         .options(selectinload(ContestEntry.photo), selectinload(ContestEntry.user)))
+         .options(selectinload(ContestEntry.photo).selectinload(Photo.exif), selectinload(ContestEntry.user)))
     return q if include_disqualified else q.where(ContestEntry.disqualified.is_(False))
 
 
@@ -112,10 +121,17 @@ async def contest_out(db: AsyncSession, c: Contest, viewer: User | None) -> Cont
     if viewer:
         e = await db.scalar(_entries_query(c.id, include_disqualified=True).where(ContestEntry.user_id == viewer.id))
         mine = entry_out(e, reveal=True) if e else None
+    judge_count = vote_count = 0
+    if c.finalized_at is not None:
+        judge_count = await db.scalar(select(func.count()).select_from(ContestJudge).where(
+            ContestJudge.contest_id == c.id, ContestJudge.user_id.is_not(None))) or 0
+        vote_count = await db.scalar(select(func.count()).select_from(PublicVote).join(
+            PublicVoter, PublicVoter.id == PublicVote.voter_id).where(PublicVoter.contest_id == c.id)) or 0
     return ContestOut(**card.model_dump(), description=c.description, rules=c.rules, anonymous=c.anonymous,
                       min_votes=c.min_votes, prizes=[PrizeOut(rank=p.rank, title=p.title) for p in prizes],
                       published_at=c.published_at, my_role=role, is_judge=judge is not None, my_entry=mine,
-                      share_url=f"{get_settings().frontend_url}/contests/{c.id}")
+                      share_url=f"{get_settings().frontend_url}/contests/{c.id}",
+                      judge_count=judge_count, vote_count=vote_count)
 
 
 async def _replace_prizes(db: AsyncSession, contest_id: uuid.UUID, prizes) -> None:
@@ -406,20 +422,21 @@ async def list_entries(contest_id: uuid.UUID, request: Request, background: Back
     admin = await _is_admin(db, c, viewer)
     if status == "draft" and not admin:
         raise AppError(404, "not_found")
+    nums = await _numbers(db, c.id)
 
     if status == "finished":
         await _finalize(db, c, background)
         rows = {r["entry_id"]: r for r in c.results}
         entries = list(await db.scalars(_entries_query(c.id)))
         ordered = sorted(entries, key=lambda e: (rows.get(str(e.id), {}).get("rank") or 10**6, e.created_at))
-        return [entry_out(e, reveal=True, rank=rows.get(str(e.id), {}).get("rank"), score=rows.get(str(e.id), {}).get("score"),
+        return [entry_out(e, reveal=True, number=nums.get(e.id), rank=rows.get(str(e.id), {}).get("rank"), score=rows.get(str(e.id), {}).get("score"),
                           prize=rows.get(str(e.id), {}).get("prize"), mine=viewer is not None and e.user_id == viewer.id)
                 for e in ordered]
 
     # Yönetim listesi açıkça istenir (?view=admin); yönetici oylama sayfasında herkes gibi seçmen görünümünü alır
     if admin and (view == "admin" or status in ("draft", "open")):
         entries = list(await db.scalars(_entries_query(c.id, include_disqualified=True).order_by(ContestEntry.created_at)))
-        return [entry_out(e, reveal=True) for e in entries]
+        return [entry_out(e, reveal=True, number=nums.get(e.id), disqualify_reason=e.disqualify_reason) for e in entries]
 
     if status == "open":
         return []  # katılım sürerken kareler yalnızca yöneticilere görünür
@@ -430,8 +447,9 @@ async def list_entries(contest_id: uuid.UUID, request: Request, background: Back
         judge = await _judge(db, c, viewer)
         if not judge:
             return []
-        mine = dict((await db.execute(select(JuryScore.entry_id, JuryScore.score).where(JuryScore.judge_id == judge.id))).all())
-        return [entry_out(e, reveal=reveal, my_score=mine.get(e.id), mine=e.user_id == judge.user_id)
+        mine = {r.entry_id: r for r in await db.scalars(select(JuryScore).where(JuryScore.judge_id == judge.id))}
+        return [entry_out(e, reveal=reveal, number=nums.get(e.id), my_score=mine[e.id].score if e.id in mine else None,
+                          my_note=mine[e.id].note if e.id in mine else None, mine=e.user_id == judge.user_id)
                 for e in _shuffle(entries, str(judge.id))]
 
     voter = await _voter(db, c, viewer, x_voter_token, create=False)
@@ -444,7 +462,8 @@ async def list_entries(contest_id: uuid.UUID, request: Request, background: Back
             return e.user_id == viewer.id
         return voter is not None and normalize_email(e.user.email) == voter.email_normalized
 
-    return [entry_out(e, reveal=reveal, my_stars=stars.get(e.id), mine=is_mine(e)) for e in _shuffle(entries, seed)]
+    return [entry_out(e, reveal=reveal, number=nums.get(e.id), my_stars=stars.get(e.id), mine=is_mine(e))
+            for e in _shuffle(entries, seed)]
 
 
 # ---------------------------------------------------------------- jüri puanlaması
@@ -462,11 +481,14 @@ async def score_entry(contest_id: uuid.UUID, entry_id: uuid.UUID, body: ScoreIn,
         raise AppError(404, "not_found")
     if e.user_id == user.id:
         raise AppError(403, "cannot_vote_own")
+    note = (body.note or "").strip() or None
     existing = await db.get(JuryScore, (e.id, judge.id))
     if existing:
         existing.score = body.score
+        if "note" in body.model_fields_set:
+            existing.note = note
     else:
-        db.add(JuryScore(entry_id=e.id, judge_id=judge.id, score=body.score))
+        db.add(JuryScore(entry_id=e.id, judge_id=judge.id, score=body.score, note=note))
     await db.commit()
     return Response(status_code=204)
 
@@ -553,17 +575,41 @@ async def results(contest_id: uuid.UUID, background: BackgroundTasks, viewer: Us
                   db: AsyncSession = Depends(get_db)):
     c = await _contest(db, contest_id)
     status = contest_status(c)
+    admin = await _is_admin(db, c, viewer)
     if status == "finished":
         await _finalize(db, c, background)
         rows, reveal = c.results, True
-    elif status in ("judging", "closed") and await _is_admin(db, c, viewer):
+    elif status in ("judging", "closed") and admin:
         rows, reveal = await compute_results(db, c), True  # yöneticiye ara sonuç önizlemesi
     else:
         raise AppError(403, "results_not_ready")
     entries = {str(e.id): e for e in await db.scalars(_entries_query(c.id))}
+    nums = await _numbers(db, c.id)
+    spread: dict[uuid.UUID, list[int]] = {}
+    if admin and c.judging_mode == "jury" and entries:
+        # Jüri tutarlılığını görmek için tek tek puanlar (yalnızca hesabı bağlı jüri üyeleri; sonuçla aynı küme)
+        q = (select(JuryScore.entry_id, JuryScore.score).join(ContestJudge, ContestJudge.id == JuryScore.judge_id)
+             .where(ContestJudge.contest_id == c.id, ContestJudge.user_id.is_not(None)))
+        for entry_id, score in (await db.execute(q)).all():
+            spread.setdefault(entry_id, []).append(score)
     return [ResultRow(rank=r["rank"], score=r["score"], count=r["count"], prize=r["prize"],
-                      entry=entry_out(entries[r["entry_id"]], reveal=reveal))
+                      entry=entry_out(entries[r["entry_id"]], reveal=reveal, number=nums.get(entries[r["entry_id"]].id)),
+                      scores=sorted(spread.get(entries[r["entry_id"]].id, [])) if admin and c.judging_mode == "jury" else None)
             for r in rows if r["entry_id"] in entries]
+
+
+@router.post("/contests/{contest_id}/announce", response_model=ContestOut)
+async def announce_results(contest_id: uuid.UUID, background: BackgroundTasks, user: User = Depends(get_current_user),
+                           db: AsyncSession = Depends(get_db)):
+    """Oylama bittiyse sonuçları ilan tarihini beklemeden şimdi açıklar (sıralama donar, katılımcılara bildirim gider)."""
+    c = await _contest(db, contest_id)
+    await _require_admin(db, c, user)
+    if contest_status(c) != "closed":
+        raise AppError(409, "invalid_state")
+    c.results_at = utcnow()
+    await _finalize(db, c, background)
+    await db.commit()
+    return await contest_out(db, c, user)
 
 
 @router.get("/contests/{contest_id}/summary", response_model=ContestSummary)

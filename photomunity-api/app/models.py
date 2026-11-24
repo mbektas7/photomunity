@@ -428,6 +428,7 @@ class JuryScore(Base):
     entry_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("contest_entries.id", ondelete="CASCADE"), primary_key=True)
     judge_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("contest_judges.id", ondelete="CASCADE"), primary_key=True)
     score: Mapped[int] = mapped_column(Integer)
+    note: Mapped[str | None] = mapped_column(Text)  # yalnızca o jüri üyesinin gördüğü özel not
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, server_default=func.now(), onupdate=_now)
 
 
