@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'widgets/design.dart';
+import 'widgets/intro.dart';
 import 'screens/auth_screens.dart';
 import 'screens/community_screens.dart';
 import 'screens/contest_screens.dart';
@@ -27,6 +28,7 @@ import 'screens/search_screen.dart';
 import 'screens/tools_hub_screen.dart';
 import 'screens/comments_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/sky/dark_spots_screen.dart';
 import 'screens/sky/moon_calendar_screen.dart';
 import 'screens/sky/night_tools_screen.dart';
 import 'screens/sky/sky_common.dart';
@@ -128,7 +130,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/feed', builder: (_, _) => const FeedScreen()),
+              GoRoute(path: '/feed', builder: (_, _) => const ModuleIntro(module: 'feed', child: FeedScreen())),
             ],
           ),
           StatefulShellBranch(
@@ -136,7 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               // Alt menüdeki harita: tam ekran harita, menünün altında kalmayacak boşlukla
               GoRoute(
                 path: '/maptab',
-                builder: (_, _) => const MapScreen(inTab: true),
+                builder: (_, _) => const ModuleIntro(module: 'map', child: MapScreen(inTab: true)),
               ),
             ],
           ),
@@ -149,15 +151,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/communities',
-                builder: (_, s) => CommunitiesScreen(
-                  segment: int.tryParse(s.uri.queryParameters['s'] ?? ''),
+                builder: (_, s) => ModuleIntro(
+                  module: 'communities',
+                  child: CommunitiesScreen(segment: int.tryParse(s.uri.queryParameters['s'] ?? '')),
                 ),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/me', builder: (_, _) => const MyProfileScreen()),
+              GoRoute(path: '/me', builder: (_, _) => const ModuleIntro(module: 'profile', child: MyProfileScreen())),
             ],
           ),
         ],
@@ -175,7 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/p/:id/critiques',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => CritiqueScreen(photoId: s.pathParameters['id']!),
+        builder: (_, s) => ModuleIntro(module: 'critique', child: CritiqueScreen(photoId: s.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/p/:id/zoom',
@@ -190,27 +193,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/themes',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const WeeklyThemeScreen(),
+        builder: (_, _) => const ModuleIntro(module: 'themes', child: WeeklyThemeScreen()),
       ),
       GoRoute(
         path: '/themes/:id',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => WeeklyThemeScreen(key: ValueKey(s.uri.toString()), id: s.pathParameters['id']),
+        builder: (_, s) => ModuleIntro(module: 'themes', child: WeeklyThemeScreen(key: ValueKey(s.uri.toString()), id: s.pathParameters['id'])),
       ),
       GoRoute(
         path: '/critiques',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const CritiqueRequestsScreen(),
+        builder: (_, _) => const ModuleIntro(module: 'critique', child: CritiqueRequestsScreen()),
       ),
       GoRoute(
         path: '/collections/:id',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => CollectionScreen(id: s.pathParameters['id']!),
+        builder: (_, s) => ModuleIntro(module: 'collections', child: CollectionScreen(id: s.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/events/:id',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => EventScreen(id: s.pathParameters['id']!),
+        builder: (_, s) => ModuleIntro(module: 'events', child: EventScreen(id: s.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/events/:id/edit',
@@ -225,7 +228,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sky/plans',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const PlansScreen(),
+        builder: (_, s) => ModuleIntro(module: 'plans', child: PlansScreen(key: ValueKey(s.uri.toString()), scope: s.uri.queryParameters['scope'])),
+      ),
+      GoRoute(
+        path: '/sky/plans/shared/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => SharedPlanScreen(id: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/sky/plans/new',
@@ -258,18 +266,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         builder: (_, s) {
           final q = s.uri.queryParameters;
-          return GearScreen(key: ValueKey(s.uri.toString()), camera: q['camera'], lens: q['lens'], label: q['label']);
+          return ModuleIntro(
+            module: 'gear',
+            child: GearScreen(key: ValueKey(s.uri.toString()), camera: q['camera'], lens: q['lens'], label: q['label']),
+          );
         },
       ),
       GoRoute(
         path: '/upload',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => UploadScreen(communitySlug: s.uri.queryParameters['community']),
+        builder: (_, s) => ModuleIntro(module: 'upload', child: UploadScreen(communitySlug: s.uri.queryParameters['community'])),
       ),
       GoRoute(
         path: '/explore',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const ExploreScreen(),
+        builder: (_, _) => const ModuleIntro(module: 'explore', child: ExploreScreen()),
       ),
       GoRoute(
         path: '/search',
@@ -323,25 +334,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sky',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const SkyHubScreen(),
+        builder: (_, _) => const ModuleIntro(module: 'sky', child: SkyHubScreen()),
+      ),
+      GoRoute(
+        path: '/sky/dark',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const ModuleIntro(module: 'dark_spots', child: DarkSpotsScreen()),
       ),
       GoRoute(
         path: '/sky/moon',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const MoonCalendarScreen(),
+        builder: (_, _) => const ModuleIntro(module: 'moon', child: MoonCalendarScreen()),
       ),
       GoRoute(
         path: '/sky/planner',
         parentNavigatorKey: _rootKey,
         builder: (_, s) {
           final ms = int.tryParse(s.uri.queryParameters['date'] ?? '');
-          return SunMoonPlannerScreen(date: ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms));
+          return ModuleIntro(
+            module: 'sun_moon',
+            child: SunMoonPlannerScreen(date: ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms)),
+          );
         },
       ),
       GoRoute(
         path: '/sky/tools',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => NightToolsScreen(key: ValueKey(s.uri.toString()), tab: s.uri.queryParameters['tab']),
+        builder: (_, s) => ModuleIntro(
+          module: 'night_tools',
+          child: NightToolsScreen(key: ValueKey(s.uri.toString()), tab: s.uri.queryParameters['tab']),
+        ),
       ),
       GoRoute(
         path: '/sky/ar',
@@ -387,16 +409,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           final q = s.uri.queryParameters;
           final lat = double.tryParse(q['lat'] ?? '');
           final lng = double.tryParse(q['lng'] ?? '');
-          return MapScreen(
-            initial: lat != null && lng != null ? LatLng(lat, lng) : null,
-            photos: q['photos'] == '1',
+          return ModuleIntro(
+            module: 'map',
+            child: MapScreen(
+              initial: lat != null && lng != null ? LatLng(lat, lng) : null,
+              photos: q['photos'] == '1',
+            ),
           );
         },
       ),
       GoRoute(
         path: '/messages',
         parentNavigatorKey: _rootKey,
-        builder: (_, _) => const ConversationsScreen(),
+        builder: (_, _) => const ModuleIntro(module: 'messages', child: ConversationsScreen()),
       ),
       GoRoute(
         path: '/messages/new/:username',
@@ -435,7 +460,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/contests/:id',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => ContestScreen(id: s.pathParameters['id']!),
+        builder: (_, s) => ModuleIntro(module: 'contests', child: ContestScreen(id: s.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/contests/:id/manage',

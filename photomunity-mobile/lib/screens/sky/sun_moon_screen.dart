@@ -13,6 +13,7 @@ import '../../core/config.dart';
 import '../../core/l10n.dart';
 import '../../core/sky.dart';
 import '../../core/theme.dart';
+import '../../widgets/intro.dart';
 import 'sky_common.dart';
 
 const _sunriseColor = Color(0xFFF5B82E);
@@ -108,6 +109,7 @@ class _SunMoonPlannerScreenState extends ConsumerState<SunMoonPlannerScreen> {
           ],
         ),
         actions: [
+          const IntroButton(module: 'sun_moon'),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: TextButton.icon(

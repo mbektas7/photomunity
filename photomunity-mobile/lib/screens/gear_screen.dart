@@ -28,9 +28,12 @@ class GearScreen extends ConsumerStatefulWidget {
 class _GearScreenState extends ConsumerState<GearScreen> {
   String _sort = 'recent';
 
+  /// Seçili etiket; null = tümü.
+  String? _tag;
+
   String get _key => Uri(
     path: 'gear/photos',
-    queryParameters: {'camera': ?widget.camera, 'lens': ?widget.lens, 'sort': _sort},
+    queryParameters: {'camera': ?widget.camera, 'lens': ?widget.lens, 'sort': _sort, 'tag': ?_tag},
   ).toString();
 
   void _photographers(GearStats s) {
@@ -99,7 +102,7 @@ class _GearScreenState extends ConsumerState<GearScreen> {
     );
 
     return Scaffold(
-      appBar: pageBar(context, title, sub: t(isLens ? 'gear.lens_sub' : 'gear.camera_sub')),
+      appBar: pageBar(context, title, sub: t(isLens ? 'gear.lens_sub' : 'gear.camera_sub'), intro: 'gear'),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(gearStatsProvider((widget.camera, widget.lens)));
@@ -140,6 +143,28 @@ class _GearScreenState extends ConsumerState<GearScreen> {
                   ),
                 ),
               ),
+              if (stats != null && stats.topTags.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 48,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                      children: [
+                        PillChip(label: t('gear.tag_all'), selected: _tag == null, onTap: () => setState(() => _tag = null)),
+                        for (final x in stats.topTags)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: PillChip(
+                              label: '#${x.tag}',
+                              selected: _tag == x.tag,
+                              onTap: () => setState(() => _tag = _tag == x.tag ? null : x.tag),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               if (pages.initialLoading)
                 const SliverToBoxAdapter(
                   child: Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator())),

@@ -8,6 +8,7 @@ import '../../core/astro.dart';
 import '../../core/l10n.dart';
 import '../../core/sky.dart';
 import '../../core/theme.dart';
+import '../../widgets/intro.dart';
 import 'sky_common.dart';
 
 /// Ay takvimi: her günün Ay şekli ve yüzdesi, karanlık geceler vurgulu; güne dokununca detay.
@@ -52,6 +53,7 @@ class _MoonCalendarScreenState extends ConsumerState<MoonCalendarScreen> {
             SkyPlaceLine(color: p.inkMuted),
           ],
         ),
+        actions: const [IntroButton(module: 'moon'), SizedBox(width: 12)],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),

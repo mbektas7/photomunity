@@ -16,6 +16,7 @@ import '../state/providers.dart';
 import '../widgets/comment_policy.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 import '../widgets/license.dart';
 import 'critique_screens.dart' show CritiqueToggle;
 
@@ -289,6 +290,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         ),
         title: Text(t('upload.heading'), style: font(24, weight: 700, spacing: -0.7, color: p.ink)),
         actions: [
+          const IntroButton(module: 'upload'),
+          const SizedBox(width: 8),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: FilledButton(

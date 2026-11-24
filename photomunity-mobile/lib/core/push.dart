@@ -50,12 +50,26 @@ class PushService {
   Map<String, String> _data(RemoteMessage m) =>
       m.data.map((k, v) => MapEntry(k, '$v'));
 
+  /// Bildirim izni sorulurken tamamlanmamış olur; "Nasıl çalışır" tanıtımları sistem penceresinin üstüne açılmasın diye bekler.
+  static Future<void> permissionPrompt = Future.value();
+
   /// Oturum açıldığında çağrılır: izin ister, token'ı backend'e kaydeder.
   Future<void> enable() async {
+    final prompt = Completer<void>();
+    permissionPrompt = prompt.future;
+    try {
+      await _enable(prompt);
+    } finally {
+      if (!prompt.isCompleted) prompt.complete();
+    }
+  }
+
+  Future<void> _enable(Completer<void> prompt) async {
     await _init();
     if (!_ready) return;
     final m = FirebaseMessaging.instance;
     final settings = await m.requestPermission();
+    prompt.complete();
     if (settings.authorizationStatus == AuthorizationStatus.denied) return;
     if (Platform.isIOS && await m.getAPNSToken() == null) {
       // APNs token'ı ilk açılışta birkaç saniye gecikebilir

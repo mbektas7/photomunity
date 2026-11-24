@@ -747,6 +747,7 @@ const _pushTypes = [
   'event_cancelled',
   'plan_reminder',
   'plan_weather',
+  'plan_join',
 ];
 
 final _notificationSettingsProvider =
@@ -802,6 +803,8 @@ class _NotificationSettingsState extends ConsumerState<_NotificationSettings> {
           )
         else
           for (final type in _pushTypes)
+            // Yeni türler sunucu ayarlarında varsa gösterilir
+            if (type != 'plan_join' || saved.containsKey(type))
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(

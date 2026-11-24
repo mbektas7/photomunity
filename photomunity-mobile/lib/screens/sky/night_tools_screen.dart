@@ -8,6 +8,7 @@ import '../../core/calculators.dart';
 import '../../core/l10n.dart';
 import '../../core/sky.dart';
 import '../../core/theme.dart';
+import '../../widgets/intro.dart';
 import 'sky_common.dart';
 
 /// Gece hesapları: yıldız izi, timelapse, nokta yıldız (NPF) ve meteor yağmurları.
@@ -27,6 +28,7 @@ class NightToolsScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(t('sky.night_tools'), style: font(21, weight: 700, color: p.ink)),
+          actions: const [IntroButton(module: 'night_tools'), SizedBox(width: 12)],
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,

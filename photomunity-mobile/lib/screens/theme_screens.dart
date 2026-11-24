@@ -123,7 +123,7 @@ class _WeeklyThemeScreenState extends ConsumerState<WeeklyThemeScreen> {
         ? ref.watch(currentThemeProvider)
         : ref.watch(themeProvider(widget.id!)).whenData<WeeklyTheme?>((v) => v);
     return Scaffold(
-      appBar: pageBar(context, t('theme.title'), sub: t('theme.sub')),
+      appBar: pageBar(context, t('theme.title'), sub: t('theme.sub'), intro: 'themes'),
       body: async.hasValue
           ? _body(context, async.requireValue)
           : async.hasError

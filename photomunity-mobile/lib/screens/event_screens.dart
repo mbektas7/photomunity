@@ -275,6 +275,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         context,
         t('event.title'),
         sub: e?.community.name,
+        intro: 'events',
         actions: [
           if (e != null && e.canManage && e.open)
             PopupMenuButton<String>(

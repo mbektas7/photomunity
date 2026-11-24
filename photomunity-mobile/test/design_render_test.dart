@@ -22,11 +22,14 @@ import 'package:photomunity/core/token_store.dart';
 import 'package:photomunity/router.dart';
 import 'package:photomunity/state/providers.dart';
 import 'package:photomunity/widgets/common.dart';
+import 'package:photomunity/widgets/intro.dart';
 
 const _out = String.fromEnvironment('RENDER_OUT');
 const _login = String.fromEnvironment('RENDER_LOGIN');
 const _routes = String.fromEnvironment('RENDER_ROUTES', defaultValue: '/feed');
 const _dark = bool.fromEnvironment('RENDER_DARK');
+// "Nasıl çalışır" tanıtımları varsayılan olarak görülmüş sayılır; RENDER_INTRO=sky,map yalnızca bunları açar.
+const _intro = String.fromEnvironment('RENDER_INTRO');
 
 class _MemoryTokens extends TokenStore {
   _MemoryTokens(this._t);
@@ -96,6 +99,8 @@ void main() {
       if (bytes.isEmpty) return const ColoredBox(color: Color(0x11000000));
       return Image.memory(bytes, fit: fit, gaplessPlayback: true);
     };
+
+    Intros.debugUnseen = _intro.split(',').where((x) => x.isNotEmpty).toSet();
 
     tester.view.physicalSize = const Size(780, 1688);
     tester.view.devicePixelRatio = 2;

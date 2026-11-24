@@ -11,6 +11,7 @@ import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 import 'feed_screen.dart';
 
 class ExploreScreen extends ConsumerWidget {
@@ -51,6 +52,7 @@ class ExploreScreen extends ConsumerWidget {
                             style: font(34, weight: 700, height: 1, spacing: -1.2, color: p.ink),
                           ),
                         ),
+                        const IntroButton(module: 'explore', size: 44),
 
                       ],
                     ),

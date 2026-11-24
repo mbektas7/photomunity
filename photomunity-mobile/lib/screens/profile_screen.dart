@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -297,6 +298,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                     if (widget.isTab) ...[
+                      const SizedBox(width: 8),
+                      _glassButton(LucideIcons.circleQuestionMark, t('intro.how_it_works'), () => Intros.show(context, 'profile')),
                       const SizedBox(width: 8),
                       _glassButton(LucideIcons.settings, t('settings.heading'), () => context.push('/settings')),
                     ],

@@ -15,6 +15,7 @@ import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 
 class ContestScreen extends ConsumerStatefulWidget {
   const ContestScreen({super.key, required this.id});
@@ -132,6 +133,10 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           ),
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IntroButton(module: 'contests', size: 44, color: p.surface2),
+          ),
           if (c?.myRole == 'admin')
             Padding(
               padding: const EdgeInsets.only(right: 8),

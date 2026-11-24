@@ -1326,6 +1326,25 @@ final planProvider = FutureProvider.autoDispose.family<ShootPlan, String>((ref, 
   return ShootPlan.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/me/plans/$id'));
 });
 
+/// Takip ettiklerimin paylaştığı yaklaşan planlar.
+final sharedPlansProvider = NotifierProvider.autoDispose<SharedPlans, CursorState<SharedPlan>>(SharedPlans.new);
+
+class SharedPlans extends CursorController<SharedPlan> {
+  @override
+  String get path => '/plans/shared';
+  @override
+  Map<String, dynamic> get query => const {'limit': 30};
+  @override
+  SharedPlan parse(Map<String, dynamic> j) => SharedPlan.fromJson(j);
+  @override
+  String idOf(SharedPlan item) => item.id;
+}
+
+/// Paylaşılan planın ayrıntısı (sahibi ya da takipçisi görebilir).
+final sharedPlanProvider = FutureProvider.autoDispose.family<SharedPlan, String>((ref, id) async {
+  return SharedPlan.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/plans/$id'));
+});
+
 // ---- Ekipman keşfi
 
 /// Argüman: (kamera, lens) — biri dolu.

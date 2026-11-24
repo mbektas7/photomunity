@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../core/config.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
@@ -10,6 +12,7 @@ import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 
 const _coverBg = Color(0xFF1B1E27);
 
@@ -480,6 +483,18 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
     }
   }
 
+  /// Koleksiyonun web bağlantısını sistem paylaşım menüsüyle paylaşır.
+  Future<void> _share(BuildContext anchor, PhotoCollection c) async {
+    final t = L10n.of(context);
+    final link = '${AppConfig.webUrl}/${t.locale.languageCode}/collections/${c.id}';
+    final box = anchor.findRenderObject() as RenderBox?;
+    await SharePlus.instance.share(ShareParams(
+      text: '${c.title} · $link',
+      subject: c.title,
+      sharePositionOrigin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(collectionProvider(widget.id));
@@ -555,7 +570,12 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                       children: [
                         glass(LucideIcons.chevronLeft, t('ui.back'), () => Navigator.of(context).maybePop()),
                         const Spacer(),
-                        if (c.isMine) glass(LucideIcons.ellipsis, t('ui.more'), () => _menu(c)),
+                        glass(LucideIcons.circleQuestionMark, t('intro.how_it_works'), () => Intros.show(context, 'collections')),
+                        const SizedBox(width: 8),
+                        Builder(
+                          builder: (b) => glass(LucideIcons.share2, t('ui.share'), () => _share(b, c)),
+                        ),
+                        if (c.isMine) ...[const SizedBox(width: 8), glass(LucideIcons.ellipsis, t('ui.more'), () => _menu(c))],
                       ],
                     ),
                   ),

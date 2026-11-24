@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../core/api_client.dart';
 import '../../core/astro.dart';
 import '../../core/l10n.dart';
 import '../../core/models.dart';
@@ -61,6 +62,7 @@ class _PlanEditScreenState extends ConsumerState<PlanEditScreen> {
   TimeOfDay? _time;
   bool _remind = true;
   bool _weather = true;
+  bool _shared = false;
   bool _busy = false;
   bool _ready = false;
 
@@ -94,6 +96,7 @@ class _PlanEditScreenState extends ConsumerState<PlanEditScreen> {
     _date = DateUtils.dateOnly(_nightKind(_kind) && at.hour < 12 ? at.subtract(const Duration(days: 1)) : at);
     _remind = plan.remind;
     _weather = plan.weatherAlert;
+    _shared = plan.shared;
     _adoptTime(at);
     _ready = true;
   }
@@ -155,12 +158,14 @@ class _PlanEditScreenState extends ConsumerState<PlanEditScreen> {
       'target_at': target.toUtc().toIso8601String(),
       'remind': _remind,
       'weather_alert': _weather,
+      'shared': _shared,
     };
     try {
       final api = ref.read(apiProvider);
       widget.id == null ? await api.post<dynamic>('/me/plans', body) : await api.patch<dynamic>('/me/plans/${widget.id}', body);
       ref.invalidate(plansProvider);
       if (widget.id != null) ref.invalidate(planProvider(widget.id!));
+      ref.invalidate(sharedPlansProvider);
       if (!mounted) return;
       toast(context, t('plan.saved'));
       context.canPop() ? context.pop() : context.go('/sky/plans');
@@ -191,6 +196,9 @@ class _PlanEditScreenState extends ConsumerState<PlanEditScreen> {
       final async = ref.watch(planProvider(widget.id!));
       if (async.hasValue) {
         _load(async.requireValue);
+      } else if (async.hasError && const {403, 404}.contains(ApiException.from(async.error!).status)) {
+        // Bildirimden gelen, takip ettiğim birinin planı (katıldığım plan hatırlatması gibi)
+        return SharedPlanScreen(id: widget.id!);
       } else {
         return Scaffold(
           appBar: pageBar(context, t('plan.edit_title')),
@@ -330,6 +338,12 @@ class _PlanEditScreenState extends ConsumerState<PlanEditScreen> {
                   value: _weather,
                   onChanged: (v) => setState(() => _weather = v),
                 ),
+                ToggleRow(
+                  title: t('plan.share_friends'),
+                  sub: t('plan.share_friends_sub'),
+                  value: _shared,
+                  onChanged: (v) => setState(() => _shared = v),
+                ),
               ],
             ),
           ),
@@ -425,16 +439,19 @@ Future<bool> confirmPlanDelete(BuildContext context) async {
   return ok == true;
 }
 
-/// Planlarım: yaklaşan / geçmiş; kaydırarak silme, son bulut tahmini.
+/// Planlarım: yaklaşan / geçmiş / arkadaşların planları; kaydırarak silme, son bulut tahmini.
 class PlansScreen extends ConsumerStatefulWidget {
-  const PlansScreen({super.key});
+  const PlansScreen({super.key, this.scope});
+
+  /// upcoming | past | friends
+  final String? scope;
 
   @override
   ConsumerState<PlansScreen> createState() => _PlansScreenState();
 }
 
 class _PlansScreenState extends ConsumerState<PlansScreen> {
-  String _scope = 'upcoming';
+  late String _scope = const {'upcoming', 'past', 'friends'}.contains(widget.scope) ? widget.scope! : 'upcoming';
   final _removed = <String>{};
 
   Future<void> _remove(ShootPlan plan) async {
@@ -453,12 +470,14 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
   Widget build(BuildContext context) {
     final t = L10n.of(context);
     final p = context.palette;
-    final async = ref.watch(plansProvider(_scope));
+    final friends = _scope == 'friends';
+    final async = ref.watch(plansProvider(friends ? 'upcoming' : _scope));
     final items = async.asData?.value.where((x) => !_removed.contains(x.id)).toList();
     return Scaffold(
       appBar: pageBar(
         context,
         t('plan.my_plans'),
+        intro: 'plans',
         actions: [
           RoundIconButton(
             icon: LucideIcons.plus,
@@ -470,7 +489,10 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(plansProvider),
+        onRefresh: () async {
+          ref.invalidate(plansProvider);
+          if (_scope == 'friends') await ref.read(sharedPlansProvider.notifier).refresh();
+        },
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
@@ -481,10 +503,13 @@ class _PlansScreenState extends ConsumerState<PlansScreen> {
                 children: [
                   PillChip(label: t('plan.upcoming'), selected: _scope == 'upcoming', onTap: () => setState(() => _scope = 'upcoming')),
                   PillChip(label: t('plan.past'), selected: _scope == 'past', onTap: () => setState(() => _scope = 'past')),
+                  PillChip(label: t('plan.friends'), selected: friends, onTap: () => setState(() => _scope = 'friends')),
                 ],
               ),
             ),
-            if (items == null && async.hasError)
+            if (friends)
+              const _FriendPlans()
+            else if (items == null && async.hasError)
               ErrorView(error: async.error!, onRetry: () => ref.invalidate(plansProvider))
             else if (items == null)
               const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
@@ -611,10 +636,26 @@ class _PlanTile extends StatelessWidget {
                         ],
                       ),
                     ),
+                  if (plan.shared && plan.joiners.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Semantics(
+                      label: t('plan.joined_count', {'count': plan.joinCount}),
+                      child: AvatarStack(users: plan.joiners, size: 20, max: 3),
+                    ),
+                  ],
                   const SizedBox(height: 6),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (plan.shared) ...[
+                        Icon(LucideIcons.users, size: 15, color: p.inkMuted),
+                        if (plan.joinCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 3),
+                            child: Text('${plan.joinCount}', style: font(12, weight: 700, color: p.inkMuted, tabular: true)),
+                          ),
+                        const SizedBox(width: 6),
+                      ],
                       if (plan.remind) Icon(LucideIcons.bellRing, size: 15, color: p.inkMuted),
                       if (plan.weatherAlert) ...[
                         const SizedBox(width: 6),
@@ -626,6 +667,412 @@ class _PlanTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Katıl / ayrıl; güncel planı döndürür.
+Future<SharedPlan> togglePlanJoin(WidgetRef ref, SharedPlan plan) async {
+  final api = ref.read(apiProvider);
+  late SharedPlan next;
+  if (plan.joined) {
+    await api.delete<dynamic>('/plans/${plan.id}/join');
+    next = SharedPlan.fromJson(await api.get<Map<String, dynamic>>('/plans/${plan.id}'));
+  } else {
+    next = SharedPlan.fromJson(await api.post<Map<String, dynamic>>('/plans/${plan.id}/join'));
+  }
+  ref.invalidate(sharedPlanProvider(plan.id));
+  return next;
+}
+
+/// Takip ettiklerimin paylaştığı yaklaşan planlar.
+class _FriendPlans extends ConsumerStatefulWidget {
+  const _FriendPlans();
+
+  @override
+  ConsumerState<_FriendPlans> createState() => _FriendPlansState();
+}
+
+class _FriendPlansState extends ConsumerState<_FriendPlans> {
+  final _updated = <String, SharedPlan>{};
+  final _busy = <String>{};
+
+  Future<void> _toggle(SharedPlan plan) async {
+    final t = L10n.of(context);
+    setState(() => _busy.add(plan.id));
+    try {
+      final next = await togglePlanJoin(ref, plan);
+      if (!mounted) return;
+      setState(() => _updated[plan.id] = next);
+      toast(context, t(next.joined ? 'plan.joined_toast' : 'plan.left_toast'));
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _busy.remove(plan.id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final state = ref.watch(sharedPlansProvider);
+    final ctrl = ref.read(sharedPlansProvider.notifier);
+    if (state.initialLoading) {
+      return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
+    }
+    if (state.items.isEmpty && state.error != null) return ErrorView(error: state.error!, onRetry: ctrl.refresh);
+    if (state.items.isEmpty) {
+      return SectionCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(LucideIcons.usersRound, color: p.ink),
+            const SizedBox(height: 10),
+            Text(t('plan.friends_empty'), style: font(15, color: p.inkMuted)),
+          ],
+        ),
+      );
+    }
+    return Column(
+      children: [
+        for (final raw in state.items)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: SharedPlanTile(
+              plan: _updated[raw.id] ?? raw,
+              busy: _busy.contains(raw.id),
+              onToggle: () => _toggle(_updated[raw.id] ?? raw),
+            ),
+          ),
+        if (!state.done)
+          TextButton(onPressed: state.loading ? null : ctrl.loadMore, child: Text(t('plan.load_more'))),
+      ],
+    );
+  }
+}
+
+/// Arkadaşın plan satırı: sahibi, zaman, yer, katılanlar ve katıl / ayrıl.
+class SharedPlanTile extends StatelessWidget {
+  const SharedPlanTile({super.key, required this.plan, required this.onToggle, this.busy = false});
+  final SharedPlan plan;
+  final VoidCallback onToggle;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final locale = t.locale.languageCode;
+    final colors = _planColors(plan.kind);
+    return Material(
+      color: p.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.push('/sky/plans/shared/${plan.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+                    ),
+                    child: Icon(planIcon(plan.kind), color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          plan.title ?? t('plan.kind_${plan.kind}'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: font(15.5, weight: 700, color: p.ink),
+                        ),
+                        Text(
+                          '${DateFormat.MMMEd(locale).format(plan.targetAt)} · ${DateFormat.Hm(locale).format(plan.targetAt)}',
+                          style: font(13, color: p.ink, tabular: true),
+                        ),
+                        Text(
+                          plan.placeName ?? '${plan.latitude.toStringAsFixed(3)}, ${plan.longitude.toStringAsFixed(3)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: font(12.5, color: p.inkMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Avatar(name: plan.owner.displayName, url: plan.owner.avatarUrl, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      plan.joinCount > 0
+                          ? '${plan.owner.displayName} · ${t('plan.joined_count', {'count': plan.joinCount})}'
+                          : plan.owner.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: font(13, color: p.inkMuted),
+                    ),
+                  ),
+                  if (plan.joiners.isNotEmpty) ...[
+                    AvatarStack(users: plan.joiners, size: 20, max: 3),
+                    const SizedBox(width: 8),
+                  ],
+                  SizedBox(
+                    height: 36,
+                    child: plan.joined
+                        ? OutlinedButton(
+                            style: OutlinedButton.styleFrom(shape: const StadiumBorder(), foregroundColor: p.ink),
+                            onPressed: busy ? null : onToggle,
+                            child: BusyLabel(busy: busy, label: t('plan.leave')),
+                          )
+                        : FilledButton(
+                            style: FilledButton.styleFrom(shape: const StadiumBorder()),
+                            onPressed: busy ? null : onToggle,
+                            child: BusyLabel(busy: busy, label: t('plan.join')),
+                          ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Paylaşılan planın salt okunur ayrıntısı: sahibi, gece bilgisi, katılanlar; katıl ve kısayollar.
+class SharedPlanScreen extends ConsumerStatefulWidget {
+  const SharedPlanScreen({super.key, required this.id});
+  final String id;
+
+  @override
+  ConsumerState<SharedPlanScreen> createState() => _SharedPlanScreenState();
+}
+
+class _SharedPlanScreenState extends ConsumerState<SharedPlanScreen> {
+  bool _busy = false;
+
+  Future<void> _toggle(SharedPlan plan) async {
+    final t = L10n.of(context);
+    setState(() => _busy = true);
+    try {
+      final next = await togglePlanJoin(ref, plan);
+      ref.invalidate(sharedPlansProvider);
+      if (mounted) toast(context, t(next.joined ? 'plan.joined_toast' : 'plan.left_toast'));
+    } catch (e) {
+      if (mounted) toast(context, errorText(context, e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _usePlace(SharedPlan plan) => ref.read(skyPlaceProvider.notifier).set(
+    plan.latitude,
+    plan.longitude,
+    plan.placeName ?? '${plan.latitude.toStringAsFixed(3)}, ${plan.longitude.toStringAsFixed(3)}',
+  );
+
+  /// Gece çekimlerinde gece yarısından sonrası önceki gecedir (Night AR ve planlayıcı öğleden başlar).
+  DateTime _night(SharedPlan plan) =>
+      plan.targetAt.hour < 12 ? plan.targetAt.subtract(const Duration(days: 1)) : plan.targetAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final async = ref.watch(sharedPlanProvider(widget.id));
+    final plan = async.asData?.value;
+    if (plan == null) {
+      return Scaffold(
+        appBar: pageBar(context, t('plan.shared_title')),
+        body: async.hasError
+            ? ErrorView(error: async.error!, onRetry: () => ref.invalidate(sharedPlanProvider(widget.id)))
+            : const Center(child: CircularProgressIndicator()),
+      );
+    }
+    final me = ref.watch(authProvider).asData?.value;
+    final mine = me != null && me.id == plan.owner.id;
+    final locale = t.locale.languageCode;
+    final hm = DateFormat.Hm(locale);
+    final night = planNight(DateUtils.dateOnly(_night(plan)), plan.latitude, plan.longitude);
+    final past = plan.status == 'past';
+
+    Widget row(String label, String value, {String? sub, bool last = false}) => Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(border: last ? null : Border(bottom: BorderSide(color: p.line))),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: font(14.5, color: p.inkMuted)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(value, textAlign: TextAlign.right, style: font(14.5, weight: 700, color: p.ink, tabular: true)),
+                if (sub != null && sub.isNotEmpty) Text(sub, textAlign: TextAlign.right, style: font(12, color: p.inkMuted)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final secondary = FilledButton.styleFrom(
+      backgroundColor: p.surface,
+      foregroundColor: p.ink,
+      minimumSize: const Size.fromHeight(48),
+      shape: const StadiumBorder(),
+      textStyle: font(14.5, weight: 700),
+    );
+
+    return Scaffold(
+      appBar: pageBar(context, plan.title ?? t('plan.kind_${plan.kind}'), sub: t('plan.shared_title')),
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(sharedPlanProvider(widget.id)),
+        child: ListView(
+          padding: const EdgeInsets.only(top: 4, bottom: 32),
+          children: [
+            SectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => context.push('/u/${plan.owner.username}'),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Avatar(name: plan.owner.displayName, url: plan.owner.avatarUrl, size: 40),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(plan.owner.displayName, style: font(15, weight: 700, color: p.ink)),
+                                Text(t('plan.shared_by'), style: font(12.5, color: p.inkMuted)),
+                              ],
+                            ),
+                          ),
+                          Icon(LucideIcons.chevronRight, size: 18, color: p.inkSubtle),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _PreviewStrip(kind: plan.kind, text: t('plan.kind_${plan.kind}')),
+                  const SizedBox(height: 6),
+                  row(t('plan.date'), DateFormat.MMMMEEEEd(locale).format(plan.targetAt)),
+                  row(t('plan.time'), hm.format(plan.targetAt)),
+                  row(
+                    t('plan.place'),
+                    plan.placeName ?? '${plan.latitude.toStringAsFixed(3)}, ${plan.longitude.toStringAsFixed(3)}',
+                    sub: plan.placeName == null ? null : '${plan.latitude.toStringAsFixed(3)}, ${plan.longitude.toStringAsFixed(3)}',
+                  ),
+                  row(
+                    t('plan.moon'),
+                    '${t('planner.phase.${moonPhaseKey(night.phase)}')} %${(night.illumination * 100).round()}',
+                    last: plan.notes == null,
+                  ),
+                  if (plan.notes != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(plan.notes!, style: font(14, color: p.ink)),
+                    ),
+                ],
+              ),
+            ),
+            SectionCard(
+              child: Row(
+                children: [
+                  Icon(LucideIcons.users, size: 20, color: p.accentText),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      plan.joinCount == 0 ? t('plan.no_joiners') : t('plan.joined_count', {'count': plan.joinCount}),
+                      style: font(14, color: p.ink),
+                    ),
+                  ),
+                  AvatarStack(users: plan.joiners, size: 26, max: 6),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (mine)
+                    FilledButton(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), shape: const StadiumBorder()),
+                      onPressed: () => context.push('/sky/plans/${plan.id}'),
+                      child: Text(t('plan.edit_mine')),
+                    )
+                  else if (!past)
+                    FilledButton(
+                      style: plan.joined
+                          ? secondary.copyWith(minimumSize: const WidgetStatePropertyAll(Size.fromHeight(50)))
+                          : FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), shape: const StadiumBorder()),
+                      onPressed: _busy ? null : () => _toggle(plan),
+                      child: BusyLabel(busy: _busy, label: t(plan.joined ? 'plan.leave' : 'plan.join')),
+                    ),
+                  if (!mine && plan.joined && !past)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(t('plan.joined_hint'), textAlign: TextAlign.center, style: font(12.5, color: p.inkMuted)),
+                    ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: secondary,
+                          icon: const Icon(LucideIcons.scanLine, size: 18),
+                          label: Text(t('plan.open_ar'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          onPressed: () {
+                            _usePlace(plan);
+                            context.push('/sky/ar?date=${_night(plan).millisecondsSinceEpoch}');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: secondary,
+                          icon: const Icon(LucideIcons.sunMoon, size: 18),
+                          label: Text(t('plan.open_planner'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          onPressed: () {
+                            _usePlace(plan);
+                            context.push('/sky/planner?date=${DateUtils.dateOnly(_night(plan)).millisecondsSinceEpoch}');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

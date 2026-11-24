@@ -14,6 +14,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 import '../widgets/chat_extras.dart';
 import '../widgets/community_widgets.dart' show pickMyPhoto;
 
@@ -63,6 +64,7 @@ class ConversationsScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(t('messages.title')),
+          actions: const [IntroButton(module: 'messages'), SizedBox(width: 12)],
           bottom: TabBar(
             labelStyle: font(15, weight: 600),
             labelColor: p.ink,

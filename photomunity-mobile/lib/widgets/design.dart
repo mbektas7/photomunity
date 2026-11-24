@@ -14,6 +14,7 @@ import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
 import 'common.dart';
+import 'intro.dart';
 
 // "Canlı topluluk" ortak bileşenleri (design/components/*.md).
 
@@ -1189,7 +1190,8 @@ class LegalLinks extends StatelessWidget {
 // ---------------------------------------------------------------- Revizyon 7 ortak parçalar
 
 /// Tasarımlardaki üst çubuk: beyaz yuvarlak geri düğmesi, başlık ve isteğe bağlı alt satır.
-PreferredSizeWidget pageBar(BuildContext context, String title, {String? sub, Widget? subWidget, List<Widget>? actions}) {
+/// [intro] verilirse sağda modülün "Nasıl çalışır" düğmesi (widgets/intro.dart) yer alır.
+PreferredSizeWidget pageBar(BuildContext context, String title, {String? sub, Widget? subWidget, List<Widget>? actions, String? intro}) {
   final p = context.palette;
   final t = L10n.of(context);
   return AppBar(
@@ -1222,7 +1224,11 @@ PreferredSizeWidget pageBar(BuildContext context, String title, {String? sub, Wi
           Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: font(13, color: p.inkMuted)),
       ],
     ),
-    actions: [...?actions, const SizedBox(width: 10)],
+    actions: [
+      if (intro != null) ...[IntroButton(module: intro), const SizedBox(width: 8)],
+      ...?actions,
+      const SizedBox(width: 10),
+    ],
   );
 }
 

@@ -15,6 +15,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 
 const _specialties = [
   'astro',
@@ -289,6 +290,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         _photos = v;
                         _selected = null;
                       }),
+                    ),
+                    const Spacer(),
+                    DecoratedBox(
+                      decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: p.shadowFloat),
+                      child: const IntroButton(module: 'map', size: 44),
                     ),
                   ],
                 ),

@@ -1247,8 +1247,18 @@ class ShootPlan {
       notes = _opt(j['notes']),
       lastCloudCover = _opt(j['last_cloud_cover']),
       weatherCheckedAt = j['weather_checked_at'] == null ? null : _dt(j['weather_checked_at']),
-      status = j['status'] as String? ?? 'upcoming';
+      status = j['status'] as String? ?? 'upcoming',
+      shared = j['shared'] as bool? ?? false,
+      joinCount = j['join_count'] as int? ?? 0,
+      joiners = _users(j['joiners']);
   final String id;
+
+  /// Takip edenlerime açık; katılabilirler.
+  final bool shared;
+  final int joinCount;
+
+  /// İlk katılanlar (en çok 8).
+  final List<UserCard> joiners;
 
   /// milkyway | golden | blue | moonrise | meteor | other
   final String kind;
@@ -1262,6 +1272,42 @@ class ShootPlan {
   final String? notes;
   final int? lastCloudCover;
   final DateTime? weatherCheckedAt;
+  final String status;
+}
+
+List<UserCard> _users(Object? v) =>
+    ((v as List?) ?? const []).map((e) => UserCard.fromJson(e as Map<String, dynamic>)).toList();
+
+/// Takip ettiğim birinin paylaştığı çekim planı (salt okunur; katıl / ayrıl).
+class SharedPlan {
+  SharedPlan.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      kind = j['kind'] as String? ?? 'other',
+      title = _opt(j['title']),
+      latitude = _d(j['latitude'])!,
+      longitude = _d(j['longitude'])!,
+      placeName = _opt(j['place_name']),
+      targetAt = _dt(j['target_at']),
+      notes = _opt(j['notes']),
+      owner = UserCard.fromJson(j['owner'] as Map<String, dynamic>),
+      joinCount = j['join_count'] as int? ?? 0,
+      joined = j['joined'] as bool? ?? false,
+      joiners = _users(j['joiners']),
+      status = j['status'] as String? ?? 'upcoming';
+  final String id;
+  final String kind;
+  final String? title;
+  final double latitude;
+  final double longitude;
+  final String? placeName;
+  final DateTime targetAt;
+  final String? notes;
+  final UserCard owner;
+  final int joinCount;
+  final bool joined;
+  final List<UserCard> joiners;
+
+  /// upcoming | past
   final String status;
 }
 
@@ -1279,7 +1325,10 @@ class GearStats {
       aperture = _d((j['common_settings'] as Map?)?['median_aperture']),
       iso = _opt((j['common_settings'] as Map?)?['median_iso']),
       focal = _d((j['common_settings'] as Map?)?['median_focal_length_mm']),
-      sampleSize = (j['common_settings'] as Map?)?['sample_size'] as int? ?? 0;
+      sampleSize = (j['common_settings'] as Map?)?['sample_size'] as int? ?? 0,
+      topTags = ((j['top_tags'] as List?) ?? const [])
+          .map((e) => (tag: (e as Map)['tag'] as String, count: e['count'] as int? ?? 0))
+          .toList();
   final String? camera;
   final String? lens;
   final int photoCount;
@@ -1290,4 +1339,7 @@ class GearStats {
   final int? iso;
   final double? focal;
   final int sampleSize;
+
+  /// Bu ekipmanla çekilen karelerde en sık geçen etiketler.
+  final List<({String tag, int count})> topTags;
 }

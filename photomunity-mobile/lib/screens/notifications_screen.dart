@@ -115,6 +115,7 @@ class _Tile extends StatelessWidget {
                       'event_reminder' || 'event_new' || 'event_cancelled' => LucideIcons.calendarDays,
                       'plan_reminder' => LucideIcons.calendarClock,
                       'plan_weather' => LucideIcons.cloudRain,
+                      'plan_join' => LucideIcons.userPlus,
                       _ => LucideIcons.image,
                     }, size: 19, color: p.surface),
                   ),

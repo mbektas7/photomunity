@@ -107,7 +107,7 @@ class CritiqueScreen extends ConsumerWidget {
     final isOwner = photo != null && photo.user.id == me?.id;
 
     return Scaffold(
-      appBar: pageBar(context, t('critique.title')),
+      appBar: pageBar(context, t('critique.title'), intro: 'critique'),
       bottomNavigationBar: list == null || (!list.canCritique && list.myCritique == null)
           ? null
           : SafeArea(
@@ -537,7 +537,7 @@ class CritiqueRequestsScreen extends ConsumerWidget {
     final pages = ref.watch(cursorPhotosProvider(key));
     final ctrl = ref.read(cursorPhotosProvider(key).notifier);
     return Scaffold(
-      appBar: pageBar(context, t('critique.requests_title'), sub: t('critique.requests_sub')),
+      appBar: pageBar(context, t('critique.requests_title'), sub: t('critique.requests_sub'), intro: 'critique'),
       body: RefreshIndicator(
         onRefresh: ctrl.refresh,
         child: NotificationListener<ScrollNotification>(

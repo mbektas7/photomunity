@@ -12,6 +12,7 @@ import '../core/astro.dart';
 import '../core/l10n.dart';
 import '../core/sky.dart';
 import '../core/theme.dart';
+import '../widgets/intro.dart';
 import 'sky/ar_widgets.dart';
 import 'sky/sky_common.dart';
 
@@ -65,7 +66,11 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    // Tanıtım (ilk açılışta) kamera izni penceresinden önce gösterilir
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) await Intros.maybeShow(context, 'night_ar');
+      if (mounted) _initCamera();
+    });
     _accSub =
         accelerometerEventStream(samplingPeriod: SensorInterval.gameInterval)
             .listen((e) {
@@ -372,6 +377,12 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
                 ),
                 const SizedBox(height: 8),
                 ArGlassButton(icon: LucideIcons.moon, label: t('ar.align_moon'), onTap: _alignToMoon),
+                const SizedBox(height: 8),
+                ArGlassButton(
+                  icon: LucideIcons.circleQuestionMark,
+                  label: t('intro.how_it_works'),
+                  onTap: () => Intros.show(context, 'night_ar'),
+                ),
                 const SizedBox(height: 8),
                 ArGlassButton(icon: LucideIcons.slidersHorizontal, label: t('ar.calibrate'), onTap: _calibrationSheet),
               ],

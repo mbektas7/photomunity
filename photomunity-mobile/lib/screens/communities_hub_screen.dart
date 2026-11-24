@@ -10,6 +10,7 @@ import '../state/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 import 'feed_screen.dart' show navClearance;
 
 /// Alt menüdeki "Topluluk": topluluklar (yönettiklerin, üyeliklerin, keşfet) ve yarışmalar.
@@ -55,6 +56,8 @@ class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
                     Expanded(
                       child: Text(t('nav.community'), style: font(34, weight: 700, spacing: -1.2, color: p.ink)),
                     ),
+                    const IntroButton(module: 'communities', size: 44),
+                    const SizedBox(width: 8),
                     RoundIconButton(
                       icon: LucideIcons.search,
                       label: t('search.hint'),

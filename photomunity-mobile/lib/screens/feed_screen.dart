@@ -11,6 +11,7 @@ import 'onboarding_screen.dart';
 import '../widgets/common.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/design.dart';
+import '../widgets/intro.dart';
 import 'messages_screens.dart';
 import 'notifications_screen.dart';
 
@@ -57,6 +58,8 @@ class FeedScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          const IntroButton(module: 'feed', size: 44),
+          const SizedBox(width: 8),
           IconButton(
             style: IconButton.styleFrom(backgroundColor: p.surface, fixedSize: const Size(44, 44), minimumSize: const Size(44, 44)),
             tooltip: t('search.hint'),

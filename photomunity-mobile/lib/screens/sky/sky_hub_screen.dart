@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../core/weather.dart';
 import '../../state/providers.dart';
 import '../../widgets/design.dart';
+import '../../widgets/intro.dart';
 import 'sky_common.dart';
 
 /// Gökyüzü modülü: bu gecenin özeti ve dört bölüm (Night AR, Ay takvimi, Güneş & Ay, gece hesapları).
@@ -121,6 +122,7 @@ class SkyHubScreen extends ConsumerWidget {
             SkyPlaceLine(color: p.inkMuted),
           ],
         ),
+        actions: const [IntroButton(module: 'sky'), SizedBox(width: 12)],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
@@ -316,6 +318,24 @@ class SkyHubScreen extends ConsumerWidget {
                 '/sky/tools',
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Material(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(20),
+            child: ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              onTap: () => context.push('/sky/dark'),
+              leading: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(color: const Color(0xFF151933), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(LucideIcons.mapPinned, color: Color(0xFFFFD27A)),
+              ),
+              title: Text(t('dark.title'), style: font(15, weight: 700, color: p.ink)),
+              subtitle: Text(t('dark.hub_sub'), style: font(13, color: p.inkMuted)),
+              trailing: Icon(LucideIcons.chevronRight, color: p.inkSubtle),
+            ),
           ),
           const SizedBox(height: 12),
           Material(
