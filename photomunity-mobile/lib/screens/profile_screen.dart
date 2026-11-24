@@ -462,15 +462,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 8),
                       Text(prof.bio!, style: font(15, height: 1.45, color: p.ink)),
                     ],
-                    // Çektiği alanlar ve kullandığı makine
-                    if (prof.specialties.isNotEmpty || body != null) ...[
+                    // Çektiği alanlar (ekipman yalnızca Ekipman sekmesinde)
+                    if (prof.specialties.isNotEmpty) ...[
                       const SizedBox(height: Space.s3),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
                         children: [
                           for (final sp in prof.specialties) ExifChip(t('specialties.$sp')),
-                          if (body != null) ExifChip('${body.brand} ${body.model}'),
                         ],
                       ),
                     ],

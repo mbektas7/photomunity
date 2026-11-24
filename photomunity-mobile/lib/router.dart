@@ -516,7 +516,11 @@ class AppShell extends StatelessWidget {
       bottomNavigationBar: FloatingBottomNav(
         current: shell.currentIndex,
         // Aynı hedefe tekrar dokunmak o sekmenin başına döner
-        onSelect: (b) => shell.goBranch(b, initialLocation: b == shell.currentIndex),
+        onSelect: (b) {
+          // Akıştayken Ana sayfa'ya tekrar dokunmak akışı en üste kaydırır
+          if (b == 0 && shell.currentIndex == 0 && GoRouter.of(context).state.uri.path == '/feed') scrollFeedToTop();
+          shell.goBranch(b, initialLocation: b == shell.currentIndex);
+        },
       ),
     );
   }

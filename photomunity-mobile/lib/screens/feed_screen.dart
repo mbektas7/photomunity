@@ -24,6 +24,15 @@ bool loadMoreOnScroll(ScrollNotification n, VoidCallback loadMore) {
 /// Alt menünün altında içerik kalmasın diye kaydırma sonu boşluğu.
 const navClearance = 120.0;
 
+/// Akışın kaydırması: alt menüde Ana sayfa'ya tekrar dokununca en üste çıkmak için.
+final feedScroll = ScrollController();
+
+/// Akış açıkken Ana sayfa'ya dokunulunca en üste kaydırır.
+void scrollFeedToTop() {
+  if (!feedScroll.hasClients) return;
+  feedScroll.animateTo(0, duration: const Duration(milliseconds: 450), curve: Curves.easeOutCubic);
+}
+
 class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});
 
@@ -83,6 +92,7 @@ class FeedScreen extends ConsumerWidget {
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) => loadMoreOnScroll(n, ctrl.loadMore),
           child: CustomScrollView(
+            controller: feedScroll,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               const SliverToBoxAdapter(child: _Stories()),

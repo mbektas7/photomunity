@@ -31,6 +31,16 @@ export function Wordmark({ className }: { className?: string }) {
 
 /** Sol menülü akış düzeninde üst çubuk yalnızca dar ekranda görünür. */
 const SIDEBAR_ROUTES = ["/feed"];
+
+/** Akıştayken Ana sayfa'ya tekrar tıklamak akışı en üste kaydırır. */
+function scrollFeedTop(href: string, pathname: string) {
+  return (e: React.MouseEvent) => {
+    if (href !== "/feed" || pathname !== "/feed" || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  };
+}
 export const usesSidebar = (pathname: string) => SIDEBAR_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 
 function LocaleSwitch({ className }: { className?: string }) {
@@ -206,6 +216,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={scrollFeedTop(href, pathname)}
               aria-current={active ? "page" : undefined}
               aria-label={badge ? `${label}, ${badge}` : undefined}
               className={clsx(
@@ -258,6 +269,7 @@ export function MobileTabBar() {
       <li key={href} className="flex justify-center">
         <Link
           href={href}
+          onClick={scrollFeedTop(href, pathname)}
           aria-label={label}
           aria-current={active ? "page" : undefined}
           className={clsx("flex h-12 w-12 items-center justify-center rounded-full", active ? "text-ink" : "text-ink-subtle")}
