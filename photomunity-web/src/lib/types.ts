@@ -193,7 +193,12 @@ export type Entry = {
   prize: string | null;
   my_stars: number | null;
   my_score: number | null;
+  /** Jüri üyesinin bu kareye düştüğü özel not (yalnızca kendisi görür) */
+  my_note?: string | null;
+  number?: number | null;
+  disqualify_reason?: string | null;
   mine: boolean;
+  exif?: Exif | null;
 };
 
 export type Contest = ContestCard & {
@@ -207,11 +212,22 @@ export type Contest = ContestCard & {
   is_judge: boolean;
   my_entry: Entry | null;
   share_url: string;
+  /** Yalnızca sonuçlar açıklandıktan sonra dolar */
+  judge_count?: number;
+  vote_count?: number;
 };
 
 export type Judge = { id: string; user: UserCard | null; email: string | null; weight: number; pending: boolean; scored: number };
 
-export type ResultRow = { rank: number | null; score: number | null; count: number; prize: string | null; entry: Entry };
+export type ResultRow = {
+  rank: number | null;
+  score: number | null;
+  count: number;
+  prize: string | null;
+  entry: Entry;
+  /** Tek tek jüri puanları (yalnızca yönetici, jüri modu) */
+  scores?: number[] | null;
+};
 
 export type ContestSummary = { entries: number; disqualified: number; voters: number; votes: number; suspicious_ips: number; judges: Judge[] };
 
