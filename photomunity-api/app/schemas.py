@@ -1038,6 +1038,7 @@ class PlanIn(BaseModel):
     remind: bool = True
     weather_alert: bool = False
     notes: str | None = Field(default=None, max_length=1000)
+    shared: bool = False
 
 
 class PlanUpdate(BaseModel):
@@ -1050,6 +1051,7 @@ class PlanUpdate(BaseModel):
     remind: bool | None = None
     weather_alert: bool | None = None
     notes: str | None = Field(default=None, max_length=1000)
+    shared: bool | None = None
 
 
 class PlanOut(ORM):
@@ -1070,10 +1072,35 @@ class PlanOut(ORM):
     weather_checked_at: datetime | None
     last_cloud_cover: int | None
     status: str = "upcoming"  # upcoming | past
+    shared: bool = False
+    join_count: int = 0
+    joiners: list[UserCard] = []  # en fazla 8, en yeni önce
 
 
 class PlanPage(BaseModel):
     items: list[PlanOut]
+    next_cursor: str | None
+
+
+class SharedPlanOut(BaseModel):
+    """Paylaşılan plan (takip edilenlerin planları ve plan ayrıntısı)."""
+    id: uuid.UUID
+    kind: str
+    title: str | None
+    latitude: float
+    longitude: float
+    place_name: str | None
+    target_at: datetime
+    notes: str | None
+    owner: UserCard
+    join_count: int
+    joined: bool
+    joiners: list[UserCard]  # en fazla 8, en yeni önce
+    status: str  # upcoming | past
+
+
+class SharedPlanPage(BaseModel):
+    items: list[SharedPlanOut]
     next_cursor: str | None
 
 
@@ -1087,6 +1114,11 @@ class GearSettings(BaseModel):
     sample_size: int
 
 
+class GearTag(BaseModel):
+    tag: str
+    count: int
+
+
 class GearStats(BaseModel):
     camera: str | None
     lens: str | None
@@ -1094,6 +1126,7 @@ class GearStats(BaseModel):
     photographer_count: int
     top_photographers: list[UserCard]
     common_settings: GearSettings
+    top_tags: list[GearTag] = []  # en fazla 8, küçük harfe normalize
 
 
 class GearName(BaseModel):

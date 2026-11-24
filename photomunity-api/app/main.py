@@ -44,7 +44,7 @@ register_error_handlers(app)
 for router in (auth.router, users.router, photos.router, notifications.router, moderation.router,
                communities.router, contests.router, messaging.router, map.router, guides.router, billing.router, stats.router,
                admin.router, admin.public, comments.router,
-               themes.router, themes.admin_router, critiques.router, collections.router, events.router, plans.router, gear.router):
+               themes.router, themes.admin_router, critiques.router, collections.router, events.router, plans.router, plans.shared_router, gear.router):
     app.include_router(router, prefix=settings.api_prefix)
 
 

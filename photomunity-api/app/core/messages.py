@@ -77,6 +77,9 @@ MESSAGES: dict[str, dict[str, str]] = {
     "capacity_too_low": {"tr": "Kontenjan, katılacağını bildiren kişi sayısından az olamaz.", "en": "Capacity can't be lower than the number of attendees."},
     "invalid_plan_date": {"tr": "Plan tarihi ileri bir tarih olmalı.", "en": "The plan date must be in the future."},
     "plan_limit": {"tr": "En fazla 100 yaklaşan çekim planın olabilir.", "en": "You can have at most 100 upcoming plans."},
+    "cannot_join_own": {"tr": "Kendi planına katılamazsın.", "en": "You can't join your own plan."},
+    "plan_not_shared": {"tr": "Bu plan katılıma açık değil.", "en": "This plan isn't open for others to join."},
+    "plan_past": {"tr": "Bu planın zamanı geçti.", "en": "This plan has already taken place."},
     "gear_required": {"tr": "Bir kamera ya da lens seç.", "en": "Pick a camera or a lens."},
 }
 

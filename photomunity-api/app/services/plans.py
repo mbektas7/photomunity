@@ -3,12 +3,12 @@ import logging
 from datetime import datetime, timedelta
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.security import as_aware
-from app.models import Notification, ShootPlan
+from app.models import Notification, PlanJoin, ShootPlan
 from app.services import themes as tsvc
 from app.services.notifications import notify
 
@@ -29,13 +29,40 @@ def utcnow() -> datetime:
     return tsvc.utcnow()
 
 
+def _preset_flags(target: datetime, now: datetime) -> tuple[datetime | None, datetime | None]:
+    left = as_aware(target) - now
+    return (now if left <= DAY else None), (now if left <= HOUR2 else None)
+
+
 def preset_reminders(plan: ShootPlan, now: datetime | None = None) -> None:
     """Plan hedefe 24 saatten (2 saatten) az kala kaydedildiyse o hatırlatma zaten gereksiz: gönderilmiş say."""
     now = now or utcnow()
-    left = as_aware(plan.target_at) - now
-    plan.reminded_day_at = now if left <= DAY else None
-    plan.reminded_hour_at = now if left <= HOUR2 else None
+    plan.reminded_day_at, plan.reminded_hour_at = _preset_flags(plan.target_at, now)
     plan.weather_alerted_at = None
+
+
+def preset_join_reminders(join: PlanJoin, plan: ShootPlan, now: datetime | None = None) -> None:
+    """Katılım için aynı kural: hedefe 24 saatten (2 saatten) az kala katılan o hatırlatmayı almaz."""
+    join.reminded_day_at, join.reminded_hour_at = _preset_flags(plan.target_at, now or utcnow())
+
+
+async def reset_join_reminders(db: AsyncSession, plan: ShootPlan, now: datetime | None = None) -> None:
+    """Plan zamanı değişince katılımcıların hatırlatma bayrakları yeni hedefe göre sıfırlanır."""
+    day, hour = _preset_flags(plan.target_at, now or utcnow())
+    await db.execute(update(PlanJoin).where(PlanJoin.plan_id == plan.id)
+                     .values(reminded_day_at=day, reminded_hour_at=hour))
+
+
+def _next_reminder(obj, left: timedelta, now: datetime) -> int | None:
+    """obj (ShootPlan ya da PlanJoin) için sıradaki hatırlatma (24 | 2) ve bayrak güncellemesi."""
+    if obj.reminded_hour_at is None and left <= HOUR2:
+        obj.reminded_hour_at = now
+        obj.reminded_day_at = obj.reminded_day_at or now
+        return 2
+    if obj.reminded_day_at is None:
+        obj.reminded_day_at = now
+        return 24
+    return None
 
 
 def _labels(p: ShootPlan) -> dict:
@@ -49,24 +76,27 @@ def _data(p: ShootPlan, **extra) -> dict:
 
 
 async def send_plan_reminders(db: AsyncSession) -> list[Notification]:
-    """~24 saat ve ~2 saat önce "plan_reminder" (data.hours = 24 | 2). Her biri bir kez. Commit çağırana aittir."""
+    """~24 saat ve ~2 saat önce "plan_reminder" (data.hours = 24 | 2), sahibine ve katılımcılara. Her biri bir kez.
+    Commit çağırana aittir."""
     now = utcnow()
     created: list[Notification] = []
     rows = await db.scalars(select(ShootPlan).where(
         ShootPlan.remind.is_(True), ShootPlan.target_at > now, ShootPlan.target_at <= now + DAY,
         (ShootPlan.reminded_day_at.is_(None)) | (ShootPlan.reminded_hour_at.is_(None))))
     for p in rows:
-        left = as_aware(p.target_at) - now
-        hours = None
-        if p.reminded_hour_at is None and left <= HOUR2:
-            p.reminded_hour_at = now
-            p.reminded_day_at = p.reminded_day_at or now
-            hours = 2
-        elif p.reminded_day_at is None:
-            p.reminded_day_at = now
-            hours = 24
+        hours = _next_reminder(p, as_aware(p.target_at) - now, now)
         if hours:
             n = await notify(db, user_id=p.user_id, type="plan_reminder", data=_data(p, hours=hours))
+            if n:
+                created.append(n)
+    # Paylaşılan planlara katılanlar: aynı metin ve veri, kendi bayraklarıyla (sahibin remind ayarından bağımsız)
+    joins = (await db.execute(select(PlanJoin, ShootPlan).join(ShootPlan, ShootPlan.id == PlanJoin.plan_id).where(
+        ShootPlan.shared.is_(True), ShootPlan.target_at > now, ShootPlan.target_at <= now + DAY,
+        (PlanJoin.reminded_day_at.is_(None)) | (PlanJoin.reminded_hour_at.is_(None))))).all()
+    for j, p in joins:
+        hours = _next_reminder(j, as_aware(p.target_at) - now, now)
+        if hours:
+            n = await notify(db, user_id=j.user_id, type="plan_reminder", data=_data(p, hours=hours))
             if n:
                 created.append(n)
     return created

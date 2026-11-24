@@ -37,6 +37,7 @@ PUSH_DEFAULTS: dict[str, bool] = {
     "event_cancelled": True,
     "plan_reminder": True,
     "plan_weather": True,
+    "plan_join": True,
 }
 
 TEXT: dict[str, dict[str, str]] = {
@@ -65,6 +66,7 @@ TEXT: dict[str, dict[str, str]] = {
     "event_cancelled": {"tr": "{event} etkinliği iptal edildi.", "en": "{event} was cancelled."},
     "plan_reminder": {"tr": "Hatırlatma: {plan} çekimine {hours} saat kaldı.", "en": "Reminder: {hours} hours until your {plan} shoot."},
     "plan_weather": {"tr": "Hava bozuluyor: {plan} için bulut oranı %{cloud} bekleniyor.", "en": "Weather alert: {cloud}% cloud cover expected for {plan}."},
+    "plan_join": {"tr": "{actor} {plan} çekimine katılıyor.", "en": "{actor} is joining your {plan} shoot."},
 }
 
 

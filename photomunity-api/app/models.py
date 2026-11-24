@@ -741,6 +741,7 @@ class ShootPlan(Base):
     """Kişisel çekim planı: hatırlatma ve hava (bulut) uyarısı."""
 
     __tablename__ = "shoot_plans"
+    __table_args__ = (Index("ix_shoot_plans_shared_target", "shared", "target_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
@@ -759,3 +760,16 @@ class ShootPlan(Base):
     weather_alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     weather_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_cloud_cover: Mapped[int | None] = mapped_column(Integer)  # son kontrolde hedef saatteki bulut oranı (%)
+    shared: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())  # takipçilere açık plan
+
+
+class PlanJoin(Base):
+    """Paylaşılan çekim planına katılım. Katılımcılar da 24 sa / 2 sa hatırlatması alır (hava uyarısı yok)."""
+
+    __tablename__ = "plan_joins"
+
+    plan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("shoot_plans.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True)
+    created_at: Mapped[datetime] = _created()
+    reminded_day_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reminded_hour_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

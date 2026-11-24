@@ -4,6 +4,7 @@ Eşleşme normalize edilmiş tam eşitliktir: baş/son boşluk atılır, büyük
 Yalnızca herkese açık ve aktif profillerin yayındaki, gizlenmemiş kareleri sayılır; engeller iki yönlü uygulanır.
 """
 import statistics
+from collections import Counter
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
@@ -16,11 +17,16 @@ from app.api.v1.photos import _cards
 from app.core.database import get_db
 from app.core.errors import AppError
 from app.models import Photo, PhotoExif, PhotoStatus, User
-from app.schemas import GearName, GearSettings, GearStats, PhotoPage, UserCard
+from app.schemas import GearName, GearSettings, GearStats, GearTag, PhotoPage, UserCard
 from app.services.exif import shutter_display
 from app.services.themes import like_counts_subquery
 
 router = APIRouter(prefix="/gear", tags=["gear"])
+SAMPLE = 5000  # istatistik ve etiket filtresi için en yeni kare sayısı (aday küme sınırı)
+
+
+def _tag_norm(t) -> str:
+    return str(t).strip().lower().lstrip("#") if t is not None else ""
 
 
 def _norm(col):
@@ -47,21 +53,38 @@ def _base(*cols):
 
 @router.get("/photos", response_model=PhotoPage)
 async def gear_photos(camera: str | None = Query(None, max_length=100), lens: str | None = Query(None, max_length=150),
+                      tag: str | None = Query(None, max_length=40),
                       sort: Literal["recent", "popular"] = "recent", cursor: str | None = None,
                       limit: int = Query(24, ge=1, le=60), viewer: User | None = Depends(get_optional_user),
                       db: AsyncSession = Depends(get_db)):
+    """tag: etiketlerden biriyle büyük/küçük harf duyarsız tam eşleşme (en yeni 5000 aday kare içinde süzülür)."""
     try:
         off = max(0, int(cursor)) if cursor else 0
     except ValueError:
         off = 0
-    q = _base(Photo).where(*_filters(camera, lens, viewer)).options(selectinload(Photo.user))
+    conds = _filters(camera, lens, viewer)
+    order = [Photo.published_at.desc(), Photo.id]
+    likes = None
     if sort == "popular":
         likes = like_counts_subquery()
-        q = q.outerjoin(likes, likes.c.photo_id == Photo.id).order_by(
-            func.coalesce(likes.c.n, 0).desc(), Photo.published_at.desc(), Photo.id)
+        order = [func.coalesce(likes.c.n, 0).desc(), *order]
+
+    def ordered(q):
+        if likes is not None:
+            q = q.outerjoin(likes, likes.c.photo_id == Photo.id)
+        return q.order_by(*order)
+
+    tag_n = _tag_norm(tag)
+    if tag_n:
+        # JSON dizisi sorgusu SQLite/Postgres arasında taşınabilir değil: sıralı aday kümeyi Python'da süz, sonra sayfala
+        cands = (await db.execute(ordered(_base(Photo.id, Photo.tags).where(*conds)).limit(SAMPLE))).all()
+        ids = [pid for pid, tags in cands if any(_tag_norm(t) == tag_n for t in (tags or []))][off:off + limit + 1]
+        by_id = {p.id: p for p in await db.scalars(
+            select(Photo).where(Photo.id.in_(ids)).options(selectinload(Photo.user)))} if ids else {}
+        photos = [by_id[i] for i in ids if i in by_id]
     else:
-        q = q.order_by(Photo.published_at.desc(), Photo.id)
-    photos = list(await db.scalars(q.offset(off).limit(limit + 1)))
+        q = ordered(_base(Photo).where(*conds).options(selectinload(Photo.user)))
+        photos = list(await db.scalars(q.offset(off).limit(limit + 1)))
     return PhotoPage(items=await _cards(db, photos[:limit], viewer), next_cursor=str(off + limit) if len(photos) > limit else None)
 
 
@@ -73,15 +96,17 @@ def _median(values: list):
 @router.get("/stats", response_model=GearStats)
 async def gear_stats(camera: str | None = Query(None, max_length=100), lens: str | None = Query(None, max_length=150),
                      viewer: User | None = Depends(get_optional_user), db: AsyncSession = Depends(get_db)):
-    """Kare ve fotoğrafçı sayısı, en çok kare paylaşan 12 fotoğrafçı ve medyan çekim ayarları (en yeni 5000 kare)."""
+    """Kare ve fotoğrafçı sayısı, en çok kare paylaşan 12 fotoğrafçı, medyan çekim ayarları ve en sık 8 etiket
+    (ayarlar ve etiketler en yeni 5000 kare üzerinden)."""
     conds = _filters(camera, lens, viewer)
     photo_count = await db.scalar(_base(func.count(Photo.id)).where(*conds)) or 0
     photographer_count = await db.scalar(_base(func.count(func.distinct(Photo.user_id))).where(*conds)) or 0
     top = (await db.execute(_base(Photo.user_id, func.count().label("n")).where(*conds)
                             .group_by(Photo.user_id).order_by(func.count().desc()).limit(12))).all()
     users = {u.id: u for u in await db.scalars(select(User).where(User.id.in_([r[0] for r in top])))} if top else {}
-    rows = (await db.execute(_base(PhotoExif.exposure_time, PhotoExif.aperture, PhotoExif.iso, PhotoExif.focal_length_mm)
-                             .where(*conds).order_by(Photo.published_at.desc()).limit(5000))).all()
+    rows = (await db.execute(_base(PhotoExif.exposure_time, PhotoExif.aperture, PhotoExif.iso, PhotoExif.focal_length_mm,
+                                   Photo.tags).where(*conds).order_by(Photo.published_at.desc()).limit(SAMPLE))).all()
+    tag_counts = Counter(t for r in rows for t in {_tag_norm(x) for x in (r[4] or [])} if t)
     shutter = _median([r[0] for r in rows])
     iso = _median([r[2] for r in rows])
     focal = _median([r[3] for r in rows])
@@ -94,7 +119,8 @@ async def gear_stats(camera: str | None = Query(None, max_length=100), lens: str
             median_shutter_seconds=shutter, median_shutter_display=shutter_display(shutter),
             median_aperture=round(aperture, 1) if aperture is not None else None,
             median_iso=int(round(iso)) if iso is not None else None,
-            median_focal_length_mm=round(focal, 1) if focal is not None else None, sample_size=len(rows)))
+            median_focal_length_mm=round(focal, 1) if focal is not None else None, sample_size=len(rows)),
+        top_tags=[GearTag(tag=t, count=n) for t, n in sorted(tag_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]])
 
 
 @router.get("/search", response_model=list[GearName])
