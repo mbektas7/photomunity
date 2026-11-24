@@ -298,8 +298,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                     if (widget.isTab) ...[
-                      const SizedBox(width: 8),
-                      _glassButton(LucideIcons.circleQuestionMark, t('intro.how_it_works'), () => Intros.show(context, 'profile')),
+                      IntroGate(
+                        module: 'profile',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(width: 8),
+                            _glassButton(LucideIcons.circleQuestionMark, t('intro.how_it_works'), () => Intros.show(context, 'profile')),
+                          ],
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       _glassButton(LucideIcons.settings, t('settings.heading'), () => context.push('/settings')),
                     ],

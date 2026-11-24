@@ -1225,7 +1225,7 @@ PreferredSizeWidget pageBar(BuildContext context, String title, {String? sub, Wi
       ],
     ),
     actions: [
-      if (intro != null) ...[IntroButton(module: intro), const SizedBox(width: 8)],
+      if (intro != null) IntroGate(module: intro, trailing: const SizedBox(width: 8), child: IntroButton(module: intro)),
       ...?actions,
       const SizedBox(width: 10),
     ],

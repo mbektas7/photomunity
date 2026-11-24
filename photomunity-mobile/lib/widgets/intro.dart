@@ -152,6 +152,18 @@ class Intros {
   static Set<String>? _seen;
   static bool _showing = false;
 
+  /// Görülen modüller değişince "?" düğmeleri kendini gizler.
+  static final seenVersion = ValueNotifier<int>(0);
+
+  /// Modülün tanıtımı görüldü mü (depo henüz okunmadıysa null).
+  static bool? isSeen(String module) => _seen?.contains(module);
+
+  static Future<void> ensureLoaded() async {
+    if (_seen != null) return;
+    await _load();
+    seenVersion.value++;
+  }
+
   /// Testler / ekran görüntüleri: verilirse yalnızca bu modüller "görülmemiş" sayılır (depo okunmaz).
   static Set<String>? debugUnseen;
 
@@ -171,7 +183,9 @@ class Intros {
 
   static Future<void> _markSeen(String module) async {
     final seen = await _load();
-    if (!seen.add(module) || debugUnseen != null) return;
+    if (!seen.add(module)) return;
+    seenVersion.value++;
+    if (debugUnseen != null) return;
     try {
       await storage.write(key: _key, value: seen.join(','));
     } catch (_) {}
@@ -237,7 +251,39 @@ class _ModuleIntroState extends State<ModuleIntro> {
   Widget build(BuildContext context) => widget.child;
 }
 
-/// Uygulama çubuğundaki "Nasıl çalışır" düğmesi.
+/// Tanıtım görülene kadar [child]'ı gösterir; görüldükten sonra ekranda "?" kalmaz.
+class IntroGate extends StatefulWidget {
+  const IntroGate({super.key, required this.module, required this.child, this.trailing});
+  final String module;
+  final Widget child;
+
+  /// Düğmeyle birlikte gizlenecek boşluk vb.
+  final Widget? trailing;
+
+  @override
+  State<IntroGate> createState() => _IntroGateState();
+}
+
+class _IntroGateState extends State<IntroGate> {
+  @override
+  void initState() {
+    super.initState();
+    Intros.ensureLoaded();
+  }
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<int>(
+    valueListenable: Intros.seenVersion,
+    builder: (context, _, _) {
+      // Depo okunana kadar da gizli: görülmüş bir modülde düğme bir an bile yanıp sönmesin
+      if (!introsEnabled || Intros.isSeen(widget.module) != false) return const SizedBox.shrink();
+      final trailing = widget.trailing;
+      return trailing == null ? widget.child : Row(mainAxisSize: MainAxisSize.min, children: [widget.child, trailing]);
+    },
+  );
+}
+
+/// Uygulama çubuğundaki "Nasıl çalışır" düğmesi (tanıtım görülünce kaybolur).
 class IntroButton extends StatelessWidget {
   const IntroButton({super.key, required this.module, this.size = 40, this.color, this.scrim = false});
   final String module;
@@ -248,13 +294,16 @@ class IntroButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = L10n.of(context);
-    return RoundIconButton(
-      icon: LucideIcons.circleQuestionMark,
-      label: t('intro.how_it_works'),
-      size: size,
-      scrim: scrim,
-      color: color ?? (scrim ? null : context.palette.surface),
-      onPressed: () => Intros.show(context, module),
+    return IntroGate(
+      module: module,
+      child: RoundIconButton(
+        icon: LucideIcons.circleQuestionMark,
+        label: t('intro.how_it_works'),
+        size: size,
+        scrim: scrim,
+        color: color ?? (scrim ? null : context.palette.surface),
+        onPressed: () => Intros.show(context, module),
+      ),
     );
   }
 }

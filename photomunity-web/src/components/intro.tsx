@@ -76,7 +76,7 @@ function markSeen(m: IntroModule) {
 }
 
 /**
- * "Nasıl çalışır" düğmesi + tanıtım penceresi. Modül ilk kez açıldığında kendiliğinden açılır
+ * "Nasıl çalışır" düğmesi (yalnızca tanıtım görülene kadar) + tanıtım penceresi. Modül ilk kez açıldığında kendiliğinden açılır
  * (giriş yapmış kullanıcıya; `publicOk` ile oturumsuz ziyaretçiye de). /welcome sırasında açılmaz.
  */
 export function HowItWorks({ module, auto = true, publicOk = false, tone = "default", className }: {
@@ -91,6 +91,12 @@ export function HowItWorks({ module, auto = true, publicOk = false, tone = "defa
   const { data: me, isLoading } = useMe();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Tanıtım görüldükten sonra "?" düğmesi ekranda kalmaz. Sunucu çıktısıyla uyuşsun diye ilk çizimde gizli.
+  const [seen, setSeen] = useState(true);
+
+  useEffect(() => {
+    setSeen(isSeen(module));
+  }, [module]);
 
   useEffect(() => {
     if (!auto || isLoading || (!me && !publicOk) || pathname.includes("/welcome")) return;
@@ -106,7 +112,7 @@ export function HowItWorks({ module, auto = true, publicOk = false, tone = "defa
 
   return (
     <>
-      <button
+      {!seen && <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("how")}
@@ -118,9 +124,9 @@ export function HowItWorks({ module, auto = true, publicOk = false, tone = "defa
         )}
       >
         <CircleHelp className="h-[18px] w-[18px]" strokeWidth={1.9} aria-hidden />
-      </button>
+      </button>}
       {/* Başlıkların (h1) içinde durduğu için pencere body'ye taşınır: yazı stilini ve anlamı miras almasın */}
-      {open && createPortal(<IntroDialog module={module} onClose={() => setOpen(false)} />, document.body)}
+      {open && createPortal(<IntroDialog module={module} onClose={() => { setOpen(false); setSeen(true); }} />, document.body)}
     </>
   );
 }

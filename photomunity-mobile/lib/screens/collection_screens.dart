@@ -570,8 +570,11 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                       children: [
                         glass(LucideIcons.chevronLeft, t('ui.back'), () => Navigator.of(context).maybePop()),
                         const Spacer(),
-                        glass(LucideIcons.circleQuestionMark, t('intro.how_it_works'), () => Intros.show(context, 'collections')),
-                        const SizedBox(width: 8),
+                        IntroGate(
+                          module: 'collections',
+                          trailing: const SizedBox(width: 8),
+                          child: glass(LucideIcons.circleQuestionMark, t('intro.how_it_works'), () => Intros.show(context, 'collections')),
+                        ),
                         Builder(
                           builder: (b) => glass(LucideIcons.share2, t('ui.share'), () => _share(b, c)),
                         ),

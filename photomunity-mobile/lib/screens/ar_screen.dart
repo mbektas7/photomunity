@@ -378,12 +378,20 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
                 const SizedBox(height: 8),
                 ArGlassButton(icon: LucideIcons.moon, label: t('ar.align_moon'), onTap: _alignToMoon),
                 const SizedBox(height: 8),
-                ArGlassButton(
-                  icon: LucideIcons.circleQuestionMark,
-                  label: t('intro.how_it_works'),
-                  onTap: () => Intros.show(context, 'night_ar'),
+                IntroGate(
+                  module: 'night_ar',
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ArGlassButton(
+                        icon: LucideIcons.circleQuestionMark,
+                        label: t('intro.how_it_works'),
+                        onTap: () => Intros.show(context, 'night_ar'),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
                 ArGlassButton(icon: LucideIcons.slidersHorizontal, label: t('ar.calibrate'), onTap: _calibrationSheet),
               ],
             ),
