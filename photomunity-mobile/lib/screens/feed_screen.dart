@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'theme_screens.dart' show ThemeBanner;
 import '../core/l10n.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
@@ -83,6 +84,7 @@ class FeedScreen extends ConsumerWidget {
             slivers: [
               const SliverToBoxAdapter(child: _Stories()),
               const SliverToBoxAdapter(child: _HomeBanner()),
+              const SliverToBoxAdapter(child: ThemeBanner()),
               const SliverToBoxAdapter(child: OnboardingCard()),
               if (pages.initialLoading)
                 const SliverFillRemaining(

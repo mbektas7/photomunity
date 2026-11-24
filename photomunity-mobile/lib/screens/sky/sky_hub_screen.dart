@@ -10,6 +10,9 @@ import '../../core/astro.dart';
 import '../../core/l10n.dart';
 import '../../core/sky.dart';
 import '../../core/theme.dart';
+import '../../core/weather.dart';
+import '../../state/providers.dart';
+import '../../widgets/design.dart';
 import 'sky_common.dart';
 
 /// Gökyüzü modülü: bu gecenin özeti ve dört bölüm (Night AR, Ay takvimi, Güneş & Ay, gece hesapları).
@@ -26,30 +29,11 @@ class SkyHubScreen extends ConsumerWidget {
     // Gece planı öğleden öğleye; sabahın erken saatlerinde dünkü gece hâlâ sürüyor
     final night = now.hour < 12 ? now.subtract(const Duration(days: 1)) : now;
     final plan = planNight(night, place.lat, place.lng);
-    final day = planDay(now, place.lat, place.lng);
     final hm = DateFormat.Hm(locale);
     final best = plan.bestWindows.isEmpty ? null : plan.bestWindows.first;
     final core = nightCoreHighest(plan);
     final shower = upcomingShowers(now, count: 1).first;
     final moonSet = plan.moonset;
-
-    Widget stat(String label, String value) => Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: font(11.5, color: Colors.white60)),
-            const SizedBox(height: 2),
-            Text(value, style: font(15, weight: 700, color: Colors.white)),
-          ],
-        ),
-      ),
-    );
 
     Widget tile(String title, String sub, List<Color> colors, Widget art, String route) => Material(
       borderRadius: BorderRadius.circular(Radii.card),
@@ -86,13 +70,46 @@ class SkyHubScreen extends ConsumerWidget {
       ),
     );
 
-    final verdict = best != null
-        ? t('sky.tonight_good')
-        : (core == null ? t('sky.tonight_no_core') : t('sky.tonight_bright'));
+    final forecast = ref.watch(forecastProvider((place.lat, place.lng))).asData?.value;
+    final span = darkSpan(plan);
+    final tonightWx = span == null ? null : forecast?.average(span.start, span.end);
+    final score = nightScore(plan, cloud: tonightWx?.cloud);
+    final plans = ref.watch(plansProvider('upcoming')).asData?.value;
+    final verdict = t('sky.score_${score.score >= 80 ? 'great' : score.verdict}');
+    final moonText = '${t('planner.phase.${moonPhaseKey(plan.phase)}')} %${(plan.illumination * 100).round()}';
     final moonLine = [
-      '${t('planner.phase.${moonPhaseKey(plan.phase)}')} %${(plan.illumination * 100).round()}',
-      if (moonSet != null) t('sky.moon_sets_at', {'time': hm.format(moonSet)}),
+      if (tonightWx != null) t(tonightWx.cloud < 20 ? 'sky.clear' : (tonightWx.cloud < 60 ? 'sky.partly' : 'sky.cloudy')),
+      moonText,
+      if (tonightWx == null && moonSet != null) t('sky.moon_sets_at', {'time': hm.format(moonSet)}),
     ].join(' · ');
+    final ringColor = switch (score.verdict) {
+      'good' => const Color(0xFF7FE0C0),
+      'fair' => const Color(0xFFFFD27A),
+      _ => const Color(0xFFFF9C8F),
+    };
+
+    Widget wxStat(IconData icon, String label, String value) => Expanded(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: Colors.white70),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: font(11.5, color: Colors.white70)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: font(15, weight: 700, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -108,12 +125,12 @@ class SkyHubScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
-          // Bu gece
+          // Bu gece: çekim puanı, hava ve pencere
           InkWell(
             borderRadius: BorderRadius.circular(24),
             onTap: () => context.push('/planner'),
             child: Ink(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 gradient: const LinearGradient(
@@ -126,8 +143,8 @@ class SkyHubScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      MoonGlyph(phase: plan.phase, fraction: plan.illumination, size: 56, dark: const Color(0xFF2A3060)),
-                      const SizedBox(width: 14),
+                      MoonGlyph(phase: plan.phase, fraction: plan.illumination, size: 48, dark: const Color(0xFF2A3060)),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,21 +154,46 @@ class SkyHubScreen extends ConsumerWidget {
                               style: font(12, weight: 700, spacing: 0.4, color: Colors.white60),
                             ),
                             Text(verdict, style: font(20, weight: 700, color: Colors.white)),
-                            Text(moonLine, style: font(13.5, color: Colors.white70)),
+                            Text(moonLine, style: font(13, color: Colors.white70)),
                           ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Semantics(
+                        label: t('sky.score_label', {'score': score.score}),
+                        excludeSemantics: true,
+                        child: Container(
+                          width: 54,
+                          height: 54,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: ringColor, width: 4)),
+                          child: Text('${score.score}', style: font(17, weight: 700, color: Colors.white, tabular: true)),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      stat(
+                      wxStat(LucideIcons.cloud, t('sky.cloud'), tonightWx == null ? '—' : '%${tonightWx.cloud.round()}'),
+                      const SizedBox(width: 6),
+                      wxStat(LucideIcons.droplet, t('sky.humidity'), tonightWx == null ? '—' : '%${tonightWx.humidity.round()}'),
+                      const SizedBox(width: 6),
+                      wxStat(LucideIcons.wind, t('sky.wind'),
+                          tonightWx == null ? '—' : t('sky.kmh', {'v': tonightWx.wind.round()})),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      wxStat(
+                        LucideIcons.clock,
                         t('sky.window'),
-                        best == null ? '—' : '${hm.format(best.start)} – ${hm.format(best.end)}',
+                        best == null ? '—' : '${hm.format(best.start)}–${hm.format(best.end)}',
                       ),
-                      const SizedBox(width: 8),
-                      stat(
+                      const SizedBox(width: 6),
+                      wxStat(
+                        LucideIcons.orbit,
                         t('sky.core_highest'),
                         core == null
                             ? t('sky.below_horizon')
@@ -159,20 +201,56 @@ class SkyHubScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      stat(
-                        t('sky.golden_evening'),
-                        day.goldenEvening == null
-                            ? '—'
-                            : '${hm.format(day.goldenEvening!.start)} – ${hm.format(day.goldenEvening!.end)}',
-                      ),
-                      const SizedBox(width: 8),
-                      stat(t('sky.sunset'), day.sunset == null ? '—' : hm.format(day.sunset!.t)),
-                    ],
-                  ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _NightsCard(base: night, lat: place.lat, lng: place.lng, forecast: forecast),
+          const SizedBox(height: 10),
+          Material(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => context.push('/sky/plans'),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(color: p.accentTint, borderRadius: BorderRadius.circular(12)),
+                      child: Icon(LucideIcons.calendarClock, color: p.accentText),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(t('plan.my_plans'), style: font(15.5, weight: 700, color: p.ink)),
+                          Text(
+                            plans == null
+                                ? t('plan.my_plans_sub')
+                                : plans.isEmpty
+                                ? t('plan.none_upcoming')
+                                : t('plan.upcoming_count', {'count': plans.length}),
+                            style: font(12.5, color: p.inkMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (plans != null && plans.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: ShapeDecoration(color: p.accent, shape: const StadiumBorder()),
+                        child: Text('${plans.length}', style: font(11, weight: 700, color: p.accentInk, tabular: true)),
+                      ),
+                    const SizedBox(width: 6),
+                    Icon(LucideIcons.chevronRight, color: p.inkSubtle),
+                  ],
+                ),
               ),
             ),
           ),
@@ -306,4 +384,101 @@ class _BandPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Önümüzdeki beş gece: bulut çubuğu, Ay şekli ve İyi/Orta/Kötü (gece puanından).
+class _NightsCard extends StatelessWidget {
+  const _NightsCard({required this.base, required this.lat, required this.lng, required this.forecast});
+  final DateTime base;
+  final double lat, lng;
+  final Forecast? forecast;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final locale = t.locale.languageCode;
+    final nights = [
+      for (var i = 0; i < 5; i++)
+        () {
+          final date = DateTime(base.year, base.month, base.day + i);
+          final plan = planNight(date, lat, lng);
+          final span = darkSpan(plan);
+          final wx = span == null ? null : forecast?.average(span.start, span.end);
+          return (date: date, plan: plan, cloud: wx?.cloud, score: nightScore(plan, cloud: wx?.cloud));
+        }(),
+    ];
+    const verdictColor = {'good': Color(0xFF1A7F45), 'fair': Color(0xFFB45309), 'poor': Color(0xFFB42318)};
+    const verdictDark = {'good': Color(0xFF6FD69A), 'fair': Color(0xFFF2B866), 'poor': Color(0xFFFF8A7A)};
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SurfaceCard(
+      radius: 22,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(child: Text(t('sky.next_nights'), style: font(16, weight: 700, color: p.ink))),
+              Text(t('sky.cloud_moon'), style: font(12.5, color: p.inkMuted)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final (i, n) in nights.indexed)
+                Expanded(
+                  child: Semantics(
+                    label: t('sky.night_sr', {
+                      'day': i == 0 ? t('sky.tonight') : DateFormat.EEEE(locale).format(n.date),
+                      'cloud': n.cloud == null ? '—' : '%${n.cloud!.round()}',
+                      'verdict': t('sky.verdict_${n.score.verdict}'),
+                    }),
+                    excludeSemantics: true,
+                    child: Column(
+                      children: [
+                        Text(
+                          i == 0 ? t('sky.tonight') : DateFormat.E(locale).format(n.date),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: font(12, weight: 700, color: p.ink),
+                        ),
+                        const SizedBox(height: 5),
+                        MoonGlyph(phase: n.plan.phase, fraction: n.plan.illumination, size: 22),
+                        const SizedBox(height: 5),
+                        Container(
+                          width: 10,
+                          height: 44,
+                          alignment: Alignment.bottomCenter,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(999)),
+                          child: FractionallySizedBox(
+                            heightFactor: ((n.cloud ?? 0) / 100).clamp(0.0, 1.0),
+                            widthFactor: 1,
+                            child: const ColoredBox(color: Color(0xFF9AA3B5)),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(n.cloud == null ? '—' : '%${n.cloud!.round()}',
+                            style: font(11, color: p.inkMuted, tabular: true)),
+                        Text(
+                          t('sky.verdict_${n.score.verdict}'),
+                          style: font(11, weight: 700, color: (dark ? verdictDark : verdictColor)[n.score.verdict]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (forecast == null) ...[
+            const SizedBox(height: 10),
+            Text(t('sky.no_forecast'), style: font(12, color: p.inkMuted)),
+          ],
+        ],
+      ),
+    );
+  }
 }

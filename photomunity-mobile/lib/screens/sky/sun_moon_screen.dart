@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -106,6 +107,22 @@ class _SunMoonPlannerScreenState extends ConsumerState<SunMoonPlannerScreen> {
             SkyPlaceLine(color: p.inkMuted),
           ],
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: () => context.push(Uri(path: '/sky/plans/new', queryParameters: {
+                'kind': 'golden',
+                'lat': '${place.lat}',
+                'lng': '${place.lng}',
+                if (place.label.isNotEmpty) 'name': place.label,
+                'date': '${_date.millisecondsSinceEpoch}',
+              }).toString()),
+              icon: const Icon(LucideIcons.calendarPlus, size: 18),
+              label: Text(t('plan.plan_this')),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [

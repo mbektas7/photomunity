@@ -12,7 +12,11 @@ import '../state/providers.dart';
 import '../widgets/comment_policy.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
+import '../widgets/license.dart';
+import '../widgets/redo_card.dart';
 import '../widgets/share_sheet.dart';
+import 'collection_screens.dart';
+import 'critique_screens.dart';
 
 class PhotoScreen extends ConsumerStatefulWidget {
   const PhotoScreen({super.key, required this.id});
@@ -266,7 +270,24 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     final locale = t.locale.languageCode;
     final parts = exifParts(photo.exif, locale);
     final lens = photo.exif?.lens;
-    final hasCard = photo.title != null || photo.description != null || photo.tags.isNotEmpty || lens != null;
+    final camera = photo.exif?.camera;
+    final hasCard = photo.title != null || photo.description != null || photo.tags.isNotEmpty || lens != null || camera != null;
+    // Ekipman satırı: dokununca o kamera / lensle çekilenler
+    Widget gearRow(IconData icon, String text, String route) => InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => context.push(route),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: p.inkMuted),
+            const SizedBox(width: 8),
+            Expanded(child: Text(text, style: font(13.5, color: p.inkMuted))),
+            Icon(LucideIcons.chevronRight, size: 16, color: p.inkSubtle),
+          ],
+        ),
+      ),
+    );
     final shadow = const [Shadow(color: Color(0x99000000), blurRadius: 3, offset: Offset(0, 1))];
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(photoProvider(widget.id)),
@@ -286,7 +307,14 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        NetPhoto(url: img.url, fit: BoxFit.contain, semanticLabel: photo.title),
+                        Semantics(
+                          button: true,
+                          hint: t('zoom.open'),
+                          child: GestureDetector(
+                            onTap: () => context.push('/p/${photo.id}/zoom'),
+                            child: NetPhoto(url: img.url, fit: BoxFit.contain, semanticLabel: photo.title),
+                          ),
+                        ),
                         if (parts.isNotEmpty)
                           Positioned(
                             left: 0,
@@ -354,6 +382,22 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                   size: 38,
                   onPressed: () => showPhotoShareSheet(context, photo),
                 ),
+                if (isOwner) ...[
+                  const SizedBox(width: Space.s2),
+                  RoundIconButton(
+                    icon: LucideIcons.folderPlus,
+                    label: t('collection.add_to'),
+                    size: 38,
+                    onPressed: () => showAddToCollectionSheet(context, photo.id),
+                  ),
+                ],
+                const Spacer(),
+                RoundIconButton(
+                  icon: LucideIcons.maximize2,
+                  label: t('zoom.open'),
+                  size: 38,
+                  onPressed: () => context.push('/p/${photo.id}/zoom'),
+                ),
               ],
             ),
           ),
@@ -377,16 +421,18 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                           const SizedBox(height: 4),
                           Text(photo.description!, style: font(14.5, height: 1.5, color: p.ink)),
                         ],
-                        if (lens != null) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Icon(LucideIcons.aperture, size: 16, color: p.inkMuted),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(lens, style: font(13.5, color: p.inkMuted))),
-                            ],
+                        if (camera != null || lens != null) const SizedBox(height: 8),
+                        if (camera != null)
+                          gearRow(
+                            LucideIcons.camera,
+                            camera,
+                            Uri(path: '/gear', queryParameters: {
+                              'camera': photo.exif!.cameraModel ?? camera,
+                              'label': camera,
+                            }).toString(),
                           ),
-                        ],
+                        if (lens != null)
+                          gearRow(LucideIcons.aperture, lens, Uri(path: '/gear', queryParameters: {'lens': lens}).toString()),
                         if (photo.tags.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           Wrap(
@@ -398,6 +444,12 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                       ],
                     ),
                   ),
+                if (photo.critiqueRequested || photo.critiqueCount > 0) ...[
+                  const SizedBox(height: Space.s4),
+                  _CritiqueRow(photo: photo),
+                ],
+                const SizedBox(height: Space.s3),
+                _LicenseRow(photo: photo, isOwner: isOwner),
                 if (photo.location != null) ...[
                   const SizedBox(height: Space.s4),
                   Container(
@@ -435,6 +487,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                     ),
                   ),
                 ],
+                RedoCard(photo: photo),
                 if (isOwner && photo.suggestedLocation != null) ...[
                   const SizedBox(height: Space.s4),
                   Notice(
@@ -478,6 +531,10 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     final desc = TextEditingController(text: photo.description);
     final tags = TextEditingController(text: photo.tags.join(', '));
     var policy = photo.commentPolicy;
+    var critique = photo.critiqueRequested;
+    final question = TextEditingController(text: photo.critiqueQuestion);
+    var license = photo.license;
+    var noDownloads = photo.downloadsDisabled;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -526,6 +583,19 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               ),
             const SizedBox(height: 12),
             CommentPolicyPicker(value: policy, onChanged: (v) => setSheet(() => policy = v)),
+            const SizedBox(height: 8),
+            CritiqueToggle(
+              value: critique,
+              question: question,
+              onChanged: (v) => setSheet(() => critique = v),
+            ),
+            const SizedBox(height: 12),
+            LicensePicker(
+              license: license,
+              downloadsDisabled: noDownloads,
+              onLicense: (v) => setSheet(() => license = v),
+              onDownloads: (v) => setSheet(() => noDownloads = v),
+            ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () => Navigator.pop(c, true),
@@ -538,6 +608,10 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     if (saved == true) {
       await _patch({
         'comment_policy': policy,
+        'critique_requested': critique,
+        'critique_question': question.text.trim(),
+        'license': license,
+        'downloads_disabled': noDownloads,
         'title': title.text,
         'description': desc.text,
         'tags': tags.text
@@ -550,6 +624,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     title.dispose();
     desc.dispose();
     tags.dispose();
+    question.dispose();
   }
 }
 
@@ -574,4 +649,107 @@ class _StatusView extends StatelessWidget {
       child,
     ],
   );
+}
+
+/// Fotoğraf detayında eleştiri satırı: "Eleştiriye açık" ve eleştiri sayısı.
+class _CritiqueRow extends StatelessWidget {
+  const _CritiqueRow({required this.photo});
+  final PhotoDetail photo;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    return Material(
+      color: p.surface,
+      borderRadius: BorderRadius.circular(Radii.box),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Radii.box),
+        onTap: () => context.push('/p/${photo.id}/critiques'),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(LucideIcons.messageSquareText, size: 20, color: Color(0xFFB45309)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(child: Text(t('critique.title'), style: font(15.5, weight: 700, color: p.ink))),
+                        if (photo.critiqueRequested) ...[const SizedBox(width: 8), const CritiqueBadge()],
+                      ],
+                    ),
+                    Text(
+                      photo.critiqueQuestion ?? t('critique.count', {'count': photo.critiqueCount}),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: font(13, color: p.inkMuted),
+                    ),
+                  ],
+                ),
+              ),
+              if (photo.critiqueQuestion != null && photo.critiqueCount > 0)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text('${photo.critiqueCount}', style: font(14, weight: 700, color: p.ink, tabular: true)),
+                ),
+              Icon(LucideIcons.chevronRight, size: 20, color: p.inkSubtle),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kullanım hakkı satırı; "iletişime geç" lisansında başkalarına "Lisans iste" (mesaj isteği).
+class _LicenseRow extends StatelessWidget {
+  const _LicenseRow({required this.photo, required this.isOwner});
+  final PhotoDetail photo;
+  final bool isOwner;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final contact = photo.license == 'contact';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          Icon(LucideIcons.copyright, size: 16, color: p.inkMuted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              [
+                t('license.${photo.license}'),
+                if (photo.downloadsDisabled) t('license.downloads_off_short'),
+              ].join(' · '),
+              style: font(13, color: p.inkMuted),
+            ),
+          ),
+          if (contact && !isOwner)
+            TextButton(
+              onPressed: () => context.push(Uri(
+                path: '/messages/new/${photo.user.username}',
+                queryParameters: {
+                  'text': photo.title == null
+                      ? t('license.request_message_untitled')
+                      : t('license.request_message', {'title': photo.title!}),
+                },
+              ).toString()),
+              child: Text(t('license.request')),
+            ),
+        ],
+      ),
+    );
+  }
 }

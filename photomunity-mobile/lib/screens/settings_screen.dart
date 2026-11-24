@@ -11,6 +11,7 @@ import '../core/theme.dart';
 import '../state/providers.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/common.dart';
+import '../widgets/license.dart';
 
 const specialtyKeys = [
   'astro',
@@ -106,6 +107,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _ProfileSection(me: me),
                 const SizedBox(height: 36),
                 _EquipmentSection(initial: me.equipment),
+                const SizedBox(height: 36),
+                _LicenseDefaults(me: me),
                 const SizedBox(height: 36),
                 const _NotificationSettings(),
                 const SizedBox(height: 36),
@@ -737,6 +740,13 @@ const _pushTypes = [
   'contest_new',
   'contest_deadline',
   'contest_results',
+  'theme_won',
+  'critique_new',
+  'event_new',
+  'event_reminder',
+  'event_cancelled',
+  'plan_reminder',
+  'plan_weather',
 ];
 
 final _notificationSettingsProvider =
@@ -801,6 +811,58 @@ class _NotificationSettingsState extends ConsumerState<_NotificationSettings> {
               value: _local[type] ?? saved[type] ?? false,
               onChanged: (v) => _set(type, v),
             ),
+      ],
+    );
+  }
+}
+
+/// Yeni yüklemeler için varsayılan kullanım hakkı ve indirme ayarı.
+class _LicenseDefaults extends ConsumerStatefulWidget {
+  const _LicenseDefaults({required this.me});
+  final Me me;
+
+  @override
+  ConsumerState<_LicenseDefaults> createState() => _LicenseDefaultsState();
+}
+
+class _LicenseDefaultsState extends ConsumerState<_LicenseDefaults> {
+  String? _license;
+  bool? _noDownloads;
+
+  Future<void> _save(Map<String, dynamic> body) async {
+    try {
+      final res = await ref.read(apiProvider).patch<Map<String, dynamic>>('/me', body);
+      ref.read(authProvider.notifier).setMe(Me.fromJson(res));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _license = null;
+        _noDownloads = null;
+      });
+      toast(context, errorText(context, e));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionTitle(t('license.defaults'), lead: t('license.defaults_lead')),
+        const SizedBox(height: 12),
+        LicensePicker(
+          license: _license ?? widget.me.defaultLicense,
+          downloadsDisabled: _noDownloads ?? widget.me.defaultDownloadsDisabled,
+          onLicense: (v) {
+            setState(() => _license = v);
+            _save({'default_license': v});
+          },
+          onDownloads: (v) {
+            setState(() => _noDownloads = v);
+            _save({'default_downloads_disabled': v});
+          },
+        ),
       ],
     );
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:sensors_plus/sensors_plus.dart';
@@ -356,6 +357,20 @@ class _ArSkyScreenState extends State<ArSkyScreen> {
             bottom: 210 + MediaQuery.paddingOf(context).bottom,
             child: Column(
               children: [
+                // Bu geceyi (ya da seçili anı) çekim planına kaydet
+                ArGlassButton(
+                  icon: LucideIcons.calendarPlus,
+                  label: t('plan.plan_this'),
+                  onTap: () => context.push(Uri(path: '/sky/plans/new', queryParameters: {
+                    'kind': 'milkyway',
+                    'lat': '${widget.lat}',
+                    'lng': '${widget.lng}',
+                    'date': '${widget.date.millisecondsSinceEpoch}',
+                    if (_time.isAfter(DateTime.now().add(const Duration(minutes: 5))))
+                      'at': '${_time.millisecondsSinceEpoch}',
+                  }).toString()),
+                ),
+                const SizedBox(height: 8),
                 ArGlassButton(icon: LucideIcons.moon, label: t('ar.align_moon'), onTap: _alignToMoon),
                 const SizedBox(height: 8),
                 ArGlassButton(icon: LucideIcons.slidersHorizontal, label: t('ar.calibrate'), onTap: _calibrationSheet),

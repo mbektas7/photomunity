@@ -33,6 +33,13 @@ import 'screens/sky/sky_common.dart';
 import 'screens/sky/sky_hub_screen.dart';
 import 'screens/sky/sun_moon_screen.dart';
 import 'screens/upload_screen.dart';
+import 'screens/collection_screens.dart';
+import 'screens/critique_screens.dart';
+import 'screens/event_screens.dart';
+import 'screens/gear_screen.dart';
+import 'screens/sky/plan_screens.dart';
+import 'screens/theme_screens.dart';
+import 'screens/zoom_screen.dart';
 import 'state/providers.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
@@ -164,6 +171,95 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/p/:id/comments',
         parentNavigatorKey: _rootKey,
         builder: (_, s) => CommentsScreen(photoId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/p/:id/critiques',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => CritiqueScreen(photoId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/p/:id/zoom',
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (_, s) => CustomTransitionPage(
+          key: s.pageKey,
+          transitionsBuilder: (_, a, _, child) => FadeTransition(opacity: a, child: child),
+          child: ZoomScreen(photoId: s.pathParameters['id']!),
+        ),
+      ),
+      // ---- Revizyon 7
+      GoRoute(
+        path: '/themes',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const WeeklyThemeScreen(),
+      ),
+      GoRoute(
+        path: '/themes/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => WeeklyThemeScreen(key: ValueKey(s.uri.toString()), id: s.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/critiques',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const CritiqueRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/collections/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => CollectionScreen(id: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/events/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => EventScreen(id: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/events/:id/edit',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => EventFormScreen(id: s.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/c/:slug/events/new',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => EventFormScreen(slug: s.pathParameters['slug']),
+      ),
+      GoRoute(
+        path: '/sky/plans',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const PlansScreen(),
+      ),
+      GoRoute(
+        path: '/sky/plans/new',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) {
+          final q = s.uri.queryParameters;
+          DateTime? ms(String k) {
+            final v = int.tryParse(q[k] ?? '');
+            return v == null ? null : DateTime.fromMillisecondsSinceEpoch(v);
+          }
+
+          return PlanEditScreen(
+            key: ValueKey(s.uri.toString()),
+            kind: q['kind'],
+            lat: double.tryParse(q['lat'] ?? ''),
+            lng: double.tryParse(q['lng'] ?? ''),
+            name: q['name'],
+            date: ms('date'),
+            at: ms('at'),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/sky/plans/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) => PlanEditScreen(key: ValueKey(s.uri.toString()), id: s.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/gear',
+        parentNavigatorKey: _rootKey,
+        builder: (_, s) {
+          final q = s.uri.queryParameters;
+          return GearScreen(key: ValueKey(s.uri.toString()), camera: q['camera'], lens: q['lens'], label: q['label']);
+        },
       ),
       GoRoute(
         path: '/upload',
@@ -305,7 +401,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/messages/new/:username',
         parentNavigatorKey: _rootKey,
-        builder: (_, s) => ChatScreen(username: s.pathParameters['username']),
+        builder: (_, s) => ChatScreen(
+          key: ValueKey(s.uri.toString()),
+          username: s.pathParameters['username'],
+          initialText: s.uri.queryParameters['text'],
+        ),
       ),
       GoRoute(
         path: '/messages/:id',

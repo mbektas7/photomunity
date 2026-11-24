@@ -1185,3 +1185,172 @@ class LegalLinks extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------- Revizyon 7 ortak parçalar
+
+/// Tasarımlardaki üst çubuk: beyaz yuvarlak geri düğmesi, başlık ve isteğe bağlı alt satır.
+PreferredSizeWidget pageBar(BuildContext context, String title, {String? sub, Widget? subWidget, List<Widget>? actions}) {
+  final p = context.palette;
+  final t = L10n.of(context);
+  return AppBar(
+    backgroundColor: p.bg,
+    surfaceTintColor: Colors.transparent,
+    toolbarHeight: 64,
+    leadingWidth: 66,
+    titleSpacing: 0,
+    automaticallyImplyLeading: false,
+    leading: Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Center(
+        child: RoundIconButton(
+          icon: LucideIcons.chevronLeft,
+          label: t('ui.back'),
+          size: 40,
+          color: p.surface,
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
+    ),
+    title: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: font(21, weight: 700, color: p.ink)),
+        if (subWidget != null)
+          subWidget
+        else if (sub != null)
+          Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: font(13, color: p.inkMuted)),
+      ],
+    ),
+    actions: [...?actions, const SizedBox(width: 10)],
+  );
+}
+
+/// Seçim hapı: seçiliyse koyu dolgu (ink), değilse surface.
+class PillChip extends StatelessWidget {
+  const PillChip({super.key, required this.label, required this.selected, required this.onTap, this.color});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  /// Seçili olmayan zemin (surface kart içinde surface2 verilir).
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? p.ink : (color ?? p.surface),
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Text(
+              label,
+              style: font(13.5, weight: selected ? 700 : 600, color: selected ? p.bg : p.ink),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Başlık + açıklama + anahtar satırı (ayar kartlarında).
+class ToggleRow extends StatelessWidget {
+  const ToggleRow({super.key, required this.title, this.sub, required this.value, required this.onChanged});
+  final String title;
+  final String? sub;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: font(15, weight: 700, color: p.ink)),
+                  if (sub != null) Text(sub!, style: font(12.5, color: p.inkMuted)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Switch(value: value, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Yuvarlak köşeli beyaz kart (tasarımlardaki 22 px'lik bölüm).
+class SectionCard extends StatelessWidget {
+  const SectionCard({super.key, required this.child, this.padding = const EdgeInsets.fromLTRB(16, 14, 16, 14), this.margin = const EdgeInsets.fromLTRB(12, 0, 12, 10)});
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry margin;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: margin,
+    child: SurfaceCard(padding: padding, radius: 22, child: child),
+  );
+}
+
+/// Kırpmadan gösterilen kare: zemin üstünde kendi oranında (BoxFit.contain).
+class ContainPhoto extends StatelessWidget {
+  const ContainPhoto({super.key, required this.url, this.background, this.semanticLabel});
+  final String? url;
+  final Color? background;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: background ?? context.palette.surface2,
+    child: url == null ? const SizedBox.expand() : NetPhoto(url: url!, fit: BoxFit.contain, semanticLabel: semanticLabel),
+  );
+}
+
+/// Üst üste binen küçük avatarlar.
+class AvatarStack extends StatelessWidget {
+  const AvatarStack({super.key, required this.users, this.size = 30, this.max = 5});
+  final List<UserCard> users;
+  final double size;
+  final int max;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final shown = users.take(max).toList();
+    if (shown.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: size + 4,
+      width: (size + 4) + (shown.length - 1) * (size - 6),
+      child: Stack(
+        children: [
+          for (final (i, u) in shown.indexed)
+            Positioned(
+              left: i * (size - 6),
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(color: p.surface, shape: BoxShape.circle),
+                child: Avatar(name: u.displayName, url: u.avatarUrl, size: size),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

@@ -262,3 +262,176 @@ List<({MeteorShower s, DateTime peak, double moon})> upcomingShowers(DateTime no
   }
   return best == null ? null : (t: DateTime.fromMillisecondsSinceEpoch(best.t), alt: best.core.alt, az: best.core.az);
 }
+
+// ------------------------------------------------------------------ Çekim puanı (Revizyon 7)
+
+/// Bir gecenin çekim puanı ve bileşenleri.
+class NightScore {
+  NightScore({
+    required this.score,
+    required this.darkStart,
+    required this.darkEnd,
+    required this.darkHours,
+    required this.moonUp,
+    required this.illumination,
+    this.cloud,
+  });
+
+  /// 0–100. Bulut tahmini yoksa yalnız Ay ve karanlıkla hesaplanır (bulutsuz kabul).
+  final int score;
+
+  /// Puanın hesaplandığı karanlık aralık (astronomik karanlık; yoksa gün batımı–doğumu).
+  final DateTime? darkStart, darkEnd;
+  final double darkHours;
+
+  /// Ay'ın karanlık süre boyunca ufkun üstünde kaldığı oran (0–1).
+  final double moonUp;
+  final double illumination;
+  final double? cloud;
+
+  /// good (≥70) | fair (40–69) | poor (<40)
+  String get verdict => score >= 70 ? 'good' : (score >= 40 ? 'fair' : 'poor');
+}
+
+/// Gecenin karanlık aralığı: astronomik karanlık, yoksa (yaz gecesi, yüksek enlem) gün batımı–doğumu.
+({DateTime start, DateTime end})? darkSpan(NightPlan plan) {
+  final a = plan.duskAstro ?? plan.sunset;
+  final b = plan.dawnAstro ?? plan.sunrise;
+  if (a == null || b == null || !b.isAfter(a)) return null;
+  return (start: a, end: b);
+}
+
+/// Gece çekim puanı (0–100):
+///
+///   puan = 100 × B × A × K
+///   B (bulut)     = 1 − bulut / 100      — karanlık saatlerdeki ortalama toplam bulut oranı (Open-Meteo)
+///   A (Ay)        = 1 − 0,7 × aydınlanma × ayınUfukÜstündeOranı
+///                   (dolunay bütün gece gökteyse 0,3; yeni ay ya da Ay batmışsa 1)
+///   K (karanlık)  = 0,5 + 0,5 × min(1, astronomik karanlık saat / 6)
+///                   (yaz gecelerinde karanlık kısalır; hiç astronomik karanlık yoksa 0,5)
+///
+/// Bulut verisi yoksa B = 1 alınır; arayüz bunu "tahmin yok" diye belirtir.
+NightScore nightScore(NightPlan plan, {double? cloud}) {
+  final span = darkSpan(plan);
+  final dark = [for (final s in plan.samples) if (s.sun.alt <= -18) s];
+  final darkHours = dark.length * 5 / 60; // planNight 5 dakikalık örnekler
+  final inSpan = span == null
+      ? const <Sample>[]
+      : [
+          for (final s in plan.samples)
+            if (s.t >= span.start.millisecondsSinceEpoch && s.t <= span.end.millisecondsSinceEpoch) s,
+        ];
+  final moonUp = inSpan.isEmpty ? 0.0 : inSpan.where((s) => s.moon.alt > 0).length / inSpan.length;
+  final b = cloud == null ? 1.0 : (1 - cloud / 100).clamp(0.0, 1.0);
+  final a = 1 - 0.7 * plan.illumination * moonUp;
+  final k = 0.5 + 0.5 * math.min(1.0, darkHours / 6);
+  return NightScore(
+    score: (100 * b * a * k).round().clamp(0, 100),
+    darkStart: span?.start,
+    darkEnd: span?.end,
+    darkHours: darkHours,
+    moonUp: moonUp,
+    illumination: plan.illumination,
+    cloud: cloud,
+  );
+}
+
+// ------------------------------------------------------------------ Plan saati önerisi
+
+/// Plan türü ve gün için önerilen saat (+ varsa yön ve yükseklik).
+/// milkyway: çekirdeğin karanlıkta en yüksek anı · golden/blue: akşam altın/mavi saat başlangıcı
+/// moonrise: Ay doğuşu · meteor: astronomik karanlığın ortası · other: öneri yok.
+({DateTime t, double? az, double? alt})? suggestedPlanTime(String kind, DateTime date, double lat, double lng) {
+  switch (kind) {
+    case 'milkyway':
+      final c = nightCoreHighest(planNight(date, lat, lng));
+      return c == null ? null : (t: c.t, az: c.az, alt: c.alt);
+    case 'golden':
+    case 'blue':
+      final day = planDay(date, lat, lng);
+      final span = kind == 'golden' ? day.goldenEvening : day.blueEvening;
+      return span == null ? null : (t: span.start, az: day.sunset?.az, alt: null);
+    case 'moonrise':
+      final r = planDay(date, lat, lng).moonrise;
+      return r == null ? null : (t: r.t, az: r.az, alt: null);
+    case 'meteor':
+      final span = darkSpan(planNight(date, lat, lng));
+      if (span == null) return null;
+      return (t: span.start.add(span.end.difference(span.start) ~/ 2), az: null, alt: null);
+  }
+  return null;
+}
+
+// ------------------------------------------------------------------ "Bu kareyi tekrar çek"
+
+/// Çekim anındaki gök: Samanyolu çekirdeği (gece, ufkun üstünde) ya da Güneş.
+class RedoTarget {
+  RedoTarget(this.kind, this.az, this.alt, this.at, this.moon);
+
+  /// core | sun
+  final String kind;
+  final double az, alt;
+  final DateTime at;
+  final double moon;
+}
+
+/// Çekim anında hangi gök cismi hedef alınır: Güneş −12° altında ve çekirdek ufkun üstündeyse çekirdek, değilse Güneş.
+RedoTarget redoTarget(DateTime at, double lat, double lng) {
+  final ms = at.millisecondsSinceEpoch;
+  final sun = sunPosition(ms, lat, lng);
+  final core = corePosition(ms, lat, lng);
+  final moon = moonIllumination(ms).fraction;
+  if (sun.alt < -12 && core.alt > 0) return RedoTarget('core', core.az, core.alt, at, moon);
+  return RedoTarget('sun', sun.az, sun.alt, at, moon);
+}
+
+typedef RedoMatch = ({DateTime t, double moon, double az, double alt});
+
+double _azDiff(double a, double b) => ((a - b + 540) % 360 - 180).abs();
+
+/// [from] sonrasındaki [days] gün içinde aynı görünüm için uygun anlar (en fazla [count]).
+///
+/// core: çekirdek aynı yön ±5° ve yükseklik ±5°, Güneş −18° altında (astronomik karanlık), Ay %35'ten az.
+/// sun:  Güneş aynı yön ±3° ve yükseklik ±2°.
+/// Ardışık günler aynı dönemi verdiğinden aradaki boşluğu 3 günden az olan eşleşmeler tek dönem sayılır;
+/// her dönemden en iyisi (core: en karanlık Ay, sun: en yakın konum) seçilir.
+List<RedoMatch> findRedoDates(RedoTarget target, double lat, double lng, DateTime from, {int count = 3, int days = 365}) {
+  const step = 5 * _minute;
+  final start = DateTime(from.year, from.month, from.day, 12).millisecondsSinceEpoch;
+  final core = target.kind == 'core';
+  final azTol = core ? 5.0 : 3.0, altTol = core ? 5.0 : 2.0;
+  final nightly = <({int day, RedoMatch m, double dist})>[];
+  for (var d = 0; d < days; d++) {
+    final dayStart = start + d * 86400000;
+    ({int day, RedoMatch m, double dist})? best;
+    for (var t = dayStart; t < dayStart + 86400000; t += step) {
+      if (t <= from.millisecondsSinceEpoch) continue;
+      final pos = core ? corePosition(t, lat, lng) : sunPosition(t, lat, lng);
+      final da = _azDiff(pos.az, target.az), dh = (pos.alt - target.alt).abs();
+      if (da > azTol || dh > altTol) continue;
+      if (core && sunPosition(t, lat, lng).alt > -18) continue;
+      final moon = moonIllumination(t).fraction;
+      if (core && moon >= 0.35) continue;
+      final dist = da / azTol + dh / altTol;
+      if (best == null || dist < best.dist) {
+        best = (day: d, m: (t: DateTime.fromMillisecondsSinceEpoch(t), moon: moon, az: pos.az, alt: pos.alt), dist: dist);
+      }
+    }
+    if (best != null) nightly.add(best);
+  }
+  final out = <RedoMatch>[];
+  var i = 0;
+  while (i < nightly.length && out.length < count) {
+    var j = i;
+    var pick = nightly[i];
+    while (j + 1 < nightly.length && nightly[j + 1].day - nightly[j].day <= 3) {
+      j++;
+      final c = nightly[j];
+      final better = core ? c.m.moon < pick.m.moon - 0.02 || (c.m.moon - pick.m.moon).abs() <= 0.02 && c.dist < pick.dist : c.dist < pick.dist;
+      if (better) pick = c;
+    }
+    out.add(pick.m);
+    i = j + 1;
+  }
+  return out;
+}

@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'theme_screens.dart' show ThemeBanner;
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
@@ -71,6 +72,8 @@ class ExploreScreen extends ConsumerWidget {
                     children: [
                       for (final (i, (icon, label, route)) in [
                         (LucideIcons.moon, t('sky.title'), '/sky'),
+                        (LucideIcons.trophy, t('theme.title'), '/themes'),
+                        (LucideIcons.messageSquareText, t('critique.requests_short'), '/critiques'),
                         (LucideIcons.scan, t('explore.tool_ar'), '/sky/ar'),
                         (LucideIcons.map, t('map.title'), '/map'),
                         (LucideIcons.calculator, t('tools.title'), '/tools'),
@@ -90,6 +93,7 @@ class ExploreScreen extends ConsumerWidget {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: Space.s6)),
+              const SliverToBoxAdapter(child: ThemeBanner(padding: EdgeInsets.fromLTRB(12, 0, 12, Space.s6))),
               if (live.isNotEmpty) ...[
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(Space.s5, 0, 8, 6),

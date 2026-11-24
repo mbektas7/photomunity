@@ -41,4 +41,37 @@ void main() {
     expect(r.total.inMinutes, inInclusiveRange(118, 121));
     expect(r.frames, 232);
   });
+
+  test('tekrar çek: çekirdek ve Güneş için yakın tarihler', () {
+    // Temmuz gecesi, çekirdek güneyde
+    final night = DateTime(2025, 7, 14, 0, 51);
+    final core = redoTarget(night, lat, lng);
+    expect(core.kind, 'core');
+    final sw = Stopwatch()..start();
+    final dates = findRedoDates(core, lat, lng, DateTime(2026, 1, 1));
+    sw.stop();
+    expect(dates, isNotEmpty);
+    for (final m in dates) {
+      expect(m.moon, lessThan(0.35));
+      expect(sunPosition(m.t.millisecondsSinceEpoch, lat, lng).alt, lessThanOrEqualTo(-18));
+    }
+    // Ardışık geceler tek dönem sayılır
+    for (var i = 1; i < dates.length; i++) {
+      expect(dates[i].t.difference(dates[i - 1].t).inDays, greaterThan(3));
+    }
+    final evening = redoTarget(DateTime(2025, 9, 10, 18, 40), lat, lng);
+    expect(evening.kind, 'sun');
+    final sun = findRedoDates(evening, lat, lng, DateTime(2026, 1, 1));
+    expect(sun, isNotEmpty);
+    // ignore: avoid_print
+    print('redo core ${sw.elapsedMilliseconds} ms: ${dates.map((d) => d.t)} · sun: ${sun.map((d) => d.t)}');
+  });
+
+  test('gece puanı 0–100 ve Ay etkisi', () {
+    final dark = nightScore(planNight(DateTime(2026, 7, 14), lat, lng), cloud: 0);
+    final full = nightScore(planNight(DateTime(2026, 7, 29), lat, lng), cloud: 0);
+    expect(dark.score, inInclusiveRange(0, 100));
+    expect(full.score, lessThan(dark.score));
+    expect(nightScore(planNight(DateTime(2026, 7, 14), lat, lng), cloud: 100).score, 0);
+  });
 }

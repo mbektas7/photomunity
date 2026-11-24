@@ -77,7 +77,13 @@ class Me extends UserCard {
     required this.equipment,
     this.onboardingDone = true,
     this.hasPhotos = false,
+    this.defaultLicense = 'all_rights',
+    this.defaultDownloadsDisabled = false,
   });
+
+  /// Yüklemede varsayılan kullanım hakkı ve indirme ayarı (Revizyon 7).
+  final String defaultLicense;
+  final bool defaultDownloadsDisabled;
 
   final String email;
   final bool emailVerified;
@@ -129,6 +135,8 @@ class Me extends UserCard {
           .toList(),
       onboardingDone: j['onboarding_done'] as bool? ?? true,
       hasPhotos: j['has_photos'] as bool? ?? false,
+      defaultLicense: j['default_license'] as String? ?? 'all_rights',
+      defaultDownloadsDisabled: j['default_downloads_disabled'] as bool? ?? false,
     );
   }
 }
@@ -154,7 +162,11 @@ class Profile extends UserCard {
     required this.isFollowing,
     required this.isMe,
     required this.canViewPhotos,
+    this.themeWins = 0,
   });
+
+  /// Kazanılan haftalık tema sayısı (profil rozeti).
+  final int themeWins;
 
   final String? bio;
   final String? website;
@@ -194,6 +206,7 @@ class Profile extends UserCard {
       isFollowing: j['is_following'] as bool? ?? false,
       isMe: j['is_me'] as bool? ?? false,
       canViewPhotos: j['can_view_photos'] as bool? ?? false,
+      themeWins: j['theme_wins'] as int? ?? 0,
     );
   }
 }
@@ -223,6 +236,9 @@ class PhotoCard {
     this.commentCount = 0,
     this.commentsOff = false,
     this.lastComment,
+    this.critiqueRequested = false,
+    this.critiqueQuestion,
+    this.critiqueCount = 0,
   });
   final String id;
   final UserCard user;
@@ -242,6 +258,11 @@ class PhotoCard {
   final int commentCount;
   final bool commentsOff;
   final ({String username, String body})? lastComment;
+
+  /// Eleştiri modu: sahibi eleştiri istiyor, sorusu ve gelen eleştiri sayısı.
+  final bool critiqueRequested;
+  final String? critiqueQuestion;
+  final int critiqueCount;
 
   ImageVariant? get thumb => images['thumb'] ?? images['feed'];
   ImageVariant? get feed => images['feed'] ?? images['full'];
@@ -278,6 +299,9 @@ class PhotoCard {
             body: (j['last_comment'] as Map)['body'] as String,
           )
         : null,
+    critiqueRequested: j['critique_requested'] as bool? ?? false,
+    critiqueQuestion: _opt(j['critique_question']),
+    critiqueCount: j['critique_count'] as int? ?? 0,
   );
 }
 
@@ -375,6 +399,8 @@ class PhotoDetail extends PhotoCard {
           .toList(),
       commentPolicy = j['comment_policy'] as String? ?? 'everyone',
       canComment = j['can_comment'] as bool? ?? false,
+      license = j['license'] as String? ?? 'all_rights',
+      downloadsDisabled = j['downloads_disabled'] as bool? ?? false,
       super(
         id: j['id'] as String,
         user: UserCard.fromJson(j['user'] as Map<String, dynamic>),
@@ -390,7 +416,14 @@ class PhotoDetail extends PhotoCard {
             : Exif.fromJson(j['exif'] as Map<String, dynamic>),
         place: _opt(j['place']),
         commentCount: j['comment_count'] as int? ?? 0,
+        critiqueRequested: j['critique_requested'] as bool? ?? false,
+        critiqueQuestion: _opt(j['critique_question']),
+        critiqueCount: j['critique_count'] as int? ?? 0,
       );
+
+  /// all_rights | cc_by | cc_by_nc | contact
+  final String license;
+  final bool downloadsDisabled;
 
   final String? description;
   final List<String> tags;
@@ -452,6 +485,14 @@ String routeFor(Map<String, String> data, {String? photoId, String? username}) {
   final user = username ?? data['username'];
   final conversation = data['conversation_id'];
   if (conversation != null) return '/messages/$conversation';
+  // Revizyon 7: tema, eleştiri, etkinlik ve çekim planı bildirimleri
+  final theme = data['theme_id'];
+  if (theme != null) return '/themes/$theme';
+  final event = data['event_id'];
+  if (event != null) return '/events/$event';
+  final plan = data['plan_id'];
+  if (plan != null) return '/sky/plans/$plan';
+  if (photo != null && data['critique_id'] != null) return '/p/$photo/critiques';
   if (contest != null) return '/contests/$contest';
   if (community != null) return '/c/$community';
   if (photo != null && data['comment_id'] != null) return '/p/$photo/comments';
@@ -955,4 +996,298 @@ class Conversation {
   final int unread;
   final DateTime lastMessageAt;
   final DateTime? otherLastReadAt;
+}
+
+// =====================================================================  Revizyon 7
+
+/// Haftalık temaya katılım (fotoğraf + sıralama).
+class ThemeEntry {
+  ThemeEntry.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      themeId = j['theme_id'] as String,
+      createdAt = _dt(j['created_at']),
+      rank = _opt(j['rank']),
+      photo = PhotoCard.fromJson(j['photo'] as Map<String, dynamic>);
+  final String id;
+  final String themeId;
+  final DateTime createdAt;
+  final int? rank;
+  final PhotoCard photo;
+}
+
+class WeeklyTheme {
+  WeeklyTheme.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      number = j['number'] as int,
+      title = j['title'] as String,
+      description = _opt(j['description']),
+      startsAt = _dt(j['starts_at']),
+      endsAt = _dt(j['ends_at']),
+      status = j['status'] as String,
+      entryCount = j['entry_count'] as int? ?? 0,
+      myEntry = j['my_entry'] == null ? null : ThemeEntry.fromJson(j['my_entry'] as Map<String, dynamic>),
+      winner = j['winner'] == null ? null : ThemeEntry.fromJson(j['winner'] as Map<String, dynamic>);
+  final String id;
+  final int number;
+  final String title;
+  final String? description;
+  final DateTime startsAt;
+  final DateTime endsAt;
+
+  /// scheduled | active | ended (sonuç işleniyor) | finished
+  final String status;
+  final int entryCount;
+  final ThemeEntry? myEntry;
+  final ThemeEntry? winner;
+  bool get active => status == 'active';
+}
+
+class ThemeWin {
+  ThemeWin.fromJson(Map<String, dynamic> j)
+    : themeId = j['theme_id'] as String,
+      number = j['number'] as int,
+      title = j['title'] as String,
+      wonAt = j['won_at'] == null ? null : _dt(j['won_at']),
+      likeCount = j['like_count'] as int? ?? 0,
+      photo = PhotoCard.fromJson(j['photo'] as Map<String, dynamic>);
+  final String themeId;
+  final int number;
+  final String title;
+  final DateTime? wonAt;
+  final int likeCount;
+  final PhotoCard photo;
+}
+
+/// Bir eleştiri: dört ölçüt (1–5), iyi yanlar ve geliştirme önerisi.
+class Critique {
+  Critique.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      photoId = j['photo_id'] as String,
+      user = UserCard.fromJson(j['user'] as Map<String, dynamic>),
+      authorSpecialties = ((j['author_specialties'] as List?) ?? const []).cast<String>(),
+      composition = j['composition'] as int,
+      light = j['light'] as int,
+      focus = j['focus'] as int,
+      editing = j['editing'] as int,
+      average = _d(j['average']) ?? 0,
+      good = _opt(j['good']),
+      improve = _opt(j['improve']),
+      helpfulCount = j['helpful_count'] as int? ?? 0,
+      helpfulByMe = j['helpful_by_me'] as bool? ?? false,
+      mine = j['mine'] as bool? ?? false,
+      canDelete = j['can_delete'] as bool? ?? false,
+      createdAt = _dt(j['created_at']);
+
+  Critique._helpful(Critique c, this.helpfulByMe, this.helpfulCount)
+    : id = c.id,
+      photoId = c.photoId,
+      user = c.user,
+      authorSpecialties = c.authorSpecialties,
+      composition = c.composition,
+      light = c.light,
+      focus = c.focus,
+      editing = c.editing,
+      average = c.average,
+      good = c.good,
+      improve = c.improve,
+      mine = c.mine,
+      canDelete = c.canDelete,
+      createdAt = c.createdAt;
+
+  Critique withHelpful(bool on) => Critique._helpful(this, on, helpfulCount + (on ? 1 : -1));
+
+  final String id;
+  final String photoId;
+  final UserCard user;
+  final List<String> authorSpecialties;
+  final int composition, light, focus, editing;
+  final double average;
+  final String? good;
+  final String? improve;
+  final int helpfulCount;
+  final bool helpfulByMe;
+  final bool mine;
+  final bool canDelete;
+  final DateTime createdAt;
+
+  /// Ölçüt anahtarı → puan (l10n: `critique.c_*`).
+  Map<String, int> get scores => {'composition': composition, 'light': light, 'focus': focus, 'editing': editing};
+}
+
+class CritiqueList {
+  CritiqueList.fromJson(Map<String, dynamic> j)
+    : count = j['count'] as int? ?? 0,
+      averages = ((j['averages'] as Map?) ?? const {}).map((k, v) => MapEntry('$k', _d(v))),
+      items = ((j['items'] as List?) ?? const []).map((e) => Critique.fromJson(e as Map<String, dynamic>)).toList(),
+      myCritique = j['my_critique'] == null ? null : Critique.fromJson(j['my_critique'] as Map<String, dynamic>),
+      canCritique = j['can_critique'] as bool? ?? false,
+      critiqueRequested = j['critique_requested'] as bool? ?? false,
+      critiqueQuestion = _opt(j['critique_question']);
+
+  CritiqueList._items(CritiqueList l, this.items)
+    : count = l.count,
+      averages = l.averages,
+      myCritique = l.myCritique,
+      canCritique = l.canCritique,
+      critiqueRequested = l.critiqueRequested,
+      critiqueQuestion = l.critiqueQuestion;
+
+  CritiqueList withItems(List<Critique> items) => CritiqueList._items(this, items);
+
+  final int count;
+
+  /// composition, light, focus, editing, overall (eleştiri yoksa null)
+  final Map<String, double?> averages;
+  final List<Critique> items;
+  final Critique? myCritique;
+  final bool canCritique;
+  final bool critiqueRequested;
+  final String? critiqueQuestion;
+}
+
+/// Koleksiyon kartı: kapak için en fazla üç karenin görselleri.
+class CollectionCard {
+  CollectionCard.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      title = j['title'] as String,
+      description = _opt(j['description']),
+      photoCount = j['photo_count'] as int? ?? 0,
+      covers = ((j['covers'] as List?) ?? const []).map(PhotoCard._images).toList(),
+      position = j['position'] as int? ?? 0,
+      updatedAt = _dt(j['updated_at']),
+      containsPhoto = _opt(j['contains_photo']);
+  final String id;
+  final String title;
+  final String? description;
+  final int photoCount;
+  final List<Map<String, ImageVariant>> covers;
+  final int position;
+  final DateTime updatedAt;
+  final bool? containsPhoto;
+}
+
+class PhotoCollection extends CollectionCard {
+  PhotoCollection.fromJson(super.j)
+    : owner = UserCard.fromJson(j['owner'] as Map<String, dynamic>),
+      isMine = j['is_mine'] as bool? ?? false,
+      photos = ((j['photos'] as List?) ?? const []).map((e) => PhotoCard.fromJson(e as Map<String, dynamic>)).toList(),
+      super.fromJson();
+  final UserCard owner;
+  final bool isMine;
+  final List<PhotoCard> photos;
+}
+
+/// Topluluk etkinliği (foto yürüyüşü).
+class EventCard {
+  EventCard.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      community = CommunityCard.fromJson(j['community'] as Map<String, dynamic>),
+      title = j['title'] as String,
+      startsAt = _dt(j['starts_at']),
+      endsAt = j['ends_at'] == null ? null : _dt(j['ends_at']),
+      locationName = j['location_name'] as String,
+      latitude = _d(j['latitude']),
+      longitude = _d(j['longitude']),
+      capacity = _opt(j['capacity']),
+      attendeeCount = j['attendee_count'] as int? ?? 0,
+      attending = j['attending'] as bool? ?? false,
+      status = j['status'] as String,
+      cancelledAt = j['cancelled_at'] == null ? null : _dt(j['cancelled_at']);
+  final String id;
+  final CommunityCard community;
+  final String title;
+  final DateTime startsAt;
+  final DateTime? endsAt;
+  final String locationName;
+  final double? latitude;
+  final double? longitude;
+  final int? capacity;
+  final int attendeeCount;
+  final bool attending;
+
+  /// upcoming | ongoing | past | cancelled
+  final String status;
+  final DateTime? cancelledAt;
+  bool get hasPoint => latitude != null && longitude != null;
+  bool get open => status == 'upcoming' || status == 'ongoing';
+  bool get full => capacity != null && attendeeCount >= capacity!;
+}
+
+class CommunityEvent extends EventCard {
+  CommunityEvent.fromJson(super.j)
+    : description = _opt(j['description']),
+      bring = _opt(j['bring']),
+      createdBy = j['created_by'] == null ? null : UserCard.fromJson(j['created_by'] as Map<String, dynamic>),
+      attendeesPreview = ((j['attendees_preview'] as List?) ?? const [])
+          .map((e) => UserCard.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      myRole = _opt(j['my_role']),
+      canManage = j['can_manage'] as bool? ?? false,
+      super.fromJson();
+  final String? description;
+  final String? bring;
+  final UserCard? createdBy;
+  final List<UserCard> attendeesPreview;
+  final String? myRole;
+  final bool canManage;
+}
+
+/// Çekim planı (hatırlatma ve hava uyarısı sunucuda).
+class ShootPlan {
+  ShootPlan.fromJson(Map<String, dynamic> j)
+    : id = j['id'] as String,
+      kind = j['kind'] as String,
+      title = _opt(j['title']),
+      latitude = _d(j['latitude'])!,
+      longitude = _d(j['longitude'])!,
+      placeName = _opt(j['place_name']),
+      targetAt = _dt(j['target_at']),
+      remind = j['remind'] as bool? ?? true,
+      weatherAlert = j['weather_alert'] as bool? ?? false,
+      notes = _opt(j['notes']),
+      lastCloudCover = _opt(j['last_cloud_cover']),
+      weatherCheckedAt = j['weather_checked_at'] == null ? null : _dt(j['weather_checked_at']),
+      status = j['status'] as String? ?? 'upcoming';
+  final String id;
+
+  /// milkyway | golden | blue | moonrise | meteor | other
+  final String kind;
+  final String? title;
+  final double latitude;
+  final double longitude;
+  final String? placeName;
+  final DateTime targetAt;
+  final bool remind;
+  final bool weatherAlert;
+  final String? notes;
+  final int? lastCloudCover;
+  final DateTime? weatherCheckedAt;
+  final String status;
+}
+
+/// Ekipman keşfi istatistikleri.
+class GearStats {
+  GearStats.fromJson(Map<String, dynamic> j)
+    : camera = _opt(j['camera']),
+      lens = _opt(j['lens']),
+      photoCount = j['photo_count'] as int? ?? 0,
+      photographerCount = j['photographer_count'] as int? ?? 0,
+      topPhotographers = ((j['top_photographers'] as List?) ?? const [])
+          .map((e) => UserCard.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      shutter = _opt((j['common_settings'] as Map?)?['median_shutter_display']),
+      aperture = _d((j['common_settings'] as Map?)?['median_aperture']),
+      iso = _opt((j['common_settings'] as Map?)?['median_iso']),
+      focal = _d((j['common_settings'] as Map?)?['median_focal_length_mm']),
+      sampleSize = (j['common_settings'] as Map?)?['sample_size'] as int? ?? 0;
+  final String? camera;
+  final String? lens;
+  final int photoCount;
+  final int photographerCount;
+  final List<UserCard> topPhotographers;
+  final String? shutter;
+  final double? aperture;
+  final int? iso;
+  final double? focal;
+  final int sampleSize;
 }

@@ -13,7 +13,9 @@ import '../state/providers.dart';
 import '../widgets/ad_widgets.dart';
 import '../widgets/common.dart';
 import '../widgets/share_sheet.dart';
+import 'collection_screens.dart';
 import 'feed_screen.dart';
+import 'theme_screens.dart';
 
 const _kitOrder = ['body', 'lens', 'drone', 'flash', 'tripod', 'filter', 'other'];
 
@@ -152,6 +154,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _refresh() async {
     ref.invalidate(profileProvider(widget.username));
     ref.invalidate(awardsProvider(widget.username));
+    ref.invalidate(userCollectionsProvider(widget.username));
     await ref.read(photoPagesProvider(_photosPath).notifier).refresh();
   }
 
@@ -440,6 +443,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       children: [
                         Text(prof.displayName, style: font(20, weight: 700, height: 1.15, spacing: -0.4, color: p.ink)),
                         if (prof.isPro) const ProBadge(),
+                        if (prof.themeWins > 0) ThemeWinBadge(username: prof.username, count: prof.themeWins),
                       ],
                     ),
                     if (place.isNotEmpty) ...[const SizedBox(height: 3), _Meta(icon: LucideIcons.mapPin, text: place)],
@@ -507,7 +511,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  int _tab = 0; // 0 fotoğraflar, 1 ekipman
+  int _tab = 0; // 0 fotoğraflar, 1 koleksiyonlar, 2 ekipman
 
   Widget _body(BuildContext context, Profile prof) {
     final t = L10n.of(context);
@@ -591,15 +595,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(Space.s5, Space.s3, Space.s5, Space.s3),
               sliver: SliverToBoxAdapter(
-                child: Row(
-                  children: [
-                    tabButton(0, t('profile.tab_photos')),
-                    if (kit.isNotEmpty) tabButton(1, t('profile.tab_kit')),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      tabButton(0, t('profile.tab_photos')),
+                      if (prof.canViewPhotos) tabButton(1, t('profile.tab_collections')),
+                      if (kit.isNotEmpty) tabButton(2, t('profile.tab_kit')),
+                    ],
+                  ),
                 ),
               ),
             ),
-            if (_tab == 1 && kit.isNotEmpty)
+            if (_tab == 1 && prof.canViewPhotos)
+              SliverCollections(username: prof.username, isMe: prof.isMe)
+            else if (_tab == 2 && kit.isNotEmpty)
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 sliver: SliverToBoxAdapter(

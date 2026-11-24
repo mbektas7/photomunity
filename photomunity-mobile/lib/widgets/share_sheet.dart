@@ -36,7 +36,8 @@ Future<void> showPhotoShareSheet(BuildContext context, PhotoDetail photo) {
       message: {'photo_id': photo.id},
       whatsappSub: t('share.whatsapp_sub'),
       storySub: t('share.story_sub'),
-      story: (_) => renderStoryImage(photo, lang),
+      story: (_, signed) => renderStoryImage(photo, lang, signature: signed ? '© ${photo.user.displayName}' : null),
+      signatureLabel: '© ${photo.user.displayName}',
     ),
   );
 }
@@ -65,7 +66,7 @@ Future<void> showProfileShareSheet(BuildContext context, Profile prof) {
       message: {'body': link},
       whatsappSub: t('share.whatsapp_profile_sub'),
       storySub: t('share.story_profile_sub'),
-      story: (ref) async => renderProfileStoryImage(prof, link, labels, await _recentThumbs(ref, prof)),
+      story: (ref, _) async => renderProfileStoryImage(prof, link, labels, await _recentThumbs(ref, prof)),
       previewStory: true,
     ),
   );
@@ -92,6 +93,7 @@ class _ShareSheet extends ConsumerStatefulWidget {
     required this.storySub,
     required this.story,
     this.previewStory = false,
+    this.signatureLabel,
   });
   final String title;
   final String link;
@@ -99,8 +101,11 @@ class _ShareSheet extends ConsumerStatefulWidget {
   final Map<String, dynamic> message; // uygulama içi mesajla gönderilecek içerik
   final String whatsappSub;
   final String storySub;
-  final Future<File> Function(WidgetRef ref) story;
+  final Future<File> Function(WidgetRef ref, bool signed) story;
   final bool previewStory; // hikâye görselini menünün üstünde önizle
+
+  /// Doluysa hikâye görseline isteğe bağlı "© Ad" imzası (varsayılan kapalı).
+  final String? signatureLabel;
 
   @override
   ConsumerState<_ShareSheet> createState() => _ShareSheetState();
@@ -113,7 +118,9 @@ class _ShareSheetState extends ConsumerState<_ShareSheet> {
   String get _link => widget.link;
   String get _text => widget.text;
 
-  Future<File> _storyImage() => _storyFile ??= widget.story(ref);
+  bool _signed = false;
+
+  Future<File> _storyImage() => _storyFile ??= widget.story(ref, _signed);
 
   @override
   void initState() {
@@ -306,6 +313,19 @@ class _ShareSheetState extends ConsumerState<_ShareSheet> {
                     divider(),
                     row(LucideIcons.camera, const Color(0xFFD6249F), Colors.white, t('share.story'),
                         widget.storySub, _story, busy: _busy),
+                    if (widget.signatureLabel != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(70, 0, 12, 4),
+                        child: ToggleRow(
+                          title: t('share.signature'),
+                          sub: t('share.signature_sub', {'name': widget.signatureLabel!}),
+                          value: _signed,
+                          onChanged: (v) => setState(() {
+                            _signed = v;
+                            _storyFile = null; // imza değişti: görsel yeniden çizilir
+                          }),
+                        ),
+                      ),
                     divider(),
                     row(LucideIcons.share, p.surface2, p.ink, t('share.other'), t('share.other_sub'), _other),
                     divider(),
@@ -398,7 +418,7 @@ class _UserPickerState extends ConsumerState<_UserPicker> {
 
 /// Instagram hikâyesi boyutunda (1080×1920) paylaşım görseli: koyu zemin, fotoğraf
 /// kırpılmadan ortada, altında EXIF şeridi, en altta Photomunity logosu.
-Future<File> renderStoryImage(PhotoDetail photo, String locale) async {
+Future<File> renderStoryImage(PhotoDetail photo, String locale, {String? signature}) async {
   const w = 1080.0, h = 1920.0, pad = 72.0;
   final img = photo.full ?? photo.thumb;
   if (img == null) throw StateError('no image');
@@ -476,6 +496,12 @@ Future<File> renderStoryImage(PhotoDetail photo, String locale) async {
     shadow.paint(c, Offset(band.left + 28, band.top + 24));
   }
   c.restore();
+
+  // İsteğe bağlı imza: fotoğrafın altında sağda (fotoğrafın üstüne yazılmaz)
+  if (signature != null) {
+    final sig = text(signature, 30, weight: FontWeight.w600, color: Colors.white70);
+    sig.paint(c, Offset(photoRect.right - sig.width, photoRect.bottom + 18));
+  }
 
   final lw = logoH * logo.width / logo.height;
   c.drawImageRect(

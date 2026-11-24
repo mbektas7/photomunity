@@ -16,6 +16,8 @@ import '../state/providers.dart';
 import '../widgets/comment_policy.dart';
 import '../widgets/common.dart';
 import '../widgets/design.dart';
+import '../widgets/license.dart';
+import 'critique_screens.dart' show CritiqueToggle;
 
 const _types = {
   'jpg': 'image/jpeg',
@@ -68,8 +70,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   final _desc = TextEditingController();
   final _tags = TextEditingController();
   final _place = TextEditingController();
+  final _question = TextEditingController();
 
   XFile? _file;
+  bool _critique = false;
+  String? _license; // null: hesabın varsayılanı
+  bool? _noDownloads;
   List<String> _issues = const [];
   GeoPoint? _location;
   bool _locating = false;
@@ -91,7 +97,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   @override
   void dispose() {
-    for (final c in [_title, _desc, _tags, _place]) {
+    for (final c in [_title, _desc, _tags, _place, _question]) {
       c.dispose();
     }
     super.dispose();
@@ -174,6 +180,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             .where((s) => s.isNotEmpty)
             .toList(),
         'comment_policy': _commentPolicy,
+        'critique_requested': _critique,
+        if (_critique && _question.text.trim().isNotEmpty) 'critique_question': _question.text.trim(),
+        'license': ?_license,
+        'downloads_disabled': ?_noDownloads,
         'location': _location == null
             ? null
             : GeoPoint(
@@ -207,11 +217,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   }
 
   void _reset() {
-    for (final c in [_title, _desc, _tags, _place]) {
+    for (final c in [_title, _desc, _tags, _place, _question]) {
       c.clear();
     }
     setState(() {
       _file = null;
+      _critique = false;
+      _license = null;
+      _noDownloads = null;
       _commentPolicy = 'everyone';
       _issues = const [];
       _location = null;
@@ -427,6 +440,30 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             child: CommentPolicyPicker(
               value: _commentPolicy,
               onChanged: (v) => setState(() => _commentPolicy = v),
+            ),
+          ),
+          const SizedBox(height: Space.s3),
+          SurfaceCard(
+            padding: const EdgeInsets.fromLTRB(Space.s4, Space.s2, Space.s4, Space.s2),
+            child: CritiqueToggle(
+              value: _critique,
+              question: _question,
+              onChanged: (v) => setState(() => _critique = v),
+            ),
+          ),
+          const SizedBox(height: Space.s3),
+          SurfaceCard(
+            padding: const EdgeInsets.fromLTRB(Space.s4, Space.s4, Space.s4, Space.s3),
+            child: Builder(
+              builder: (context) {
+                final me = ref.watch(authProvider).asData?.value;
+                return LicensePicker(
+                  license: _license ?? me?.defaultLicense ?? 'all_rights',
+                  downloadsDisabled: _noDownloads ?? me?.defaultDownloadsDisabled ?? false,
+                  onLicense: (v) => setState(() => _license = v),
+                  onDownloads: (v) => setState(() => _noDownloads = v),
+                );
+              },
             ),
           ),
           const SizedBox(height: Space.s5),

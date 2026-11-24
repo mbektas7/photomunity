@@ -9,6 +9,7 @@ import '../core/push.dart';
 import '../core/monetization.dart';
 import '../core/realtime.dart';
 import '../core/token_store.dart';
+import '../core/weather.dart';
 
 final tokenStoreProvider = Provider((ref) => TokenStore());
 
@@ -1104,3 +1105,244 @@ class ClosedBanner extends Notifier<String?> {
   String? build() => null;
   void close(String id) => state = id;
 }
+
+// ---------------------------------------------------------------- Revizyon 7
+
+/// İmleç (`cursor`) tabanlı liste durumu; yeni uçlar `{items, next_cursor}` döner.
+class CursorState<T> {
+  const CursorState({this.items = const [], this.cursor, this.loading = false, this.done = false, this.error});
+  final List<T> items;
+  final String? cursor;
+  final bool loading;
+  final bool done;
+  final ApiException? error;
+  bool get initialLoading => loading && items.isEmpty;
+}
+
+/// Ortak sonsuz liste mantığı: aynı anda tek istek, yenileme eski yanıtları yok sayar.
+abstract class CursorController<T> extends Notifier<CursorState<T>> {
+  String get path;
+  Map<String, dynamic> get query => const {};
+  T parse(Map<String, dynamic> j);
+  String idOf(T item);
+
+  int _gen = 0;
+  bool _busy = false;
+
+  @override
+  CursorState<T> build() {
+    Future.microtask(loadMore);
+    return CursorState<T>(loading: true);
+  }
+
+  Future<void> refresh() async {
+    _gen++;
+    _busy = false;
+    state = CursorState<T>(loading: true);
+    await _load(null);
+  }
+
+  Future<void> loadMore() async {
+    if (state.done || _busy) return;
+    await _load(state.cursor);
+  }
+
+  Future<void> _load(String? cursor) async {
+    final gen = _gen;
+    _busy = true;
+    state = CursorState<T>(items: state.items, cursor: state.cursor, loading: true);
+    try {
+      final res = await ref.read(apiProvider).get<Map<String, dynamic>>(path, query: {...query, 'cursor': ?cursor});
+      if (!ref.mounted || gen != _gen) return;
+      final next = res['next_cursor'] as String?;
+      final seen = {for (final x in state.items) idOf(x)};
+      final fresh = (res['items'] as List).map((e) => parse(e as Map<String, dynamic>)).where((x) => seen.add(idOf(x)));
+      state = CursorState<T>(items: [...state.items, ...fresh], cursor: next, done: next == null);
+    } catch (e) {
+      if (!ref.mounted || gen != _gen) return;
+      state = CursorState<T>(items: state.items, cursor: state.cursor, error: ApiException.from(e));
+    } finally {
+      if (ref.mounted && gen == _gen) _busy = false;
+    }
+  }
+}
+
+/// Fotoğraf listeleri (PhotoPage). Argüman: `critiques/requests` ya da `gear/photos?lens=…&sort=popular`.
+final cursorPhotosProvider = NotifierProvider.autoDispose
+    .family<CursorPhotos, CursorState<PhotoCard>, String>(CursorPhotos.new);
+
+class CursorPhotos extends CursorController<PhotoCard> {
+  CursorPhotos(this.key);
+  final String key;
+  late final Uri _uri = Uri.parse('/$key');
+  @override
+  String get path => _uri.path;
+  @override
+  Map<String, dynamic> get query => _uri.queryParameters;
+  @override
+  PhotoCard parse(Map<String, dynamic> j) => PhotoCard.fromJson(j);
+  @override
+  String idOf(PhotoCard item) => item.id;
+}
+
+// ---- Haftalık tema
+
+/// Süren tema; yoksa null (API 404).
+final currentThemeProvider = FutureProvider.autoDispose<WeeklyTheme?>((ref) async {
+  try {
+    return WeeklyTheme.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/themes/current'));
+  } on ApiException catch (e) {
+    if (e.status == 404) return null;
+    rethrow;
+  }
+});
+
+final themeProvider = FutureProvider.autoDispose.family<WeeklyTheme, String>((ref, id) async {
+  return WeeklyTheme.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/themes/$id'));
+});
+
+/// Biten temalar (en yeni önce); "geçen hafta" kartı için.
+final pastThemesProvider = FutureProvider.autoDispose<List<WeeklyTheme>>((ref) async {
+  final r = await ref.read(apiProvider).get<Map<String, dynamic>>('/themes', query: {'status': 'past', 'limit': 5});
+  return (r['items'] as List).map((e) => WeeklyTheme.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+/// Argüman: (tema kimliği, sıralama top | new | following)
+final themeEntriesProvider = NotifierProvider.autoDispose
+    .family<ThemeEntries, CursorState<ThemeEntry>, (String, String)>(ThemeEntries.new);
+
+class ThemeEntries extends CursorController<ThemeEntry> {
+  ThemeEntries(this.arg);
+  final (String, String) arg;
+  @override
+  String get path => '/themes/${arg.$1}/entries';
+  @override
+  Map<String, dynamic> get query => {'sort': arg.$2};
+  @override
+  ThemeEntry parse(Map<String, dynamic> j) => ThemeEntry.fromJson(j);
+  @override
+  String idOf(ThemeEntry item) => item.id;
+}
+
+final themeWinsProvider = FutureProvider.autoDispose.family<List<ThemeWin>, String>((ref, username) async {
+  final r = await ref.read(apiProvider).get<List<dynamic>>('/users/$username/theme-wins');
+  return r.map((e) => ThemeWin.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+// ---- Eleştiri
+
+final critiquesProvider = AsyncNotifierProvider.autoDispose
+    .family<CritiquesController, CritiqueList, String>(CritiquesController.new);
+
+class CritiquesController extends AsyncNotifier<CritiqueList> {
+  CritiquesController(this.photoId);
+  final String photoId;
+
+  @override
+  Future<CritiqueList> build() async =>
+      CritiqueList.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/photos/$photoId/critiques'));
+
+  /// "Faydalı" işareti; iyimser, hata olursa geri alınır.
+  Future<void> toggleHelpful(Critique c) async {
+    final before = state.asData?.value;
+    if (before == null) return;
+    final on = !c.helpfulByMe;
+    state = AsyncData(before.withItems([for (final x in before.items) x.id == c.id ? x.withHelpful(on) : x]));
+    try {
+      final api = ref.read(apiProvider);
+      on ? await api.post<dynamic>('/critiques/${c.id}/helpful') : await api.delete<dynamic>('/critiques/${c.id}/helpful');
+    } catch (e) {
+      if (ref.mounted) state = AsyncData(before);
+      rethrow;
+    }
+  }
+
+  Future<void> save(Map<String, dynamic> body) async {
+    await ref.read(apiProvider).put<dynamic>('/photos/$photoId/critiques', body);
+    _changed();
+  }
+
+  Future<void> deleteMine() async {
+    await ref.read(apiProvider).delete<dynamic>('/photos/$photoId/critiques/me');
+    _changed();
+  }
+
+  Future<void> remove(Critique c) async {
+    await ref.read(apiProvider).delete<dynamic>('/critiques/${c.id}');
+    _changed();
+  }
+
+  void _changed() {
+    ref.invalidateSelf();
+    ref.invalidate(photoProvider(photoId));
+  }
+}
+
+// ---- Koleksiyonlar
+
+final userCollectionsProvider = FutureProvider.autoDispose.family<List<CollectionCard>, String>((ref, username) async {
+  final r = await ref.read(apiProvider).get<List<dynamic>>('/users/$username/collections');
+  return r.map((e) => CollectionCard.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+/// Kendi koleksiyonlarım; fotoğraf verilirse her biri için "bu kare içinde mi".
+final myCollectionsProvider = FutureProvider.autoDispose.family<List<CollectionCard>, String?>((ref, photoId) async {
+  final r = await ref.read(apiProvider).get<List<dynamic>>('/me/collections', query: {'photo_id': ?photoId});
+  return r.map((e) => CollectionCard.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+final collectionProvider = FutureProvider.autoDispose.family<PhotoCollection, String>((ref, id) async {
+  return PhotoCollection.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/collections/$id'));
+});
+
+// ---- Topluluk etkinlikleri
+
+final communityEventsProvider = FutureProvider.autoDispose
+    .family<({List<EventCard> upcoming, List<EventCard> past}), String>((ref, slug) async {
+      final r = await ref.read(apiProvider).get<Map<String, dynamic>>('/communities/$slug/events');
+      List<EventCard> list(String k) =>
+          ((r[k] as List?) ?? const []).map((e) => EventCard.fromJson(e as Map<String, dynamic>)).toList();
+      return (upcoming: list('upcoming'), past: list('past'));
+    });
+
+final eventProvider = FutureProvider.autoDispose.family<CommunityEvent, String>((ref, id) async {
+  return CommunityEvent.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/events/$id'));
+});
+
+final eventAttendeesProvider = FutureProvider.autoDispose.family<List<UserCard>, String>((ref, id) async {
+  final r = await ref.read(apiProvider).get<List<dynamic>>('/events/$id/attendees');
+  return r.map((e) => UserCard.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+// ---- Çekim planları
+
+/// Argüman: upcoming | past
+final plansProvider = FutureProvider.autoDispose.family<List<ShootPlan>, String>((ref, scope) async {
+  final r = await ref.read(apiProvider).get<Map<String, dynamic>>('/me/plans', query: {'scope': scope, 'limit': 100});
+  return (r['items'] as List).map((e) => ShootPlan.fromJson(e as Map<String, dynamic>)).toList();
+});
+
+final planProvider = FutureProvider.autoDispose.family<ShootPlan, String>((ref, id) async {
+  return ShootPlan.fromJson(await ref.read(apiProvider).get<Map<String, dynamic>>('/me/plans/$id'));
+});
+
+// ---- Ekipman keşfi
+
+/// Argüman: (kamera, lens) — biri dolu.
+final gearStatsProvider = FutureProvider.autoDispose.family<GearStats, (String?, String?)>((ref, arg) async {
+  final (camera, lens) = arg;
+  return GearStats.fromJson(
+    await ref.read(apiProvider).get<Map<String, dynamic>>('/gear/stats', query: {'camera': ?camera, 'lens': ?lens}),
+  );
+});
+
+// ---- Hava (Open-Meteo, doğrudan; anahtarsız)
+
+/// Argüman: (enlem, boylam). Çevrimdışı ya da hata: null (ekranlar "tahmin yok" gösterir).
+final forecastProvider = FutureProvider.autoDispose.family<Forecast?, (double, double)>((ref, arg) async {
+  try {
+    return await fetchForecast(arg.$1, arg.$2);
+  } catch (_) {
+    return null;
+  }
+});

@@ -256,16 +256,19 @@ class _List extends ConsumerWidget {
 
 /// Sohbet ekranı. [conversationId] yoksa [username] ile yeni sohbet: ilk mesaj gönderilince oluşturulur.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, this.conversationId, this.username});
+  const ChatScreen({super.key, this.conversationId, this.username, this.initialText});
   final String? conversationId;
   final String? username;
+
+  /// Yazma kutusuna önceden konan metin (ör. "Lisans iste").
+  final String? initialText;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  final _text = TextEditingController();
+  late final _text = TextEditingController(text: widget.initialText);
   final _scroll = ScrollController();
   bool _sending = false;
   bool _uploading = false;

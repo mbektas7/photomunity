@@ -9,6 +9,7 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../state/providers.dart';
+import 'event_screens.dart';
 import '../widgets/common.dart';
 import '../widgets/community_widgets.dart';
 import '../widgets/photo_widgets.dart';
@@ -185,7 +186,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     final t = L10n.of(context);
     final p = context.palette;
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: NestedScrollView(
         headerSliverBuilder: (context, _) => [
           SliverAppBar(
@@ -287,6 +288,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 tabs: [
                   Tab(text: t('community.tab_feed')),
                   Tab(text: t('community.tab_contests')),
+                  Tab(text: t('community.tab_events')),
                   Tab(text: t('community.tab_members')),
                 ],
               ),
@@ -294,7 +296,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             ),
           ),
         ],
-        body: TabBarView(children: [_feed(c), _contests(c), _members(c)]),
+        body: TabBarView(children: [_feed(c), _contests(c), CommunityEventsTab(c: c), _members(c)]),
       ),
     );
   }
