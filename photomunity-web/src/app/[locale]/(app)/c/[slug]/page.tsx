@@ -17,6 +17,7 @@ import { countryName } from "@/lib/format";
 import { useLoadMore, useMe } from "@/lib/hooks";
 import { relativeTime } from "@/lib/relative-time";
 import type { Community, CommunityPost, ContestCard, Member, NewsImage } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 const TABS = ["feed", "contests", "events", "members"] as const;
 
@@ -65,7 +66,7 @@ function CommunityView() {
         <div className="flex flex-wrap items-start gap-5">
           <CommunityLogo name={c.name} url={c.logo_url} size={84} />
           <div className="min-w-0 flex-1">
-            <h1 className="text-[clamp(1.8rem,4vw,2.8rem)] font-bold leading-[1.02] tracking-[-0.04em]">{c.name}</h1>
+            <h1 className="flex items-center gap-3 text-[clamp(1.8rem,4vw,2.8rem)] font-bold leading-[1.02] tracking-[-0.04em]">{c.name} <HowItWorks module="communities" /></h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-ink-muted">
               {place && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {place}</span>}
               <span className="tnum">{t("members_count", { count: c.member_count })}</span>

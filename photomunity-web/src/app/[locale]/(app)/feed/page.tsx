@@ -17,6 +17,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { useLoadMore, useMe, usePhotoPages } from "@/lib/hooks";
 import type { CommunityCard, ContestCard } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 /** Açık (katılım) ve oylamadaki yarışmalar; en yakın bitişe göre. */
 function useLiveContests() {
@@ -96,6 +97,7 @@ export default function FeedPage() {
       <Sidebar />
       <div className="flex min-w-0 max-w-[660px] flex-[999_1_560px] flex-col gap-[18px]">
         <h1 className="sr-only">{t("title")}</h1>
+        <div className="-mb-2 flex justify-end"><HowItWorks module="feed" /></div>
         <Stories contests={contests} />
         {me && !me.onboarding_done && <ProfileCompleteCard me={me} />}
         <HomeBanner />

@@ -9,6 +9,7 @@ import { buttonClass } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { compassPoint, planNight } from "@/lib/astro";
 import { type MoonDay, moonAgeDays, moonMonth, moonPhaseKey, nextPhase, planDay } from "@/lib/sky";
+import { HowItWorks } from "@/components/intro";
 
 function DayDetail({ day, lat, lng, onClose }: { day: MoonDay; lat: number; lng: number; onClose: () => void }) {
   const t = useTranslations("sky");
@@ -132,7 +133,7 @@ export default function MoonCalendarPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-8 sm:px-6 sm:pt-12">
       <Link href="/sky" className="text-sm text-ink-muted hover:text-ink">← {t("title")}</Link>
-      <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("moon.title")}</h1>
+      <h1 className="mt-3 flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("moon.title")} <HowItWorks module="moon" /></h1>
       <p className="mt-3 max-w-[62ch] text-ink-muted">{t("moon.lead")}</p>
       {mounted ? <Calendar /> : <div className="mt-10 h-[520px] rounded-card bg-surface" />}
       <p className="mt-6 text-xs text-ink-muted">{t("accuracy")}</p>

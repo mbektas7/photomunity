@@ -439,6 +439,28 @@ export type Plan = {
   last_cloud_cover: number | null;
   weather_checked_at: string | null;
   status: "upcoming" | "past";
+  /** Takip edenlerle paylaşıldı mı (eski API yanıtlarında olmayabilir) */
+  shared?: boolean;
+  join_count?: number;
+  /** En fazla 8 katılımcı */
+  joiners?: UserCard[];
+};
+
+/** Paylaşılan plan: sahibi ve katılımcılarıyla (GET /plans/shared, /plans/{id}). */
+export type SharedPlan = {
+  id: string;
+  kind: PlanKind;
+  title: string | null;
+  latitude: number;
+  longitude: number;
+  place_name: string | null;
+  target_at: string;
+  notes: string | null;
+  owner: UserCard;
+  join_count: number;
+  joined: boolean;
+  joiners: UserCard[];
+  status: "upcoming" | "past";
 };
 
 export type GearStats = {
@@ -447,6 +469,8 @@ export type GearStats = {
   photo_count: number;
   photographer_count: number;
   top_photographers: UserCard[];
+  /** En sık kullanılan etiketler (eski API yanıtlarında olmayabilir) */
+  top_tags?: { tag: string; count: number }[];
   common_settings: {
     median_shutter_seconds: number | null;
     median_shutter_display: string | null;

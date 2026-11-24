@@ -10,25 +10,35 @@ const DARK = process.env.NEXT_PUBLIC_MAP_STYLE_DARK || "https://tiles.openfreema
 /** user: hareket kullanıcıdan mı geldi (sürükleme, kaydırma), yoksa koddan mı (ilk yükleme, flyTo). */
 export type View = { bbox: string; zoom: number; lat: number; lng: number; user?: boolean };
 
+/** Taban haritanın üstüne çizilen yarı saydam raster katman (ör. gece ışıkları). */
+export type RasterOverlay = { id: string; tiles: string[]; maxzoom: number; attribution: string; opacity: number };
+
 export type MarkerSpec = { key: string; lat: number; lng: number; element: () => HTMLElement; onClick?: () => void };
 
 /**
  * İnce bir MapLibre sarmalayıcısı. İşaretçiler HTML öğesidir (avatar, küme rozeti, küçük resim);
  * kümeleme sunucuda yapıldığı için harita yalnızca gelenleri çizer.
  */
-export function MapView({ initial, markers, onView, flyTo, noRotate }: {
+export function MapView({ initial, markers, onView, flyTo, noRotate, overlay, onMapClick }: {
   initial: { lat: number; lng: number; zoom: number };
   markers: MarkerSpec[];
   onView: (v: View) => void;
   flyTo?: { lat: number; lng: number; zoom: number; seq: number } | null;
   /** Kuzey hep yukarıda kalsın (yön çizgileri harita üstüne çizildiğinde). */
   noRotate?: boolean;
+  overlay?: RasterOverlay | null;
+  /** Haritada boş bir yere dokunulunca */
+  onMapClick?: (lat: number, lng: number) => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
   const live = useRef(new Map<string, Marker>());
   const onViewRef = useRef(onView);
   onViewRef.current = onView;
+  const onClickRef = useRef(onMapClick);
+  onClickRef.current = onMapClick;
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
 
   useEffect(() => {
     if (!box.current) return;
@@ -71,6 +81,9 @@ export function MapView({ initial, markers, onView, flyTo, noRotate }: {
       });
     };
     m.on("moveend", emit);
+    m.on("click", (e) => onClickRef.current?.(e.lngLat.lat, ((((e.lngLat.lng + 180) % 360) + 360) % 360) - 180));
+    // Stil yüklenince (ve yeniden yüklenirse) katmanı ekle
+    m.on("style.load", () => applyOverlay(m, overlayRef.current));
     emit();
     return () => {
       live.current.forEach((mk) => mk.remove());
@@ -107,8 +120,34 @@ export function MapView({ initial, markers, onView, flyTo, noRotate }: {
   }, [markers]);
 
   useEffect(() => {
+    const m = map.current;
+    if (m && m.isStyleLoaded()) applyOverlay(m, overlay);
+  }, [overlay]);
+
+  useEffect(() => {
     if (flyTo && map.current) map.current.easeTo({ center: [flyTo.lng, flyTo.lat], zoom: flyTo.zoom, duration: 600 });
   }, [flyTo]);
 
   return <div ref={box} className="h-full w-full" />;
+}
+
+/** Raster katmanı ekler ya da yalnızca saydamlığını günceller; null gelirse kaldırır. */
+function applyOverlay(m: MlMap, o: RasterOverlay | null | undefined) {
+  const existing = m.getStyle()?.layers?.find((l) => l.id.startsWith("overlay:"));
+  if (existing && (!o || existing.id !== `overlay:${o.id}`)) {
+    m.removeLayer(existing.id);
+    if (m.getSource(existing.id)) m.removeSource(existing.id);
+  }
+  if (!o) return;
+  const id = `overlay:${o.id}`;
+  if (!m.getSource(id)) {
+    m.addSource(id, { type: "raster", tiles: o.tiles, tileSize: 256, maxzoom: o.maxzoom, attribution: o.attribution });
+  }
+  if (!m.getLayer(id)) {
+    // Yer adlarının altına çiz: ilk sembol katmanından önce
+    const firstSymbol = m.getStyle().layers?.find((l) => l.type === "symbol")?.id;
+    m.addLayer({ id, type: "raster", source: id, paint: { "raster-opacity": o.opacity, "raster-fade-duration": 0 } }, firstSymbol);
+  } else {
+    m.setPaintProperty(id, "raster-opacity", o.opacity);
+  }
 }

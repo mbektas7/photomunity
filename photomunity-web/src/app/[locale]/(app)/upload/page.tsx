@@ -12,6 +12,7 @@ import { useRouter } from "@/i18n/navigation";
 import { ApiError, api, uploadToStorage } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
 import type { CommentPolicy, License, Location } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 // Backend varsayılanlarıyla aynı; sunucu yine de kesin kontrolü yapar.
 const MIN_BYTES = 0;
@@ -127,7 +128,7 @@ export default function UploadPage() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-8 sm:px-6 sm:pt-12">
-      <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("heading")}</h1>
+      <h1 className="flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("heading")} <HowItWorks module="upload" /></h1>
       <p className="mt-3 max-w-[60ch] text-ink-muted">{t("requirements")}</p>
 
       <form onSubmit={submit} className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">

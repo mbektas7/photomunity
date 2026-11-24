@@ -22,6 +22,7 @@ function target(n: AppNotification) {
   if (n.type === "theme_won" && n.data.theme_id) return `/themes/${n.data.theme_id}`;
   if (n.type === "critique_new" && (n.data.photo_id || n.photo)) return `/p/${n.data.photo_id ?? n.photo!.id}#critique-title`;
   if (n.type.startsWith("event_") && n.data.event_id) return `/events/${n.data.event_id}`;
+  // plan_reminder, plan_weather, plan_join: /plans/{id} sahibine düzenlemeyi, katılımcıya paylaşılan görünümü açar
   if (n.type.startsWith("plan_") && n.data.plan_id) return `/plans/${n.data.plan_id}`;
   if (n.data.contest_id) return `/contests/${n.data.contest_id}`;
   if (n.data.community_slug) return `/c/${n.data.community_slug}`;

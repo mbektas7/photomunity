@@ -12,6 +12,7 @@ import { Button } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { compassPoint, moonIllumination, sunPosition } from "@/lib/astro";
 import { type DayPlan, type SkyEvent, moonPhaseKey, planDay } from "@/lib/sky";
+import { HowItWorks } from "@/components/intro";
 
 const MapView = dynamic(() => import("@/components/MapView").then((m) => m.MapView), { ssr: false });
 
@@ -232,7 +233,7 @@ export default function SunMoonPlannerPage() {
   return (
     <div className="mx-auto max-w-[1000px] px-4 pt-8 sm:px-6 sm:pt-12">
       <Link href="/sky" className="text-sm text-ink-muted hover:text-ink">← {t("title")}</Link>
-      <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("planner.title")}</h1>
+      <h1 className="mt-3 flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("planner.title")} <HowItWorks module="sunplanner" /></h1>
       <p className="mt-3 max-w-[62ch] text-ink-muted">{t("planner.lead")}</p>
       {mounted ? <Suspense><Planner /></Suspense> : <div className="mt-10 h-[600px] rounded-card bg-surface" />}
       <p className="mt-6 text-xs text-ink-muted">{t("accuracy")}</p>

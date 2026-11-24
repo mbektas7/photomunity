@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { CalendarDays, ChevronRight, ClipboardList, Moon, Smartphone, Sparkles, Sunrise } from "lucide-react";
+import { CalendarDays, ChevronRight, ClipboardList, Map as MapIcon, Moon, Smartphone, Sparkles, Sunrise } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { LocationLine, MoonShape, fmtTime, useMounted, useSkyLocation } from "@/components/sky";
@@ -15,6 +15,7 @@ import { useMe } from "@/lib/hooks";
 import { moonPhaseKey, upcomingShowers } from "@/lib/sky";
 import type { Page, Plan } from "@/lib/types";
 import { type Forecast, darkSpan, moonLight, nightWeather, scoreLabel, scoreVerdict, shootScore, shootingWindow } from "@/lib/weather";
+import { HowItWorks } from "@/components/intro";
 
 function Tonight({ lat, lng }: { lat: number; lng: number }) {
   const t = useTranslations("sky");
@@ -170,12 +171,13 @@ export default function SkyHub() {
     { href: "/sky/moon", icon: CalendarDays, title: t("hub.moon_title"), body: t("hub.moon_body") },
     { href: "/sky/planner", icon: Sunrise, title: t("hub.sun_title"), body: t("hub.sun_body") },
     { href: "/planner", icon: Moon, title: t("hub.night_title"), body: t("hub.night_body") },
+    { href: "/sky/dark", icon: MapIcon, title: t("hub.dark_title"), body: t("hub.dark_body") },
   ];
 
   return (
     <div className="mx-auto max-w-[1000px] px-4 pt-8 sm:px-6 sm:pt-12">
       <Link href="/guide" className="text-sm text-ink-muted hover:text-ink">← {t("back_guide")}</Link>
-      <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
+      <h1 className="mt-3 flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")} <HowItWorks module="sky" /></h1>
       <p className="mt-3 max-w-[62ch] text-ink-muted">{t("lead")}</p>
       <div className="mt-4"><LocationLine loc={loc} /></div>
 
@@ -185,7 +187,7 @@ export default function SkyHub() {
 
       <PlansEntry />
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {cards.map(({ href, icon: Icon, title, body }) => (
           <Link key={href} href={href} className="group rounded-card bg-surface px-5 py-5 transition-colors hover:bg-surface/80">
             <Icon className="h-6 w-6" strokeWidth={1.7} />

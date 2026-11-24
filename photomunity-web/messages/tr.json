@@ -1541,7 +1541,9 @@
       "night_body": "Samanyolu çekirdeği saat saat, pusulayla",
       "next_shower": "Sıradaki meteor yağmuru",
       "ar_title": "Night AR mobil uygulamada:",
-      "ar_body": "telefonunu gökyüzüne tut, Samanyolu'nu ve Ay'ı kamerada bul."
+      "ar_body": "telefonunu gökyüzüne tut, Samanyolu'nu ve Ay'ı kamerada bul.",
+      "dark_title": "Karanlık noktalar",
+      "dark_body": "Gece ışıkları haritasında ışık kirliliğinden uzak yerleri bul."
     },
     "moon": {
       "title": "Ay takvimi",
@@ -1619,6 +1621,18 @@
       "leonids": "Leonidler",
       "geminids": "Geminidler",
       "ursids": "Ursidler"
+    },
+    "dark": {
+      "title": "Karanlık noktalar",
+      "lead": "Uydudan görülen gece ışıkları, ışık kirliliğine iyi bir yaklaşım. Karanlık bölgeler gökyüzü çekimi için daha uygun.",
+      "opacity": "Katman saydamlığı",
+      "legend_title": "Gece ışıkları",
+      "legend_dark": "Karanlık = gökyüzü için iyi",
+      "legend_bright": "Parlak = ışık kirliliği yüksek",
+      "tap_hint": "Haritada bir noktaya dokun, oraya çekim planla.",
+      "plan_here": "Bu noktayı planla",
+      "clear": "Seçimi kaldır",
+      "note": "Kaynak: NASA GIBS / VIIRS Black Marble (2016 yıllık bileşim). Yaklaşık bir göstergedir; Bortle değeri değildir. Ayrıntı 8. yakınlaştırma seviyesinden sonra artmaz."
     }
   },
   "weather": {
@@ -1663,7 +1677,8 @@
     "edit": "Düzenle",
     "scope": {
       "upcoming": "Yaklaşan",
-      "past": "Geçmiş"
+      "past": "Geçmiş",
+      "friends": "Arkadaşların planları"
     },
     "empty_upcoming": "Henüz planlanmış bir çekimin yok.",
     "empty_past": "Geçmiş planın yok.",
@@ -1715,7 +1730,22 @@
     "save_changes": "Değişiklikleri kaydet",
     "not_found": "Plan bulunamadı.",
     "reminder_on": "Hatırlatma açık",
-    "weather_on": "Hava uyarısı açık"
+    "weather_on": "Hava uyarısı açık",
+    "share_toggle": "Arkadaşlarla paylaş",
+    "share_toggle_hint": "Takipçilerin bu planı görür ve katılabilir",
+    "shared_on": "Paylaşıldı",
+    "join_count": "{count, plural, =0 {Henüz katılan yok} other {# kişi katılıyor}}",
+    "joiners_title": "{count, plural, =0 {Katılanlar} other {Katılanlar · #}}",
+    "no_joiners": "Henüz kimse katılmadı. İlk sen ol!",
+    "join": "Katıl",
+    "leave": "Ayrıl",
+    "join_error": "İşlem yapılamadı.",
+    "joined_hint": "Katıldın: hatırlatma bildirimleri sana da gelir.",
+    "shared_by": "çekim planını paylaştı",
+    "shared_title": "Arkadaşının planı",
+    "past_plan": "Bu planın zamanı geçti.",
+    "empty_friends": "Takip ettiklerinin paylaştığı yaklaşan bir plan yok.",
+    "shared_error": "Arkadaşların planları yüklenemedi."
   },
   "redo": {
     "title": "Bu kareyi tekrar çek",
@@ -1953,6 +1983,218 @@
     },
     "empty": "Bu ekipmanla çekilmiş herkese açık fotoğraf yok.",
     "search": "Kamera ya da lens ara",
-    "search_empty": "Sonuç yok"
+    "search_empty": "Sonuç yok",
+    "tags_label": "Etikete göre süz",
+    "tags_all": "Tümü"
+  },
+  "intro": {
+    "how": "Nasıl çalışır",
+    "skip": "Geç",
+    "next": "İleri",
+    "start": "Başla",
+    "step_of": "Adım {n} / {total}",
+    "go_step": "{n}. adıma git",
+    "feed": {
+      "title": "Ana sayfa",
+      "s1_t": "Takip ettiklerinin kareleri",
+      "s1_b": "Takip ettiğin fotoğrafçıların yeni fotoğrafları burada, en yeniden eskiye.",
+      "s2_t": "Beğen ve yorum yap",
+      "s2_b": "Kalbe dokunarak beğen, fotoğrafı açıp yorum bırak. Fotoğrafçılar bunu çok sever.",
+      "s3_t": "Kendi kareni paylaş",
+      "s3_b": "Yükle düğmesiyle fotoğrafını ekle; takipçilerinin akışına düşsün."
+    },
+    "explore": {
+      "title": "Keşfet",
+      "s1_t": "Yeni kareler",
+      "s1_b": "Herkese açık profillerden en yeni fotoğraflar, kendi oranlarıyla. Canlı yarışmalar da burada.",
+      "s2_t": "Sekmeler",
+      "s2_b": "Senin için ve Eleştiri bekleyenler sekmeleri arasında geçiş yap; eleştiri bekleyen karelere puanlı geri bildirim ver.",
+      "s3_t": "Haftalık tema",
+      "s3_b": "Üstteki bantta bu haftanın teması var; dokunup katılabilirsin."
+    },
+    "map": {
+      "title": "Harita",
+      "s1_t": "Fotoğrafçılar ve fotoğraflar",
+      "s1_b": "Haritada yakınındaki fotoğrafçıları ya da çekildikleri yerdeki fotoğrafları gör.",
+      "s2_t": "Yakınlaş, keşfet",
+      "s2_b": "Yakınlaştıkça kümeler açılır; bir işarete dokunup profile ya da fotoğrafa git.",
+      "s3_t": "Konum gizliliği",
+      "s3_b": "Konumun yalnızca ayarlardan eklediysen görünür ve gizlilik için yaklaşık 5 km'ye yuvarlanır."
+    },
+    "communities": {
+      "title": "Topluluklar",
+      "s1_t": "Katıl",
+      "s1_b": "İlgi alanına uygun topluluklara katıl; özel olanlar için istek gönder.",
+      "s2_t": "Haberler",
+      "s2_b": "Topluluk gönderilerini oku, yorum yap, paylaşımlara katıl.",
+      "s3_t": "Etkinlikler",
+      "s3_b": "Foto yürüyüşleri ve buluşmalar topluluk sayfasında; katılıp yerini ayırt.",
+      "s4_t": "Yarışmalar",
+      "s4_b": "Topluluklar kendi yarışmalarını düzenler; karelerinle katıl."
+    },
+    "contests": {
+      "title": "Yarışmalar",
+      "s1_t": "Katılım",
+      "s1_b": "Yarışma açıkken karelerini gönder. Kurallar ve son tarih yarışma sayfasında.",
+      "s2_t": "Değerlendirme",
+      "s2_b": "Katılım bitince jüri puanlar ya da halk oylaması başlar; bazı yarışmalar ikisini birleştirir.",
+      "s3_t": "Sonuçlar",
+      "s3_b": "Kazananlar açıklanınca sıralama, ödüller ve jüri notları görünür.",
+      "s4_t": "Anonimlik",
+      "s4_b": "Değerlendirme sırasında fotoğrafçı adları gizlidir; herkes yalnızca kareye bakar."
+    },
+    "themes": {
+      "title": "Haftalık tema",
+      "s1_t": "Her hafta yeni tema",
+      "s1_b": "Her hafta yeni bir tema başlar; ilham al ve çekime çık.",
+      "s2_t": "Tek kare gönder",
+      "s2_b": "Her temaya kendi fotoğraflarından biriyle katılırsın; tema bitene kadar geri çekebilirsin.",
+      "s3_t": "Beğeniyle sıralama",
+      "s3_b": "Katılımlar beğeni sayısına göre sıralanır; diğerlerine de göz at.",
+      "s4_t": "Kazanana rozet",
+      "s4_b": "Hafta sonunda en çok beğenilen kare profilinde görünen bir rozet kazanır."
+    },
+    "critique": {
+      "title": "Eleştiri",
+      "s1_t": "Eleştiriye aç",
+      "s1_b": "Yüklerken ya da sonra fotoğrafını eleştiriye aç; merak ettiğin şeyi soru olarak ekle.",
+      "s2_t": "4 ölçüt",
+      "s2_b": "Eleştirmenler kompozisyon, ışık, odak/keskinlik ve düzenlemeyi ayrı ayrı puanlar; neyin işe yaradığını ve neyin geliştirilebileceğini yazar.",
+      "s3_t": "Faydalı işaretle",
+      "s3_b": "İşine yarayan eleştirileri faydalı olarak işaretle; iyi eleştirmenler öne çıksın."
+    },
+    "collections": {
+      "title": "Koleksiyonlar",
+      "s1_t": "Seri oluştur",
+      "s1_b": "Karelerini bir hikâye ya da proje etrafında koleksiyonda topla.",
+      "s2_t": "Sırala",
+      "s2_b": "Fotoğrafların sırasını değiştir; ilk kare kapak olur.",
+      "s3_t": "Paylaş",
+      "s3_b": "Koleksiyonun bağlantısını paylaş; herkes seriyi baştan sona görsün."
+    },
+    "events": {
+      "title": "Etkinlikler",
+      "s1_t": "Katıl",
+      "s1_b": "Foto yürüyüşüne ya da buluşmaya katıl; yaklaşınca hatırlatma alırsın.",
+      "s2_t": "Kontenjan",
+      "s2_b": "Bazı etkinliklerde yer sınırlı; dolduysa yer açılınca tekrar dene.",
+      "s3_t": "O gecenin gökyüzü",
+      "s3_b": "Etkinlik akşamsa Ay evresi ve gökyüzü bilgisi sayfada görünür."
+    },
+    "sky": {
+      "title": "Gökyüzü",
+      "s1_t": "Bu gece puanı",
+      "s1_b": "Bulut, nem, rüzgâr ve Ay ışığına göre bu gecenin çekim puanını gör.",
+      "s2_t": "5 gece tahmini",
+      "s2_b": "Önümüzdeki gecelerin bulut ve Ay durumunu karşılaştır, en iyisini seç.",
+      "s3_t": "Araçlar",
+      "s3_b": "Ay takvimi, Güneş ve Ay planlayıcı, gece hesapları, karanlık noktalar ve çekim planları burada."
+    },
+    "moon": {
+      "title": "Ay takvimi",
+      "s1_t": "Ay evreleri",
+      "s1_b": "Ayın her gününde Ay'ın evresini ve aydınlanma oranını gör.",
+      "s2_t": "Karanlık geceleri seç",
+      "s2_b": "Yeni Ay'a yakın geceler Samanyolu için en iyisi; bir güne dokunup ayrıntıya bak."
+    },
+    "sunplanner": {
+      "title": "Güneş ve Ay planlayıcı",
+      "s1_t": "Saatler ve yönler",
+      "s1_b": "Gün doğumu, altın ve mavi saat, Ay doğuşu saatlerini ve yönlerini gör.",
+      "s2_t": "Yer seç",
+      "s2_b": "Haritayı kaydırarak çekim yapacağın yeri seç; çizgiler oraya göre güncellenir.",
+      "s3_t": "Plana dönüştür",
+      "s3_b": "Uygun anı bulunca tek dokunuşla çekim planı oluştur."
+    },
+    "nightcalc": {
+      "title": "Gece hesapları",
+      "s1_t": "Yıldızlar nokta kalsın",
+      "s1_b": "NPF kuralıyla yıldız izi bırakmadan en uzun pozlamayı hesapla.",
+      "s2_t": "Alan derinliği ve ND",
+      "s2_b": "Hiperfokal mesafeyi ve ND filtreyle yeni pozlama süresini bul; sonuçlar anında güncellenir."
+    },
+    "plans": {
+      "title": "Çekim planları",
+      "s1_t": "Planla",
+      "s1_b": "Ne çekeceğini, nerede ve ne zaman seç; uygun saat önerilir.",
+      "s2_t": "Hatırlatma",
+      "s2_b": "Bir gün ve iki saat önce bildirim alırsın.",
+      "s3_t": "Hava uyarısı",
+      "s3_b": "Hedef saatte bulut artarsa seni uyarırız.",
+      "s4_t": "Arkadaşlarla paylaş",
+      "s4_b": "Planı paylaş; takipçilerin görüp katılabilir. Arkadaşların planları sekmesinden onlarınkine katıl."
+    },
+    "dark": {
+      "title": "Karanlık noktalar",
+      "s1_t": "Gece ışıkları",
+      "s1_b": "Uydudan görülen gece ışıkları haritada; parlak yerler ışık kirliliği demek.",
+      "s2_t": "Saydamlık",
+      "s2_b": "Kaydırıcıyla katmanı aç kapa; altındaki yolları ve yer adlarını gör.",
+      "s3_t": "Planla",
+      "s3_b": "Karanlık bir noktaya dokun, oraya çekim planı oluştur."
+    },
+    "messages": {
+      "title": "Mesajlar",
+      "s1_t": "İstekler",
+      "s1_b": "Biriyle ilk mesajlaşma bir istek olarak gider; karşı taraf kabul edince sohbet açılır. Sana gelenler İstekler'de.",
+      "s2_t": "Anında gönderim",
+      "s2_b": "Mesajlar anında iletilir; fotoğraf ve GIF de gönderebilirsin."
+    },
+    "gear": {
+      "title": "Ekipman keşfi",
+      "s1_t": "Kamera ya da lense dokun",
+      "s1_b": "Fotoğraf sayfasındaki ekipman adına dokun ya da burada ara.",
+      "s2_t": "Ayarlar",
+      "s2_b": "Bu ekipmanla en sık kullanılan pozlama, diyafram, ISO ve odak uzaklığını gör.",
+      "s3_t": "Etiketler",
+      "s3_b": "Etiket çiplerine dokunarak fotoğrafları konuya göre süz."
+    },
+    "upload": {
+      "title": "Yükleme",
+      "s1_t": "Kırpılmaz",
+      "s1_b": "Fotoğrafın olduğu gibi, kendi oranında gösterilir; hiçbir yerde kırpılmaz.",
+      "s2_t": "EXIF",
+      "s2_b": "Kamera, lens ve ayarlar dosyadan otomatik okunur; istersen gizleyebilirsin.",
+      "s3_t": "Konum isteğe bağlı",
+      "s3_b": "Konum eklemek senin seçimin; eklersen haritada görünür.",
+      "s4_t": "Lisans ve eleştiri",
+      "s4_b": "Lisansını seç, istersen fotoğrafı eleştiriye aç."
+    },
+    "profile": {
+      "title": "Profil",
+      "s1_t": "Koleksiyonlar",
+      "s1_b": "Karelerini seriler halinde koleksiyonlarda topla ve profilinde sergile.",
+      "s2_t": "Ödüller ve rozetler",
+      "s2_b": "Yarışma ve haftalık tema ödüllerin profilinde görünür.",
+      "s3_t": "Paylaş",
+      "s3_b": "Profil bağlantını paylaş; yeni takipçiler kazan."
+    },
+    "jury": {
+      "title": "Jüri değerlendirmesi",
+      "s1_t": "Puanla",
+      "s1_b": "Her kareye 1–10 arası puan ver; fotoğrafçı adı gizlidir.",
+      "s2_t": "Klavye kısayolları",
+      "s2_b": "1–9 ve 0 (=10) ile puan ver, ← → ile gezin. Kaydedilince bir sonrakine geçer.",
+      "s3_t": "Özel not",
+      "s3_b": "Kendine not bırak; yalnızca sen görürsün."
+    },
+    "voting": {
+      "title": "Halk oylaması",
+      "s1_t": "Yıldız ver",
+      "s1_b": "Her kareye 1–5 yıldız ver; istediğin zaman değiştirebilirsin.",
+      "s2_t": "Klavye kısayolları",
+      "s2_b": "1–5 tuşlarıyla puan ver, ← → ile kareler arasında gezin.",
+      "s3_t": "Adil oylama",
+      "s3_b": "Fotoğrafçılar gizli; kendi karene oy veremezsin."
+    },
+    "nightplanner": {
+      "title": "Gece planlayıcı",
+      "s1_t": "Saat saat gökyüzü",
+      "s1_b": "Seçtiğin gece ve yerde Samanyolu çekirdeğinin, Ay'ın ve Güneş'in hareketini gör.",
+      "s2_t": "Pusula ve yön",
+      "s2_b": "Çekirdeğin hangi yönde ve ne yükseklikte olacağını pusulada izle.",
+      "s3_t": "En iyi pencere",
+      "s3_b": "Çekirdek yeterince yüksek, gökyüzü karanlık ve Ay ufkun altındaysa en iyi pencere vurgulanır."
+    }
   }
 }

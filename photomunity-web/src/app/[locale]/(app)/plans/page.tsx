@@ -1,16 +1,17 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import { CalendarDays, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
-import { PlanRow } from "@/components/plans";
+import { useCallback, useEffect, useState } from "react";
+import { HowItWorks } from "@/components/intro";
+import { PlanRow, SharedPlanRow } from "@/components/plans";
 import { buttonClass } from "@/components/ui";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import { useMe } from "@/lib/hooks";
-import type { EventCard, Page, Plan } from "@/lib/types";
+import { useLoadMore, useMe } from "@/lib/hooks";
+import type { EventCard, Page, Plan, SharedPlan } from "@/lib/types";
 
 export default function PlansPage() {
   const t = useTranslations("plans");
@@ -18,19 +19,30 @@ export default function PlansPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: me, isLoading } = useMe();
-  const [scope, setScope] = useState<"upcoming" | "past">("upcoming");
+  const [scope, setScope] = useState<"upcoming" | "past" | "friends">("upcoming");
 
   useEffect(() => {
     if (!isLoading && !me) router.replace("/login");
   }, [me, isLoading, router]);
 
-  const q = useQuery({ queryKey: ["plans", scope], enabled: !!me, queryFn: () => api<Page<Plan>>(`me/plans?scope=${scope}`) });
+  const q = useQuery({ queryKey: ["plans", scope], enabled: !!me && scope !== "friends", queryFn: () => api<Page<Plan>>(`me/plans?scope=${scope}`) });
   const events = useQuery({ queryKey: ["events", "mine"], enabled: !!me, queryFn: () => api<EventCard[]>("me/events") });
   const remove = useMutation({
     mutationFn: (id: string) => api(`me/plans/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["plans"] }),
   });
-  const items = q.data?.items ?? [];
+  const shared = useInfiniteQuery({
+    queryKey: ["plans", "shared"],
+    enabled: !!me && scope === "friends",
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => api<Page<SharedPlan>>(pageParam ? `plans/shared?limit=20&cursor=${encodeURIComponent(pageParam)}` : "plans/shared?limit=20"),
+    getNextPageParam: (last) => last.next_cursor,
+  });
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = shared;
+  const loadMore = useCallback(() => !isFetchingNextPage && fetchNextPage(), [fetchNextPage, isFetchingNextPage]);
+  const sentinel = useLoadMore(loadMore, scope === "friends" && !!hasNextPage);
+  const sharedItems = shared.data?.pages.flatMap((p) => p.items) ?? [];
+  const items = scope === "friends" ? [] : q.data?.items ?? [];
   const myEvents = (events.data ?? []).filter((e) => e.status === "upcoming" || e.status === "ongoing");
 
   return (
@@ -38,7 +50,7 @@ export default function PlansPage() {
       <Link href="/sky" className="text-sm text-ink-muted hover:text-ink">← {t("back_sky")}</Link>
       <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
+          <h1 className="flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")} <HowItWorks module="plans" /></h1>
           <p className="mt-3 max-w-[56ch] text-ink-muted">{t("lead")}</p>
         </div>
         <Link href="/plans/new" className={buttonClass("primary")}>
@@ -47,7 +59,7 @@ export default function PlansPage() {
       </div>
 
       <div className="mt-6 flex gap-1 border-b border-line" role="tablist" aria-label={t("title")}>
-        {(["upcoming", "past"] as const).map((k) => (
+        {(["upcoming", "friends", "past"] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -61,7 +73,20 @@ export default function PlansPage() {
         ))}
       </div>
 
-      {q.isSuccess && items.length === 0 && (
+      {scope === "friends" && (
+        <>
+          {shared.isError && <p className="mt-6 rounded-card bg-surface px-6 py-12 text-ink-muted">{t("shared_error")}</p>}
+          {shared.isSuccess && sharedItems.length === 0 && (
+            <p className="mt-6 rounded-card bg-surface px-6 py-12 text-ink-muted">{t("empty_friends")}</p>
+          )}
+          <ul className="mt-6 flex flex-col gap-2">
+            {sharedItems.map((p) => <SharedPlanRow key={p.id} plan={p} />)}
+          </ul>
+          <div ref={sentinel} className="h-px" />
+        </>
+      )}
+
+      {scope !== "friends" && q.isSuccess && items.length === 0 && (
         <div className="mt-6 rounded-card bg-surface px-6 py-12">
           <p className="text-ink-muted">{scope === "upcoming" ? t("empty_upcoming") : t("empty_past")}</p>
           {scope === "upcoming" && (

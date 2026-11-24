@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { useLoadMore, useMe } from "@/lib/hooks";
 import type { Page, Theme, ThemeEntry, ThemeWin } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 export function useCurrentTheme() {
   return useQuery({
@@ -158,7 +159,7 @@ export function ThemeView({ theme, previous }: { theme: Theme; previous?: Theme 
     <div className="flex flex-col gap-6">
       <section className="grid gap-6 rounded-card bg-surface p-5 sm:rounded-[28px] sm:p-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">{t("weekly")} · {t("no_jury")}</p>
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">{t("weekly")} · {t("no_jury")} <HowItWorks module="themes" /></p>
           <p className="tnum text-sm text-ink-muted">{themeRange(theme, locale)}</p>
           <h1 className="text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[48px]">{theme.title}</h1>
           {theme.description && <p className="max-w-[62ch] whitespace-pre-line text-[16px] leading-[1.55]">{theme.description}</p>}

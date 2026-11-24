@@ -12,6 +12,7 @@ import { Link } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
 import type { Contest, Entry } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 const NOTE_MAX = 1000;
 
@@ -146,6 +147,7 @@ function Jury({ c, list }: { c: Contest; list: Entry[] }) {
           <h1 className="truncate text-[16px] font-bold sm:text-[17px]">{c.title}</h1>
           <p className="truncate text-caption text-white/60">{me ? t("subtitle_named", { name: me.display_name }) : t("subtitle")}</p>
         </div>
+        <HowItWorks module="jury" tone="dark" />
         <div className="hidden flex-1 justify-center xl:flex">
           <StageStepper status={c.status} tone="dark" />
         </div>

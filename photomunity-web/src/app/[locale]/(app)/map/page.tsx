@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import { SPECIALTIES, countryName, initials } from "@/lib/format";
 import { useMe } from "@/lib/hooks";
 import type { MapCluster, MapPhotographer, MapPhotoPoint, PhotoMapData, PhotographerMapData } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 const MapView = dynamic(() => import("@/components/MapView").then((m) => m.MapView), { ssr: false });
 
@@ -126,13 +127,16 @@ function MapScreen() {
       <MapView initial={initial} markers={markers} onView={setView} flyTo={flyTo} />
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 sm:left-4 sm:top-4">
-        <div className="pointer-events-auto flex rounded-full border border-ring-idle bg-surface p-1 shadow-float">
+        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="flex rounded-full border border-ring-idle bg-surface p-1 shadow-float">
           {(["photographers", "photos"] as const).map((k) => (
             <button key={k} type="button" onClick={() => { setLayer(k); setSelected(null); }} aria-pressed={layer === k}
               className={clsx("h-9 rounded-full px-4 text-sm font-medium", layer === k ? "bg-ink text-surface" : "text-ink-muted hover:text-ink")}>
               {t(`layer_${k}`)}
             </button>
           ))}
+        </div>
+        <HowItWorks module="map" className="!h-11 !w-11 border border-ring-idle !bg-surface shadow-float" />
         </div>
         {layer === "photographers" && (
           <select value={specialty} onChange={(e) => setSpecialty(e.target.value)} aria-label={t("specialty")}

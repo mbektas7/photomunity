@@ -11,6 +11,7 @@ import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
 import type { CommunityCard } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 export default function CommunitiesPage() {
   const t = useTranslations("communities");
@@ -27,7 +28,7 @@ export default function CommunitiesPage() {
     <div className="mx-auto max-w-[860px] px-4 pt-8 sm:px-6 sm:pt-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
+          <h1 className="flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")} <HowItWorks module="communities" /></h1>
           <p className="mt-3 max-w-[52ch] text-ink-muted">{t("lead")}</p>
         </div>
         {me && (

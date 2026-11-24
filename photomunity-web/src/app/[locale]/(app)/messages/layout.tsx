@@ -7,6 +7,7 @@ import { Suspense, useEffect } from "react";
 import { ConversationList, RequestsBanner, useMessageUnread } from "@/components/messages";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useMe } from "@/lib/hooks";
+import { HowItWorks } from "@/components/intro";
 
 /** İki panelli düzen: masaüstünde liste solda, sohbet sağda; mobilde ikisi ayrı ekran. */
 export default function MessagesLayout({ children }: { children: React.ReactNode }) {
@@ -35,7 +36,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div data-fullbleed className="mx-auto grid h-[calc(100dvh-4rem-4.5rem)] max-w-[1200px] gap-4 px-0 pb-3 md:h-[calc(100dvh-5rem)] lg:grid-cols-[360px_minmax(0,1fr)] lg:px-6">
       <aside className={clsx("flex min-h-0 flex-col overflow-hidden lg:rounded-card lg:bg-surface", !atRoot && "hidden lg:flex")}>
         <div className="px-4 pb-3 pt-6">
-          <h1 className="text-title">{t("title")}</h1>
+          <h1 className="flex items-center gap-3 text-title">{t("title")} <HowItWorks module="messages" /></h1>
           <div className="mt-4 flex gap-1">
             {(["inbox", "requests"] as const).map((f) => (
               <Link

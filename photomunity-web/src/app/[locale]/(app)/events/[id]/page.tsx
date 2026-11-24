@@ -20,6 +20,7 @@ import { useMe } from "@/lib/hooks";
 import { moonPhaseKey } from "@/lib/sky";
 import type { CommunityEvent, UserCard } from "@/lib/types";
 import { nightWeather, shootingWindow } from "@/lib/weather";
+import { HowItWorks } from "@/components/intro";
 
 const DAY = 86_400_000;
 
@@ -97,7 +98,7 @@ export default function EventPage() {
           <div className="flex items-start gap-4">
             <DateBlock iso={e.starts_at} dim={!open} />
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">{t("kicker")}</p>
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">{t("kicker")} <HowItWorks module="events" /></p>
               <h1 className="text-[30px] font-bold leading-tight tracking-[-0.03em] sm:text-[38px]">{e.title}</h1>
               <p className="tnum mt-1 text-ink-muted">{eventTimeRange(e, locale)}</p>
             </div>

@@ -22,6 +22,7 @@ import { ApiError, api } from "@/lib/api";
 import { countryName } from "@/lib/format";
 import { useLoadMore, usePhotoPages } from "@/lib/hooks";
 import type { Equipment, Profile } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 const KIT_ORDER: Equipment["type"][] = ["body", "lens", "drone", "flash", "tripod", "filter", "other"];
 
@@ -76,6 +77,7 @@ export default function ProfilePage() {
             <h1 className="flex flex-wrap items-center gap-3 text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[44px]">
               {p.display_name}
               {p.is_pro && <ProBadge />}
+              {p.is_me && <HowItWorks module="profile" />}
             </h1>
             {!!p.theme_wins && <ThemeWinsBadge username={p.username} count={p.theme_wins} />}
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-ink-muted">

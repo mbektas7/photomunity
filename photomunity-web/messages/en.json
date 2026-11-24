@@ -1541,7 +1541,9 @@
       "night_body": "The Milky Way core hour by hour, with a compass",
       "next_shower": "Next meteor shower",
       "ar_title": "Night AR is in the mobile app:",
-      "ar_body": "point your phone at the sky to find the Milky Way and the moon in the camera."
+      "ar_body": "point your phone at the sky to find the Milky Way and the moon in the camera.",
+      "dark_title": "Dark spots",
+      "dark_body": "Find places away from light pollution on a night-lights map."
     },
     "moon": {
       "title": "Moon calendar",
@@ -1619,6 +1621,18 @@
       "leonids": "Leonids",
       "geminids": "Geminids",
       "ursids": "Ursids"
+    },
+    "dark": {
+      "title": "Dark spots",
+      "lead": "Night lights seen from space are a good proxy for light pollution. Dark areas are better for night-sky photography.",
+      "opacity": "Layer opacity",
+      "legend_title": "Night lights",
+      "legend_dark": "Dark = good for the sky",
+      "legend_bright": "Bright = heavy light pollution",
+      "tap_hint": "Tap a spot on the map to plan a shoot there.",
+      "plan_here": "Plan this spot",
+      "clear": "Clear selection",
+      "note": "Source: NASA GIBS / VIIRS Black Marble (2016 annual composite). An approximation, not a Bortle value. Detail doesn't increase beyond zoom level 8."
     }
   },
   "weather": {
@@ -1663,7 +1677,8 @@
     "edit": "Edit",
     "scope": {
       "upcoming": "Upcoming",
-      "past": "Past"
+      "past": "Past",
+      "friends": "Friends' plans"
     },
     "empty_upcoming": "You haven't planned any shoots yet.",
     "empty_past": "No past plans.",
@@ -1715,7 +1730,22 @@
     "save_changes": "Save changes",
     "not_found": "Plan not found.",
     "reminder_on": "Reminder on",
-    "weather_on": "Weather alert on"
+    "weather_on": "Weather alert on",
+    "share_toggle": "Share with friends",
+    "share_toggle_hint": "Your followers can see this plan and join",
+    "shared_on": "Shared",
+    "join_count": "{count, plural, =0 {No one joined yet} one {# person joining} other {# people joining}}",
+    "joiners_title": "{count, plural, =0 {Joining} other {Joining · #}}",
+    "no_joiners": "No one has joined yet. Be the first!",
+    "join": "Join",
+    "leave": "Leave",
+    "join_error": "Something went wrong.",
+    "joined_hint": "You're in: you'll get the reminders too.",
+    "shared_by": "shared a shooting plan",
+    "shared_title": "Friend's plan",
+    "past_plan": "This plan is in the past.",
+    "empty_friends": "No upcoming plans shared by people you follow.",
+    "shared_error": "Couldn't load friends' plans."
   },
   "redo": {
     "title": "Reshoot this frame",
@@ -1953,6 +1983,218 @@
     },
     "empty": "No public photos taken with this gear.",
     "search": "Search camera or lens",
-    "search_empty": "No results"
+    "search_empty": "No results",
+    "tags_label": "Filter by tag",
+    "tags_all": "All"
+  },
+  "intro": {
+    "how": "How it works",
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Get started",
+    "step_of": "Step {n} of {total}",
+    "go_step": "Go to step {n}",
+    "feed": {
+      "title": "Home",
+      "s1_t": "Photos from people you follow",
+      "s1_b": "New photos from photographers you follow show up here, newest first.",
+      "s2_t": "Like and comment",
+      "s2_b": "Tap the heart to like, open a photo to leave a comment. Photographers love it.",
+      "s3_t": "Share your own",
+      "s3_b": "Use the upload button to add a photo; it lands in your followers' feeds."
+    },
+    "explore": {
+      "title": "Explore",
+      "s1_t": "Fresh photos",
+      "s1_b": "The latest photos from public profiles, in their own aspect ratios. Live contests are here too.",
+      "s2_t": "Tabs",
+      "s2_b": "Switch between the For you and Awaiting critique tabs; give scored feedback to photos waiting for critique.",
+      "s3_t": "Weekly theme",
+      "s3_b": "The banner at the top shows this week's theme; tap it to join."
+    },
+    "map": {
+      "title": "Map",
+      "s1_t": "Photographers and photos",
+      "s1_b": "See photographers near you, or photos at the places they were taken.",
+      "s2_t": "Zoom to explore",
+      "s2_b": "Clusters open as you zoom in; tap a marker to open a profile or photo.",
+      "s3_t": "Location privacy",
+      "s3_b": "Your location appears only if you add it in settings, and it's rounded to about 5 km for privacy."
+    },
+    "communities": {
+      "title": "Communities",
+      "s1_t": "Join",
+      "s1_b": "Join communities that fit your interests; request access to private ones.",
+      "s2_t": "News",
+      "s2_b": "Read community posts, comment and join the conversation.",
+      "s3_t": "Events",
+      "s3_b": "Photo walks and meetups live on the community page; join to save your spot.",
+      "s4_t": "Contests",
+      "s4_b": "Communities run their own contests; enter with your photos."
+    },
+    "contests": {
+      "title": "Contests",
+      "s1_t": "Enter",
+      "s1_b": "Submit your photos while the contest is open. Rules and deadline are on the contest page.",
+      "s2_t": "Judging",
+      "s2_b": "After entries close, a jury scores or public voting begins; some contests combine both.",
+      "s3_t": "Results",
+      "s3_b": "When winners are announced you'll see rankings, prizes and jury notes.",
+      "s4_t": "Anonymity",
+      "s4_b": "Photographer names are hidden during judging; everyone looks only at the photo."
+    },
+    "themes": {
+      "title": "Weekly theme",
+      "s1_t": "A new theme every week",
+      "s1_b": "A new theme starts every week; get inspired and go shoot.",
+      "s2_t": "Submit one photo",
+      "s2_b": "Enter each theme with one of your own photos; you can withdraw it until the theme ends.",
+      "s3_t": "Ranked by likes",
+      "s3_b": "Entries are ranked by likes; browse the others too.",
+      "s4_t": "A badge for the winner",
+      "s4_b": "At the end of the week the most-liked photo earns a badge shown on the profile."
+    },
+    "critique": {
+      "title": "Critique",
+      "s1_t": "Open for critique",
+      "s1_b": "Open your photo for critique when uploading or later; add a question about what you're curious about.",
+      "s2_t": "4 criteria",
+      "s2_b": "Critics score composition, light, focus/sharpness and editing separately, and note what works and what could improve.",
+      "s3_t": "Mark helpful",
+      "s3_b": "Mark critiques that helped you; good critics rise to the top."
+    },
+    "collections": {
+      "title": "Collections",
+      "s1_t": "Build a series",
+      "s1_b": "Group your photos around a story or project in a collection.",
+      "s2_t": "Reorder",
+      "s2_b": "Change the order of photos; the first one becomes the cover.",
+      "s3_t": "Share",
+      "s3_b": "Share your collection's link so anyone can see the whole series."
+    },
+    "events": {
+      "title": "Events",
+      "s1_t": "Join",
+      "s1_b": "Join a photo walk or meetup; you'll get a reminder as it approaches.",
+      "s2_t": "Capacity",
+      "s2_b": "Some events have limited spots; if it's full, check back when a spot opens.",
+      "s3_t": "That night's sky",
+      "s3_b": "For evening events the moon phase and sky info are shown on the page."
+    },
+    "sky": {
+      "title": "Sky",
+      "s1_t": "Tonight's score",
+      "s1_b": "See tonight's shooting score based on clouds, humidity, wind and moonlight.",
+      "s2_t": "5-night forecast",
+      "s2_b": "Compare clouds and moon for the coming nights and pick the best one.",
+      "s3_t": "Tools",
+      "s3_b": "Moon calendar, sun & moon planner, night calculators, dark spots and shooting plans are all here."
+    },
+    "moon": {
+      "title": "Moon calendar",
+      "s1_t": "Moon phases",
+      "s1_b": "See the moon's phase and illumination for every day of the month.",
+      "s2_t": "Pick dark nights",
+      "s2_b": "Nights near the new moon are best for the Milky Way; tap a day for details."
+    },
+    "sunplanner": {
+      "title": "Sun & moon planner",
+      "s1_t": "Times and directions",
+      "s1_b": "See sunrise, golden and blue hour and moonrise times with their directions.",
+      "s2_t": "Pick a place",
+      "s2_b": "Pan the map to your shooting spot; the lines update for that place.",
+      "s3_t": "Turn it into a plan",
+      "s3_b": "Found the right moment? Create a shooting plan in one tap."
+    },
+    "nightcalc": {
+      "title": "Night calculators",
+      "s1_t": "Keep stars sharp",
+      "s1_b": "Use the NPF rule to find the longest exposure without star trails.",
+      "s2_t": "Depth of field and ND",
+      "s2_b": "Find the hyperfocal distance and your new exposure time with an ND filter; results update instantly."
+    },
+    "plans": {
+      "title": "Shooting plans",
+      "s1_t": "Plan it",
+      "s1_b": "Choose what, where and when; we suggest a good time.",
+      "s2_t": "Reminders",
+      "s2_b": "You'll get a notification a day and two hours before.",
+      "s3_t": "Weather alert",
+      "s3_b": "We'll warn you if clouds build up at your target time.",
+      "s4_t": "Share with friends",
+      "s4_b": "Share a plan so followers can see and join it. Join theirs from the Friends' plans tab."
+    },
+    "dark": {
+      "title": "Dark spots",
+      "s1_t": "Night lights",
+      "s1_b": "Night lights seen from space are on the map; bright areas mean light pollution.",
+      "s2_t": "Opacity",
+      "s2_b": "Use the slider to fade the layer and see roads and place names underneath.",
+      "s3_t": "Plan it",
+      "s3_b": "Tap a dark spot to create a shooting plan there."
+    },
+    "messages": {
+      "title": "Messages",
+      "s1_t": "Requests",
+      "s1_b": "A first message goes as a request; the chat opens once it's accepted. Requests sent to you are under Requests.",
+      "s2_t": "Instant delivery",
+      "s2_b": "Messages arrive instantly; you can send photos and GIFs too."
+    },
+    "gear": {
+      "title": "Gear explorer",
+      "s1_t": "Tap a camera or lens",
+      "s1_b": "Tap the gear name on a photo page, or search here.",
+      "s2_t": "Settings",
+      "s2_b": "See the shutter speed, aperture, ISO and focal length most used with this gear.",
+      "s3_t": "Tags",
+      "s3_b": "Tap tag chips to filter photos by subject."
+    },
+    "upload": {
+      "title": "Upload",
+      "s1_t": "Never cropped",
+      "s1_b": "Your photo is shown as is, in its own aspect ratio; never cropped anywhere.",
+      "s2_t": "EXIF",
+      "s2_b": "Camera, lens and settings are read from the file automatically; you can hide them.",
+      "s3_t": "Location is optional",
+      "s3_b": "Adding a location is up to you; if you do, it appears on the map.",
+      "s4_t": "License and critique",
+      "s4_b": "Choose your license and, if you like, open the photo for critique."
+    },
+    "profile": {
+      "title": "Profile",
+      "s1_t": "Collections",
+      "s1_b": "Group your photos into series and showcase them on your profile.",
+      "s2_t": "Awards and badges",
+      "s2_b": "Contest and weekly theme awards appear on your profile.",
+      "s3_t": "Share",
+      "s3_b": "Share your profile link and gain new followers."
+    },
+    "jury": {
+      "title": "Jury scoring",
+      "s1_t": "Score",
+      "s1_b": "Give each photo a score from 1 to 10; photographer names are hidden.",
+      "s2_t": "Keyboard shortcuts",
+      "s2_b": "Score with 1–9 and 0 (=10), move with ← →. It advances once saved.",
+      "s3_t": "Private note",
+      "s3_b": "Leave yourself a note; only you can see it."
+    },
+    "voting": {
+      "title": "Public voting",
+      "s1_t": "Give stars",
+      "s1_b": "Rate each photo 1–5 stars; you can change it anytime.",
+      "s2_t": "Keyboard shortcuts",
+      "s2_b": "Press 1–5 to rate, ← → to move between photos.",
+      "s3_t": "Fair voting",
+      "s3_b": "Photographers are hidden, and you can't vote for your own photo."
+    },
+    "nightplanner": {
+      "title": "Night planner",
+      "s1_t": "The sky hour by hour",
+      "s1_b": "See how the Milky Way core, the moon and the sun move on the night and place you pick.",
+      "s2_t": "Compass and direction",
+      "s2_b": "Follow on the compass which direction the core will be and how high.",
+      "s3_t": "Best window",
+      "s3_b": "When the core is high enough, the sky is dark and the moon is down, the best window is highlighted."
+    }
   }
 }

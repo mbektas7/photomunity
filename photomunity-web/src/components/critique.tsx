@@ -12,6 +12,7 @@ import { ApiError, api } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
 import { relativeTime } from "@/lib/relative-time";
 import { CRITERIA, type Critique, type CritiqueList, type Criterion, type PhotoDetail } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 /** Sahibin ayarı: eleştiriye açık + soru (yükleme ve düzenleme formlarında). */
 export function CritiqueFields({ requested, question, onChange }: { requested: boolean; question: string; onChange: (v: { requested: boolean; question: string }) => void }) {
@@ -207,6 +208,7 @@ export function CritiqueSection({ photo }: { photo: PhotoDetail }) {
           <MessageSquareQuote className="h-5 w-5" strokeWidth={1.8} aria-hidden /> {t("title")}
           {d && <span className="tnum text-[14px] font-semibold text-ink-muted">{d.count}</span>}
         </h2>
+        <HowItWorks module="critique" auto={false} />
         {photo.critique_requested && (
           <span className="ml-auto rounded-full bg-accent-tint px-2.5 py-1 text-xs font-bold text-accent-text">{t("open_badge")}</span>
         )}

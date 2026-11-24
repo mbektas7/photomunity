@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ContestRow } from "@/components/community";
 import { api } from "@/lib/api";
 import type { ContestCard } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 const TABS = ["open", "judging", "finished"] as const;
 
@@ -16,7 +17,7 @@ export default function ContestsPage() {
   const q = useQuery({ queryKey: ["contests", tab], queryFn: () => api<ContestCard[]>(`contests?status=${tab}`) });
   return (
     <div className="mx-auto max-w-[860px] px-4 pt-8 sm:px-6 sm:pt-12">
-      <h1 className="text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")}</h1>
+      <h1 className="flex items-center gap-3 text-[clamp(2rem,4.5vw,3rem)] font-bold leading-none tracking-[-0.04em]">{t("title")} <HowItWorks module="contests" /></h1>
       <p className="mt-3 max-w-[56ch] text-ink-muted">{t("lead")}</p>
       <div className="mt-8 flex gap-1 border-b border-line">
         {TABS.map((k) => (

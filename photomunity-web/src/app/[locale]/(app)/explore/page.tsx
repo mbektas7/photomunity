@@ -15,6 +15,7 @@ import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { useLoadMore, usePhotoPages } from "@/lib/hooks";
 import type { ContestCard } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 export default function ExplorePage() {
   return (
@@ -52,7 +53,7 @@ function Explore() {
     <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4 pb-6 pt-2 sm:pt-4">
         <div>
-          <h1 className="text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[44px]">{t("title")}</h1>
+          <h1 className="flex items-center gap-3 text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[44px]">{t("title")} <HowItWorks module="explore" auto={tab !== "critique"} /></h1>
           <p className="mt-3 max-w-[56ch] text-ink-muted">{t("lead")}</p>
         </div>
         <Link href="/map" className={buttonClass("secondary", "bg-surface hover:bg-surface-2")}>
@@ -94,7 +95,9 @@ function Explore() {
             </Link>
           ))}
         </nav>
-        {tab === "critique" && <p className="mb-4 max-w-[60ch] text-sm text-ink-muted">{t("critique_lead")}</p>}
+        {tab === "critique" && (
+          <p className="mb-4 flex max-w-[60ch] items-start gap-2 text-sm text-ink-muted">{t("critique_lead")} <HowItWorks module="critique" /></p>
+        )}
         {q.isSuccess && items.length === 0 ? <p className="py-16 text-ink-muted">{tab === "critique" ? t("critique_empty") : t("empty")}</p> : <JustifiedWall photos={items} />}
       </section>
       <div className="mt-6"><AdSlot kind="banner" /></div>

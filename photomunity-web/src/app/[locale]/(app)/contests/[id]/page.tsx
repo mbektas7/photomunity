@@ -18,6 +18,7 @@ import { ApiError, api } from "@/lib/api";
 import { formatDateTime } from "@/lib/dates";
 import { useMe } from "@/lib/hooks";
 import type { Contest, Entry, ResultRow } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 const voterKey = (id: string) => `fg_voter_${id}`;
 const voterEmailKey = (id: string) => `fg_voter_email_${id}`;
@@ -141,7 +142,7 @@ function ContestOverview({ c }: { c: Contest }) {
               <span className="flex-1" />
               <SharePill url={c.share_url} title={c.title} />
             </div>
-            <h1 className="text-[34px] font-bold leading-[1] tracking-[-0.04em] sm:text-[44px]">{c.title}</h1>
+            <h1 className="flex items-center gap-3 text-[34px] font-bold leading-[1] tracking-[-0.04em] sm:text-[44px]">{c.title} <HowItWorks module="contests" /></h1>
             <p className="max-w-[64ch] whitespace-pre-line text-[16px] leading-[1.55] text-ink-muted">{c.description}</p>
             <ContestTimeline c={c} />
             <AdminNotice c={c} />
@@ -413,7 +414,7 @@ function PublicVote({ c }: { c: Contest }) {
             <span className="rounded-pill bg-accent-tint px-[9px] py-1 text-[12px] font-bold text-accent-text">{t("mode.public")}</span>
             <span className="tnum rounded-pill bg-surface px-[9px] py-1 text-[12px] font-bold text-ink-muted">{t("photos_count", { count: list.length || c.entry_count })}</span>
           </div>
-          <h1 className="text-[32px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[38px]">{c.title}</h1>
+          <h1 className="flex items-center gap-3 text-[32px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[38px]">{c.title} <HowItWorks module="voting" publicOk /></h1>
           <p className="mt-1.5 max-w-[72ch] text-[15px] text-ink-muted">{t("vote_lead")}</p>
         </div>
         <div className="flex items-end gap-3">

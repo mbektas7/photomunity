@@ -5,10 +5,11 @@ import clsx from "clsx";
 import { Aperture, Camera } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useDebounced } from "@/components/admin";
 import { Avatar } from "@/components/Avatar";
 import { formatAperture, formatFocal, formatShutter } from "@/components/ExifChip";
+import { HowItWorks } from "@/components/intro";
 import { JustifiedWall } from "@/components/JustifiedWall";
 import { Notice } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
@@ -32,11 +33,15 @@ function Gear() {
   const camera = params.get("camera")?.trim() || "";
   const lens = params.get("lens")?.trim() || "";
   const [sort, setSort] = useState<"recent" | "popular">("recent");
+  const [tag, setTag] = useState<string | null>(null);
   const filter = new URLSearchParams({ ...(camera ? { camera } : {}), ...(lens ? { lens } : {}) }).toString();
   const has = !!(camera || lens);
+  // Ekipman değişince etiket seçimi sıfırlanır
+  useEffect(() => setTag(null), [filter]);
+  const photoFilter = tag ? `${filter}&tag=${encodeURIComponent(tag)}` : filter;
 
   const stats = useQuery({ queryKey: ["gear", "stats", filter], enabled: has, queryFn: () => api<GearStats>(`gear/stats?${filter}`) });
-  const photos = usePhotoPages(["gear", "photos", filter, sort], `gear/photos?${filter}&sort=${sort}`, has, "cursor");
+  const photos = usePhotoPages(["gear", "photos", photoFilter, sort], `gear/photos?${photoFilter}&sort=${sort}`, has, "cursor");
   const { fetchNextPage, hasNextPage, isFetchingNextPage } = photos;
   const loadMore = useCallback(() => !isFetchingNextPage && fetchNextPage(), [fetchNextPage, isFetchingNextPage]);
   const sentinel = useLoadMore(loadMore, !!hasNextPage);
@@ -63,6 +68,7 @@ function Gear() {
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-semibold text-ink-muted">
             <Icon className="h-4 w-4" aria-hidden /> {lens ? t("lens") : camera ? t("camera") : t("title")}
+            <HowItWorks module="gear" />
           </p>
           <h1 className="mt-1 break-words text-[30px] font-bold leading-tight tracking-[-0.04em] sm:text-[44px]">{name || t("title")}</h1>
           {has && <p className="mt-2 text-ink-muted">{lens ? t("shot_with_lens") : t("shot_with_camera")}</p>}
@@ -120,6 +126,24 @@ function Gear() {
               </button>
             ))}
           </div>
+          {(s?.top_tags?.length ?? 0) > 0 && (
+            <div className="-mx-3 mb-4 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label={t("tags_label")}>
+              {[null, ...s!.top_tags!.map((x) => x.tag)].map((k) => (
+                <button
+                  key={k ?? "__all"}
+                  type="button"
+                  aria-pressed={tag === k}
+                  onClick={() => setTag(k)}
+                  className={clsx(
+                    "h-9 shrink-0 rounded-pill border px-3.5 text-[14px] font-medium",
+                    tag === k ? "border-ink bg-ink text-bg" : "border-line bg-surface hover:bg-surface-2",
+                  )}
+                >
+                  {k == null ? t("tags_all") : `#${k}`}
+                </button>
+              ))}
+            </div>
+          )}
           {photos.isSuccess && items.length === 0 ? <p className="py-12 text-ink-muted">{t("empty")}</p> : <JustifiedWall photos={items} target={320} />}
           <div ref={sentinel} className="h-px" />
         </section>

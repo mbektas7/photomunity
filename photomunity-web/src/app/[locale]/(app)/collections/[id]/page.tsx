@@ -13,6 +13,7 @@ import { Button, Notice } from "@/components/ui";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import type { Collection } from "@/lib/types";
+import { HowItWorks } from "@/components/intro";
 
 export default function CollectionPage() {
   const { id } = useParams<{ id: string }>();
@@ -67,7 +68,7 @@ export default function CollectionPage() {
       <section className="grid items-center gap-6 rounded-card bg-surface p-5 sm:rounded-[28px] sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="flex flex-col gap-4">
           <p className="tnum text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">{t("series_count", { count: c.photo_count })}</p>
-          <h1 className="text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[44px]">{c.title}</h1>
+          <h1 className="flex items-center gap-3 text-[34px] font-bold leading-none tracking-[-0.04em] sm:text-[44px]">{c.title} <HowItWorks module="collections" /></h1>
           {c.description && <p className="max-w-[60ch] whitespace-pre-line text-[16px] leading-[1.55]">{c.description}</p>}
           <Link href={`/u/${c.owner.username}?tab=collections`} className="flex items-center gap-2.5 self-start rounded-box">
             <Avatar name={c.owner.display_name} url={c.owner.avatar_url} size={34} />
