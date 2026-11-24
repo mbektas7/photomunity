@@ -44,7 +44,7 @@ void main() {
 
   test('tekrar çek: çekirdek ve Güneş için yakın tarihler', () {
     // Temmuz gecesi, çekirdek güneyde
-    final night = DateTime(2025, 7, 14, 0, 51);
+    final night = DateTime.utc(2025, 7, 13, 21, 51); // 00:51 TSİ
     final core = redoTarget(night, lat, lng);
     expect(core.kind, 'core');
     final sw = Stopwatch()..start();
@@ -59,7 +59,7 @@ void main() {
     for (var i = 1; i < dates.length; i++) {
       expect(dates[i].t.difference(dates[i - 1].t).inDays, greaterThan(3));
     }
-    final evening = redoTarget(DateTime(2025, 9, 10, 18, 40), lat, lng);
+    final evening = redoTarget(DateTime.utc(2025, 9, 10, 15, 40), lat, lng);
     expect(evening.kind, 'sun');
     final sun = findRedoDates(evening, lat, lng, DateTime(2026, 1, 1));
     expect(sun, isNotEmpty);
