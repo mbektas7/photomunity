@@ -1,9 +1,12 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/l10n.dart';
 import '../core/models.dart';
@@ -23,6 +26,33 @@ class ContestScreen extends ConsumerStatefulWidget {
 
 class _ContestScreenState extends ConsumerState<ContestScreen> {
   bool _busy = false;
+  final _scroll = ScrollController();
+  final _resultsKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// "Tüm sonuçlar": sonuç listesine kaydır. Liste tembel kurulduğu için henüz
+  /// çizilmemişse önce aşağı ilerleyip yeniden dener.
+  Future<void> _scrollToResults([int attempt = 0]) async {
+    final ctx = _resultsKey.currentContext;
+    if (ctx != null) {
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+    if (!_scroll.hasClients || attempt > 4) return;
+    final pos = _scroll.position;
+    _scroll.jumpTo((pos.pixels + pos.viewportDimension).clamp(0, pos.maxScrollExtent));
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) await _scrollToResults(attempt + 1);
+  }
 
   Future<void> _enter() async {
     final t = L10n.of(context);
@@ -181,8 +211,11 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
         ref.invalidate(entriesProvider(widget.id));
       },
       child: ListView(
+        controller: _scroll,
         padding: const EdgeInsets.fromLTRB(Space.s5, 4, Space.s5, 32),
         children: [
+          if (c.status == 'finished')
+            _Winners(contest: c, onAllResults: _scrollToResults),
           // Yarışma kapak görseli API'de yok; başlık bölümü görselsiz.
           Wrap(
             spacing: 10,
@@ -365,7 +398,7 @@ class _ContestScreenState extends ConsumerState<ContestScreen> {
           ),
         ]);
       default:
-        return _Results(contestId: c.id);
+        return KeyedSubtree(key: _resultsKey, child: _Results(contestId: c.id));
     }
   }
 }
@@ -656,6 +689,373 @@ void _fullscreen(BuildContext context, Entry e) {
   );
 }
 
+// ---------------------------------------------------------------- kazananlar sunumu
+
+const _gold = Color(0xFFE2B33C);
+const _silver = Color(0xFFB9C0CC);
+const _bronze = Color(0xFFC98B5A);
+const _medalInk = Color(0xFF14161B);
+
+Color _medalColor(int? rank) => switch (rank) {
+  1 => _gold,
+  2 => _silver,
+  _ => _bronze,
+};
+
+String _medalLabel(L10n t, int? rank) => switch (rank) {
+  1 => '🥇 ${t('winners.first')}',
+  2 => '🥈 ${t('winners.second')}',
+  3 => '🥉 ${t('winners.third')}',
+  _ => '$rank.',
+};
+
+/// Sonuçlanan yarışmanın üstünde gece gökyüzü zeminli duyuru: birinci büyük
+/// (kırpılmadan, bulanık kopyası üzerinde), ikinci ve üçüncü yan yana.
+class _Winners extends ConsumerWidget {
+  const _Winners({required this.contest, required this.onAllResults});
+  final Contest contest;
+  final VoidCallback onAllResults;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    final list = ref.watch(entriesProvider(contest.id)).asData?.value;
+    if (list == null) return const SizedBox.shrink();
+    final ranked = list.where((e) => !e.disqualified && e.rank != null && e.rank! <= 3).toList();
+    final first = ranked.where((e) => e.rank == 1).firstOrNull;
+    if (first == null) return const SizedBox.shrink();
+    final rest = ranked.where((e) => e != first).take(2).toList();
+    final c = contest;
+    final stats = [
+      if (c.entryCount > 0) t('winners.stat_entries', {'count': c.entryCount}),
+      if (c.judgeCount > 0) t('winners.stat_judges', {'count': c.judgeCount}),
+      if (c.voteCount > 0) t('winners.stat_votes', {'count': c.voteCount}),
+    ];
+    final locale = t.locale.toLanguageTag();
+    final muted = Colors.white.withValues(alpha: 0.65);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.s6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.topCenter,
+              radius: 1.4,
+              colors: [Color(0xFF2B2370), Color(0xFF0D0F1A), Color(0xFF07080D)],
+              stops: [0, 0.6, 1],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 22, 14, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  t('winners.announced'),
+                  textAlign: TextAlign.center,
+                  style: font(12, weight: 700, spacing: 0.5, color: _gold),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  c.title,
+                  textAlign: TextAlign.center,
+                  style: font(26, weight: 700, spacing: -0.6, height: 1.15, color: Colors.white),
+                ),
+                if (stats.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    stats.join(' · '),
+                    textAlign: TextAlign.center,
+                    style: font(13, color: muted, tabular: true),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                _FirstPhoto(entry: first, badge: _medalLabel(t, first.rank)),
+                _WinnerLine(entry: first, locale: locale),
+                if (rest.isNotEmpty)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < 2; i++) ...[
+                        if (i > 0) const SizedBox(width: 10),
+                        Expanded(
+                          child: i < rest.length
+                              ? _RunnerUp(entry: rest[i], badge: _medalLabel(t, rest[i].rank))
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Builder(
+                        builder: (bctx) => FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            backgroundColor: p.accent,
+                            foregroundColor: p.accentInk,
+                            shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            textStyle: font(15, weight: 700),
+                          ),
+                          onPressed: () => _shareWinner(bctx, first),
+                          child: Text(t('winners.share'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          textStyle: font(15, weight: 700),
+                        ),
+                        onPressed: onAllResults,
+                        child: Text(t('winners.all_results'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _shareWinner(BuildContext context, Entry first) async {
+    final t = L10n.of(context);
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    final winner = first.user?.displayName ?? first.title ?? '';
+    final text = '${t('winners.share_text', {'contest': contest.title, 'winner': winner})} · ${contest.shareUrl}';
+    try {
+      await SharePlus.instance.share(ShareParams(text: text, sharePositionOrigin: origin));
+    } catch (e) {
+      if (context.mounted) toast(context, errorText(context, e));
+    }
+  }
+}
+
+class _MedalBadge extends StatelessWidget {
+  const _MedalBadge({required this.label, required this.color, this.small = false});
+  final String label;
+  final Color color;
+  final bool small;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.symmetric(horizontal: small ? 8 : 11, vertical: small ? 3 : 5),
+    decoration: ShapeDecoration(color: color, shape: const StadiumBorder()),
+    child: Text(label, style: font(small ? 11 : 12, weight: 700, color: _medalInk)),
+  );
+}
+
+class _FirstPhoto extends StatelessWidget {
+  const _FirstPhoto({required this.entry, required this.badge});
+  final Entry entry;
+  final String badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final img = entry.feed;
+    return Semantics(
+      image: true,
+      label: [badge, entry.title, entry.user?.displayName].whereType<String>().join(', '),
+      child: GestureDetector(
+        onTap: () => _fullscreen(context, entry),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: AspectRatio(
+            aspectRatio: 358 / 236,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ColoredBox(color: Colors.black),
+                if (img != null) ...[
+                  // Arka planda aynı karenin bulanık, karartılmış kopyası; kare kendisi kırpılmaz.
+                  ImageFiltered(
+                    imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24, tileMode: TileMode.decal),
+                    child: NetPhoto(url: img.url, fit: BoxFit.cover),
+                  ),
+                  const ColoredBox(color: Color(0x80000000)),
+                  NetPhoto(url: img.url, fit: BoxFit.contain),
+                ],
+                Positioned(left: 12, top: 12, child: _MedalBadge(label: badge, color: _medalColor(entry.rank))),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WinnerLine extends StatelessWidget {
+  const _WinnerLine({required this.entry, required this.locale});
+  final Entry entry;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final u = entry.user;
+    final muted = Colors.white.withValues(alpha: 0.65);
+    final gear = entry.exif?.lens ?? entry.exif?.camera;
+    final sub = [if (u != null) '@${u.username}', ?gear].join(' · ');
+    final name = u?.displayName ?? '';
+    final initials = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .take(2)
+        .map((w) => w[0].toUpperCase())
+        .join();
+    return InkWell(
+      borderRadius: BorderRadius.circular(Radii.box),
+      onTap: u == null ? null : () => context.push('/u/${u.username}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        child: Row(
+          children: [
+            if (u != null) ...[
+              u.avatarUrl != null
+                  ? Avatar(name: name, url: u.avatarUrl, size: 36)
+                  : Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(color: _gold, shape: BoxShape.circle),
+                      child: Text(initials, style: font(13, weight: 700, color: _medalInk)),
+                    ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.title ?? name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: font(15, weight: 700, color: Colors.white),
+                  ),
+                  if (sub.isNotEmpty)
+                    Text(
+                      sub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: font(12.5, color: muted),
+                    ),
+                  if (entry.prize != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.trophy, size: 13, color: _gold),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              entry.prize!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: font(12.5, weight: 600, color: _gold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (entry.score != null) ...[
+              const SizedBox(width: 10),
+              Semantics(
+                label: t('contest.score', {'score': NumberFormat('0.00', locale).format(entry.score)}),
+                excludeSemantics: true,
+                child: Text(
+                  NumberFormat('0.00', locale).format(entry.score),
+                  style: font(16, weight: 700, color: Colors.white, tabular: true),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RunnerUp extends StatelessWidget {
+  const _RunnerUp({required this.entry, required this.badge});
+  final Entry entry;
+  final String badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final img = entry.feed;
+    final u = entry.user;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _fullscreen(context, entry),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(Radii.photo),
+            child: SizedBox(
+              height: 110,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const ColoredBox(color: Colors.black),
+                  if (img != null) NetPhoto(url: img.url, fit: BoxFit.contain),
+                  Positioned(
+                    left: 8,
+                    top: 8,
+                    child: _MedalBadge(label: badge, color: _medalColor(entry.rank), small: true),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: u == null ? null : () => context.push('/u/${u.username}'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                entry.title ?? u?.displayName ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: font(13, weight: 700, color: Colors.white),
+              ),
+              if (u != null)
+                Text(
+                  '@${u.username}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: font(12, color: Colors.white.withValues(alpha: 0.6)),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _Results extends ConsumerWidget {
   const _Results({required this.contestId});
   final String contestId;
@@ -785,19 +1185,55 @@ class JuryScreen extends ConsumerStatefulWidget {
 
 class _JuryScreenState extends ConsumerState<JuryScreen> {
   final _pages = PageController();
+  final _note = TextEditingController();
+  String? _noteEntryId; // _note hangi karenin notunu tutuyor
+  bool _savingNote = false;
   int _index = 0;
 
   @override
   void dispose() {
     _pages.dispose();
+    _note.dispose();
     super.dispose();
+  }
+
+  /// Sayfa değişince özel not alanını o karenin kayıtlı notuyla doldur.
+  void _syncNote(Entry e) {
+    if (_noteEntryId == e.id) return;
+    _noteEntryId = e.id;
+    _note.text = e.myNote ?? '';
+  }
+
+  /// Not alanı bu kareye aitse metni (boşsa notu siler), değilse null (not korunur).
+  String? _noteFor(Entry e) => _noteEntryId == e.id ? _note.text : null;
+
+  Future<void> _saveNote(Entry e) async {
+    final score = e.myScore;
+    if (score == null || _savingNote) return;
+    final t = L10n.of(context);
+    setState(() => _savingNote = true);
+    try {
+      await ref
+          .read(entriesProvider(widget.id).notifier)
+          .score(e.id, score, note: _note.text);
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+        toast(context, t('jury.note_saved'));
+      }
+    } catch (err) {
+      if (mounted) toast(context, errorText(context, err));
+    } finally {
+      if (mounted) setState(() => _savingNote = false);
+    }
   }
 
   Future<void> _give(List<Entry> list, int value) async {
     final e = list[_index];
     if (e.mine) return;
     try {
-      await ref.read(entriesProvider(widget.id).notifier).score(e.id, value);
+      await ref
+          .read(entriesProvider(widget.id).notifier)
+          .score(e.id, value, note: _noteFor(e));
       final next = list.indexWhere(
         (x) => list.indexOf(x) > _index && x.myScore == null && !x.mine,
       );
@@ -822,6 +1258,14 @@ class _JuryScreenState extends ConsumerState<JuryScreen> {
     final list = entries.asData?.value ?? const <Entry>[];
     final scorable = list.where((e) => !e.mine).toList();
     final done = scorable.where((e) => e.myScore != null).length;
+    if (list.isNotEmpty) {
+      final current = list[_index.clamp(0, list.length - 1)];
+      if (_noteEntryId != current.id) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _syncNote(current));
+        });
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -850,7 +1294,10 @@ class _JuryScreenState extends ConsumerState<JuryScreen> {
                   child: PageView.builder(
                     controller: _pages,
                     itemCount: list.length,
-                    onPageChanged: (i) => setState(() => _index = i),
+                    onPageChanged: (i) => setState(() {
+                      _index = i;
+                      _syncNote(list[i]);
+                    }),
                     itemBuilder: (_, i) {
                       final img = list[i].full;
                       return img == null
@@ -884,6 +1331,16 @@ class _JuryScreenState extends ConsumerState<JuryScreen> {
                         }),
                         style: font(13, color: p.inkMuted),
                       ),
+                      if (_exifLine(list[_index].exif) case final exif?) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          exif,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: font(12.5, color: p.inkMuted, tabular: true),
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       if (list[_index].mine)
                         Text(
@@ -930,11 +1387,106 @@ class _JuryScreenState extends ConsumerState<JuryScreen> {
                               ),
                           ],
                         ),
+                      if (!list[_index].mine) ...[
+                        const SizedBox(height: 12),
+                        _JuryNoteField(
+                          controller: _note,
+                          entry: list[_index],
+                          saving: _savingNote,
+                          onSave: () => _saveNote(list[_index]),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
+    );
+  }
+}
+
+String _fmtNum(double v) =>
+    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+
+/// Jüri için kısa çekim bilgisi: makine/objektif · odak · diyafram · enstantane · ISO.
+String? _exifLine(Exif? x) {
+  if (x == null) return null;
+  final parts = [
+    ?x.camera,
+    ?x.lens,
+    if (x.focalLength != null) '${x.focalLength!.round()}mm',
+    if (x.aperture != null) 'f/${_fmtNum(x.aperture!)}',
+    ?x.shutter,
+    if (x.iso != null) 'ISO ${x.iso}',
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
+
+/// Jürinin karelere düştüğü özel not; yalnızca kendisi görür. Puan vermeden kaydedilemez.
+class _JuryNoteField extends StatelessWidget {
+  const _JuryNoteField({
+    required this.controller,
+    required this.entry,
+    required this.saving,
+    required this.onSave,
+  });
+  final TextEditingController controller;
+  final Entry entry;
+  final bool saving;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = L10n.of(context);
+    final p = context.palette;
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final dirty = value.text.trim() != (entry.myNote ?? '');
+        final canSave = dirty && entry.myScore != null && !saving;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: controller,
+              minLines: 1,
+              maxLines: 3,
+              maxLength: 1000,
+              textCapitalization: TextCapitalization.sentences,
+              style: font(14.5, color: p.ink),
+              decoration: InputDecoration(
+                labelText: t('jury.note_label'),
+                hintText: t('jury.note_hint'),
+                counterText: '',
+                isDense: true,
+                prefixIcon: Icon(LucideIcons.lock, size: 16, color: p.inkMuted),
+                suffixIcon: dirty
+                    ? IconButton(
+                        tooltip: t('jury.note_save'),
+                        onPressed: canSave ? onSave : null,
+                        icon: saving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(LucideIcons.check, color: canSave ? p.accent : p.inkMuted),
+                      )
+                    : null,
+              ),
+            ),
+            if (dirty && entry.myScore == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  t('jury.note_needs_score'),
+                  textAlign: TextAlign.center,
+                  style: font(12.5, color: p.inkMuted),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -562,14 +562,20 @@ class EntriesController extends AsyncNotifier<List<Entry>> {
     }),
   );
 
-  Future<void> score(String entryId, int value) => _optimistic(
-    entryId,
-    (e) => e.copyWith(myScore: value),
-    () => ref.read(apiProvider).put<dynamic>(
-      '/contests/$contestId/jury/scores/$entryId',
-      {'score': value},
-    ),
-  );
+  /// [note] verilmezse sunucudaki not korunur; boş metin notu siler.
+  Future<void> score(String entryId, int value, {String? note}) {
+    final trimmed = note?.trim();
+    return _optimistic(
+      entryId,
+      (e) => trimmed == null
+          ? e.copyWith(myScore: value)
+          : e.copyWith(myScore: value, myNote: trimmed.isEmpty ? null : trimmed),
+      () => ref.read(apiProvider).put<dynamic>(
+        '/contests/$contestId/jury/scores/$entryId',
+        {'score': value, 'note': ?trimmed},
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------- Faz 3: Mesajlaşma ve harita

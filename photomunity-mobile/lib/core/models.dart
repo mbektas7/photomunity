@@ -564,6 +564,10 @@ class Entry {
       prize = _opt(j['prize']),
       myStars = _opt(j['my_stars']),
       myScore = _opt(j['my_score']),
+      myNote = _opt(j['my_note']),
+      exif = j['exif'] == null
+          ? null
+          : Exif.fromJson(j['exif'] as Map<String, dynamic>),
       mine = j['mine'] as bool? ?? false;
 
   final String id;
@@ -577,13 +581,19 @@ class Entry {
   final String? prize;
   final int? myStars;
   final int? myScore;
+
+  /// Jürinin bu kareye düştüğü özel not (yalnızca kendisi görür).
+  final String? myNote;
+
+  /// Çekim bilgisi (konum içermez); jüri ve seçmen görünümünde gelir.
+  final Exif? exif;
   final bool mine;
 
   ImageVariant? get feed => images['feed'] ?? images['full'] ?? images['thumb'];
   ImageVariant? get full => images['full'] ?? images['feed'];
   ImageVariant? get thumb => images['thumb'] ?? images['feed'];
 
-  Entry._copy(Entry e, {int? myStars, int? myScore})
+  Entry._copy(Entry e, {int? myStars, int? myScore, Object? myNote = _keep})
     : id = e.id,
       photoId = e.photoId,
       title = e.title,
@@ -595,10 +605,37 @@ class Entry {
       prize = e.prize,
       myStars = myStars ?? e.myStars,
       myScore = myScore ?? e.myScore,
+      myNote = identical(myNote, _keep) ? e.myNote : myNote as String?,
+      exif = e.exif,
       mine = e.mine;
 
-  Entry copyWith({int? myStars, int? myScore}) =>
-      Entry._copy(this, myStars: myStars, myScore: myScore);
+  static const _keep = Object();
+
+  /// [myNote] verilmezse mevcut not korunur; `null` notu siler.
+  Entry copyWith({int? myStars, int? myScore, Object? myNote = _keep}) =>
+      Entry._copy(this, myStars: myStars, myScore: myScore, myNote: myNote);
+}
+
+/// `/contests/{id}/results` satırı (yönetici önizlemesi ve sonuçlar).
+class ResultRow {
+  ResultRow.fromJson(Map<String, dynamic> j)
+    : rank = _opt(j['rank']),
+      score = _d(j['score']),
+      count = j['count'] as int? ?? 0,
+      prize = _opt(j['prize']),
+      entry = Entry.fromJson(j['entry'] as Map<String, dynamic>),
+      scores = (j['scores'] as List?)?.map((v) => (v as num).toInt()).toList();
+
+  final int? rank;
+  final double? score;
+
+  /// Jüride puan veren üye sayısı, halk oylamasında oy sayısı.
+  final int count;
+  final String? prize;
+  final Entry entry;
+
+  /// Jüri üyelerinin tek tek puanları (yalnızca yöneticiye gelir).
+  final List<int>? scores;
 }
 
 class Contest extends ContestCard {
@@ -619,6 +656,8 @@ class Contest extends ContestCard {
           ? null
           : Entry.fromJson(j['my_entry'] as Map<String, dynamic>),
       shareUrl = j['share_url'] as String,
+      judgeCount = j['judge_count'] as int? ?? 0,
+      voteCount = j['vote_count'] as int? ?? 0,
       super.fromJson();
 
   final String description;
@@ -630,6 +669,10 @@ class Contest extends ContestCard {
   final bool isJudge;
   final Entry? myEntry;
   final String shareUrl;
+
+  /// Yalnızca sonuçlanan yarışmada dolu: puan veren jüri ve verilen oy sayısı.
+  final int judgeCount;
+  final int voteCount;
 }
 
 /// Haberdeki fotoğraf: sunucuda işlenmiş WebP ve boyutları.

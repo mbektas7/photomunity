@@ -406,8 +406,10 @@ final _adminEntriesProvider = FutureProvider.autoDispose.family<List<Entry>, Str
       .map((e) => Entry.fromJson(e as Map<String, dynamic>))
       .toList(),
 );
-final _resultsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
-  (ref, id) async => ((await ref.read(apiProvider).get<List<dynamic>>('/contests/$id/results'))).cast<Map<String, dynamic>>(),
+final _resultsProvider = FutureProvider.autoDispose.family<List<ResultRow>, String>(
+  (ref, id) async => (await ref.read(apiProvider).get<List<dynamic>>('/contests/$id/results'))
+      .map((r) => ResultRow.fromJson(r as Map<String, dynamic>))
+      .toList(),
 );
 
 class ContestManageScreen extends ConsumerStatefulWidget {
@@ -844,14 +846,15 @@ class _Preview extends ConsumerWidget {
           for (final r in rows)
             Builder(
               builder: (_) {
-                final e = Entry.fromJson(r['entry'] as Map<String, dynamic>);
-                final score = r['score'] as num?;
-                final count = r['count'] as int? ?? 0;
+                final e = r.entry;
+                final score = r.score;
+                final count = r.count;
+                final scores = r.scores;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     children: [
-                      SizedBox(width: 30, child: Text('${r['rank'] ?? '–'}', style: font(18, weight: 700, color: p.ink, tabular: true))),
+                      SizedBox(width: 30, child: Text('${r.rank ?? '–'}', style: font(18, weight: 700, color: p.ink, tabular: true))),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
@@ -862,7 +865,22 @@ class _Preview extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(child: Text(e.user?.displayName ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: font(14.5, color: p.ink))),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e.user?.displayName ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: font(14.5, color: p.ink)),
+                            // Jüri üyelerinin tek tek puanları (yalnızca yöneticiye gelir)
+                            if (scores != null && scores.isNotEmpty)
+                              Text(
+                                scores.join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: font(12.5, color: p.inkMuted, tabular: true),
+                              ),
+                          ],
+                        ),
+                      ),
                       Text(
                         '${score == null ? '–' : score.toStringAsFixed(2)} · '
                         '${t(c.judgingMode == 'jury' ? 'manage.judges_count' : 'manage.votes_count', {'count': count})}',
